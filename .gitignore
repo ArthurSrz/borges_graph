@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Book data (downloaded from Google Drive)
+vallee_sans_hommes_frison/
+racines_ciel_gary/
+policeman_decoin/
+a_rebours_huysmans/
+chien_blanc_gary/
+peau_bison_frison/
+tilleul_soir_anglade/
+villa_triste_modiano/
+raw_books/
+
+# Data files
+*.graphml
+*.parquet
+*.pkl
+*.jsonl
+kv_store_*.json
+vdb_entities.json
+
+# Archive files
+*.zip
+*.tar.gz
+
+# System files
+.DS_Store
+.vscode/
+.claude/
+*.log
+tmp/
+temp/
