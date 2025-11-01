@@ -12,29 +12,61 @@ from pathlib import Path
 def download_from_google_drive(file_id, destination):
     """Télécharge un fichier depuis Google Drive en gérant les gros fichiers"""
 
-    # URL de téléchargement direct Google Drive
-    download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-
     try:
         print(f"📥 Téléchargement depuis Google Drive: {destination}")
 
         # Session pour gérer les cookies et redirections
         session = requests.Session()
-        response = session.get(download_url, stream=True)
 
-        # Gérer l'avertissement antivirus pour les gros fichiers
-        if 'virus scan warning' in response.text.lower() or response.status_code == 200 and 'confirm=' in response.text:
-            print("⚠️  Gros fichier détecté, gestion de l'avertissement antivirus...")
+        # Première requête pour obtenir la page de confirmation
+        initial_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        response = session.get(initial_url, stream=True)
 
-            # Extraire le token de confirmation
+        # Vérifier si on a une redirection ou un avertissement antivirus
+        if response.status_code == 200 and ('confirm=' in response.text or 'virus scan warning' in response.text.lower()):
+            print("⚠️  Gros fichier détecté, extraction du lien de téléchargement...")
+
             import re
+            # Chercher le lien de téléchargement direct ou le token de confirmation
+            download_match = re.search(r'<a[^>]*href="([^"]*download[^"]*)"', response.text)
             confirm_match = re.search(r'confirm=([^&"]*)', response.text)
-            if confirm_match:
+
+            if download_match:
+                # Lien de téléchargement direct trouvé
+                download_url = download_match.group(1).replace('&amp;', '&')
+                print(f"🔗 Lien direct trouvé")
+                response = session.get(download_url, stream=True)
+            elif confirm_match:
+                # Token de confirmation trouvé
                 confirm_token = confirm_match.group(1)
                 confirm_url = f"https://drive.google.com/uc?export=download&confirm={confirm_token}&id={file_id}"
+                print(f"🔑 Token de confirmation: {confirm_token[:10]}...")
                 response = session.get(confirm_url, stream=True)
+            else:
+                # Essayer avec drive.usercontent.google.com
+                fallback_url = f"https://drive.usercontent.google.com/download?id={file_id}&export=download"
+                print(f"🔄 Tentative avec URL alternative")
+                response = session.get(fallback_url, stream=True)
+
+        # Suivre les redirections si nécessaire
+        while response.status_code in [301, 302, 303, 307, 308]:
+            redirect_url = response.headers.get('location')
+            if redirect_url:
+                print(f"🔄 Redirection vers: {redirect_url[:50]}...")
+                response = session.get(redirect_url, stream=True)
+            else:
+                break
 
         response.raise_for_status()
+
+        # Vérifier que c'est bien un fichier binaire
+        content_type = response.headers.get('content-type', '')
+        if 'text/html' in content_type:
+            print(f"⚠️  Réponse HTML reçue au lieu d'un fichier: {content_type}")
+            # Lire un peu du contenu pour diagnostic
+            sample = response.text[:500] if hasattr(response, 'text') else str(response.content[:500])
+            print(f"📄 Échantillon: {sample[:100]}...")
+            return False
 
         # Télécharger le fichier
         total_size = int(response.headers.get('content-length', 0))
@@ -94,7 +126,29 @@ def download_and_extract_data():
         print("📦 Extraction de l'archive...")
 
         try:
+            # Vérifier que le fichier existe et a une taille raisonnable
+            if not os.path.exists(archive_name):
+                print(f"❌ Le fichier {archive_name} n'existe pas")
+                return False
+
+            file_size = os.path.getsize(archive_name)
+            print(f"📊 Taille du fichier téléchargé: {file_size / (1024*1024):.1f} MB")
+
+            if file_size < 1024:  # Moins de 1KB, probablement une erreur
+                print("⚠️  Fichier très petit, vérification du contenu...")
+                with open(archive_name, 'rb') as f:
+                    content_sample = f.read(200)
+                    print(f"📄 Début du fichier: {content_sample[:100]}")
+                    if b'<html' in content_sample.lower() or b'<!doctype' in content_sample.lower():
+                        print("❌ Le fichier téléchargé est du HTML, pas un ZIP")
+                        return False
+
+            # Tenter l'extraction
             with zipfile.ZipFile(archive_name, 'r') as zip_ref:
+                file_list = zip_ref.namelist()
+                print(f"📦 Archive contient {len(file_list)} fichiers/dossiers")
+                if file_list:
+                    print(f"📋 Premiers éléments: {file_list[:5]}")
                 zip_ref.extractall('.')
 
             # Nettoyer l'archive
