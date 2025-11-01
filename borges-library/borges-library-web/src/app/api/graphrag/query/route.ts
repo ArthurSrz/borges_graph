@@ -14,30 +14,47 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Forward the request to the Railway API
-    const response = await fetch(`${RAILWAY_API_URL}/search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        book_id,
-        query,
-        mode: 'global'  // Using global search mode by default
-      }),
-    })
+    // Try to forward the request to the Railway API first
+    try {
+      const response = await fetch(`${RAILWAY_API_URL}/query`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          book_id,
+          query,
+          mode: 'local'  // Using local search mode by default
+        }),
+      })
 
-    if (!response.ok) {
-      throw new Error(`Railway API error: ${response.status} ${response.statusText}`)
+      if (response.ok) {
+        const data = await response.json()
+        return NextResponse.json({
+          answer: data.answer || data.result || 'Pas de réponse disponible',
+          book_id,
+          query,
+          timestamp: new Date().toISOString(),
+          source: 'railway'
+        })
+      }
+    } catch (railwayError) {
+      console.warn('Railway API unavailable, using mock response:', railwayError)
     }
 
-    const data = await response.json()
+    // Fallback to mock response if Railway API is unavailable
+    const mockResponse = `Voici une réponse simulée pour la question "${query}" sur le livre "${book_id}".
+
+L'analyse littéraire révèle des thèmes profonds et des connexions complexes entre les personnages. Cette œuvre explore les relations humaines et les transformations psychologiques des protagonistes.
+
+(Note: Cette réponse est simulée car l'API GraphRAG n'est pas disponible pour le moment)`
 
     return NextResponse.json({
-      answer: data.answer || data.result || 'Pas de réponse disponible',
+      answer: mockResponse,
       book_id,
       query,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      source: 'mock'
     })
 
   } catch (error) {

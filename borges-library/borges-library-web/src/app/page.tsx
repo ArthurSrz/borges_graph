@@ -34,7 +34,7 @@ export default function HomePage() {
           </div>
 
           <p className="text-lg text-gray-500 borges-pulse">
-            Préparation de l'univers littéraire...
+            Préparation de l&apos;univers littéraire...
           </p>
         </div>
       </div>

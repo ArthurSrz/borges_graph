@@ -2,12 +2,42 @@ import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
 
+const RAILWAY_API_URL = 'https://comfortable-gentleness-production-8603.up.railway.app'
+
+function extractAuthorFromTitle(bookName: string): string {
+  const parts = bookName.split('_')
+  if (parts.length > 1) {
+    const lastPart = parts[parts.length - 1]
+    return lastPart.charAt(0).toUpperCase() + lastPart.slice(1).toLowerCase()
+  }
+  return 'Auteur inconnu'
+}
+
 export async function GET() {
   try {
-    // Path to the book data (this would be where Google Drive data is downloaded)
-    const booksPath = path.join(process.cwd(), '..', '..', '..', 'nano-graphrag', 'borges-library')
+    // Try to fetch books from Railway API first
+    try {
+      const response = await fetch(`${RAILWAY_API_URL}/books`, {
+        next: { revalidate: 300 } // Cache for 5 minutes
+      })
+      if (response.ok) {
+        const data = await response.json()
+        // Transform Railway API response to match our format
+        const books = data.books.map((book: any) => ({
+          id: book.id,
+          title: book.name.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+          author: extractAuthorFromTitle(book.name),
+          has_data: book.has_data,
+          source: 'railway'
+        }))
+        return NextResponse.json(books)
+      }
+    } catch (railwayError) {
+      console.warn('Railway API unavailable, checking local files:', railwayError)
+    }
 
-    // List of expected book directories
+    // Fallback to local file checking
+    const booksPath = path.join(process.cwd(), '..', '..', '..', 'nano-graphrag')
     const expectedBooks = [
       { id: 'vallee_sans_hommes_frison', title: 'La Vallée sans hommes', author: 'Frison' },
       { id: 'racines_ciel_gary', title: 'Les Racines du ciel', author: 'Romain Gary' },
@@ -19,20 +49,18 @@ export async function GET() {
       { id: 'villa_triste_modiano', title: 'Villa triste', author: 'Modiano' },
     ]
 
-    // Check which books actually have data available
     const availableBooks = []
 
     for (const book of expectedBooks) {
       try {
         const bookPath = path.join(booksPath, book.id)
         const graphmlPath = path.join(bookPath, 'graph_chunk_entity_relation.graphml')
-
-        // Check if the GraphML file exists
         await fs.access(graphmlPath)
-        availableBooks.push(book)
+        availableBooks.push({ ...book, has_data: true, source: 'local' })
       } catch (error) {
-        // Book directory or GraphML file doesn't exist, skip it
         console.log(`Book data not found for: ${book.id}`)
+        // Still include the book but mark as no data available
+        availableBooks.push({ ...book, has_data: false, source: 'fallback' })
       }
     }
 
