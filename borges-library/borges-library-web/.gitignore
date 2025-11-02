@@ -39,3 +39,62 @@ next-env.d.ts
 # IDE
 .vscode/
 .idea/
+
+# Book data directories (too large for git - contain GraphML and vector data)
+a_rebours_huysmans/
+chien_blanc_gary/
+peau_bison_frison/
+policeman_decoin/
+racines_ciel_gary/
+tilleul_soir_anglade/
+vallee_sans_hommes_frison/
+villa_triste_modiano/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Heavy data files
+*.graphml
+*.parquet
+*.csv
+*.zip
+*.tar.gz
+*.7z
+
+# Google Drive responses
+gdrive_response*.html
+
+# Nested repositories and components that should be separate
+nano-graphrag/
+reconciliation-api/
+test/
+borges-library/
+
+# API files that shouldn't be in frontend repo
+graphrag_*.py
+requirements.txt
+runtime.txt
+Procfile
+start_production.py
+railway.dockerfile
+
+# Documentation that belongs in main repo
+agent.md
+CLAUDE.md
+
+# Random files
+zir0Tiii

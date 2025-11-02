@@ -5,6 +5,7 @@ interface Book {
   title: string
   author: string
   graphData?: any
+  has_data?: boolean
 }
 
 interface BookSelectorProps {
@@ -49,8 +50,22 @@ export default function BookSelector({
                 : 'bg-gray-800 hover:bg-gray-700'
             }`}
           >
-            <div className="font-medium text-sm mb-1">{book.title}</div>
+            <div className="flex justify-between items-start mb-1">
+              <div className="font-medium text-sm">{book.title}</div>
+              <div className="flex items-center space-x-1">
+                {book.has_data !== undefined && (
+                  <div className={`w-2 h-2 rounded-full ${
+                    book.has_data ? 'bg-green-500' : 'bg-gray-500'
+                  }`} title={book.has_data ? 'Données GraphRAG disponibles' : 'Pas de données GraphRAG'} />
+                )}
+              </div>
+            </div>
             <div className="text-xs opacity-75">{book.author}</div>
+            {book.has_data !== undefined && (
+              <div className="text-xs mt-1 opacity-60">
+                {book.has_data ? '📚 GraphRAG disponible' : '⚠️ Pas de données'}
+              </div>
+            )}
           </button>
         ))}
       </div>
