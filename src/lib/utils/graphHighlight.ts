@@ -96,6 +96,41 @@ export class GraphHighlighter {
     const searchEntityIds = new Set(searchPath.entities.map(e => e.id));
     const searchEntityMap = new Map(searchPath.entities.map(e => [e.id, e]));
 
+    // Create fuzzy matching for entities (to handle GraphRAG vs Neo4j ID differences)
+    const createFuzzyMatcher = (searchEntities: any[], nodes: D3Node[]) => {
+      const matches = new Map<string, any>();
+
+      searchEntities.forEach(entity => {
+        // Direct match first
+        const directMatch = nodes.find(node => node.id === entity.id);
+        if (directMatch) {
+          matches.set(directMatch.id, entity);
+          return;
+        }
+
+        // Fuzzy match by name similarity
+        const entityName = entity.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const fuzzyMatch = nodes.find(node => {
+          const nodeName = node.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const nodeLabel = (node.label || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+          return nodeName.includes(entityName) ||
+                 entityName.includes(nodeName) ||
+                 nodeLabel.includes(entityName) ||
+                 entityName.includes(nodeLabel);
+        });
+
+        if (fuzzyMatch) {
+          matches.set(fuzzyMatch.id, entity);
+          console.log(`🔍 Fuzzy match: "${entity.id}" → "${fuzzyMatch.id}"`);
+        }
+      });
+
+      return matches;
+    };
+
+    const fuzzyMatches = createFuzzyMatcher(searchPath.entities, nodes);
+
     // Create relation lookup
     const searchRelations = new Set();
     const searchRelationMap = new Map();
@@ -109,11 +144,12 @@ export class GraphHighlighter {
     });
 
     console.log(`🔍 Search entities: ${searchEntityIds.size}, relations: ${searchRelations.size}`);
+    console.log(`🔍 Fuzzy matches found: ${fuzzyMatches.size}`);
 
     // Process nodes
     const highlightedNodes = nodes.map(node => {
-      const isInSearchPath = searchEntityIds.has(node.id);
-      const searchEntity = searchEntityMap.get(node.id);
+      const isInSearchPath = searchEntityIds.has(node.id) || fuzzyMatches.has(node.id);
+      const searchEntity = searchEntityMap.get(node.id) || fuzzyMatches.get(node.id);
 
       if (isInSearchPath && searchEntity) {
         // Node is part of search path - highlight it
