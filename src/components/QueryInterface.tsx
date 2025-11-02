@@ -204,39 +204,6 @@ export default function QueryInterface({ selectedBook, visibleNodeIds, onHighlig
             </div>
           </div>
 
-          {/* Search Path */}
-          {lastResult.search_path && (
-            <div className="space-y-3">
-              {lastResult.search_path.entities.length > 0 && (
-                <div>
-                  <div className="text-sm text-gray-400 mb-2">Entités Explorées:</div>
-                  <div className="space-y-1">
-                    {lastResult.search_path.entities.slice(0, 3).map((entity, idx) => (
-                      <div key={idx} className="text-xs bg-gray-800 p-2 rounded flex justify-between">
-                        <span className="text-borges-accent">{entity.id}</span>
-                        <span className="text-gray-400">Score: {(entity.score * 100).toFixed(0)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {lastResult.search_path.relations.length > 0 && (
-                <div>
-                  <div className="text-sm text-gray-400 mb-2">Relations Parcourues:</div>
-                  <div className="space-y-1">
-                    {lastResult.search_path.relations.slice(0, 3).map((relation, idx) => (
-                      <div key={idx} className="text-xs bg-gray-800 p-2 rounded">
-                        <span className="text-borges-accent">{relation.source}</span>
-                        <span className="text-gray-400 mx-2">→</span>
-                        <span className="text-borges-accent">{relation.target}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>
