@@ -30,6 +30,8 @@ interface D3Node {
   y?: number;
   fx?: number | null;
   fy?: number | null;
+  degree: number;
+  centrality_score: number;
   // Highlighting states
   highlighted?: boolean;
   dimmed?: boolean;
@@ -39,8 +41,8 @@ interface D3Node {
 
 interface D3Link {
   id: string;
-  source: string | D3Node;
-  target: string | D3Node;
+  source: string | number | D3Node;
+  target: string | number | D3Node;
   relation: string;
   weight: number;
   // Highlighting states
@@ -142,8 +144,10 @@ export class GraphHighlighter {
 
     // Process links
     const highlightedLinks = links.map(link => {
-      const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
-      const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+      const sourceId = typeof link.source === 'string' ? link.source :
+                       typeof link.source === 'number' ? link.source.toString() : link.source.id;
+      const targetId = typeof link.target === 'string' ? link.target :
+                       typeof link.target === 'number' ? link.target.toString() : link.target.id;
       const relKey = `${sourceId}-${targetId}`;
       const reverseKey = `${targetId}-${sourceId}`;
 
