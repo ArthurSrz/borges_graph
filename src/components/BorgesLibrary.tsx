@@ -171,7 +171,7 @@ export default function BorgesLibrary() {
                     <div className="text-6xl mb-4">📚</div>
                     <p className="text-xl">Explorez le graphe de connaissances</p>
                     <p className="text-sm mt-2 opacity-75">
-                      {neo4jGraphData?.nodes.length || 0} entités • {neo4jGraphData?.relationships.length || 0} relations
+                      Prêt pour l&apos;exploration
                     </p>
                   </div>
                 </div>

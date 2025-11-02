@@ -158,8 +158,8 @@ export default function GraphVisualization({
     const visibleNodes = nodes.filter(node => selectedNodeTypes.has(node.type))
     const visibleNodeIds = new Set(visibleNodes.map(n => n.id))
     const visibleLinks = links.filter(link => {
-      const sourceId = typeof link.source === 'string' ? link.source : link.source.id
-      const targetId = typeof link.target === 'string' ? link.target : link.target.id
+      const sourceId = typeof link.source === 'string' ? link.source : (link.source as D3Node).id
+      const targetId = typeof link.target === 'string' ? link.target : (link.target as D3Node).id
       return visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId)
     })
 
@@ -171,7 +171,7 @@ export default function GraphVisualization({
       .force('link', d3.forceLink<D3Node, D3Link>(visibleLinks).id(d => d.id).distance(80))
       .force('charge', d3.forceManyBody().strength(-300))
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(d => d.size + 2))
+      .force('collision', d3.forceCollide().radius(d => (d as D3Node).size + 2))
 
     // Create zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()

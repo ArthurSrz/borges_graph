@@ -1,47 +1,32 @@
-# Borges Library - Interactive Knowledge Graph Frontend
+# GraphRAG API - Minimal Deployment
 
-Frontend interface for the Borges Library system, featuring an interactive 3D knowledge graph visualization built with Next.js and D3.js.
-
-## Architecture
-
-```
-Frontend (Vercel) → Reconciliation API (Railway) → {Neo4j Aura, GraphRAG API}
-```
+Flask API for GraphRAG (Graph Retrieval-Augmented Generation) with automatic Google Drive data download.
 
 ## Features
 
-- **Interactive Graph Visualization**: Force-directed 3D graph with zoom, pan, and drag
-- **Entity Type Filtering**: Color-coded legend for Personnes, Lieux, Événements, Concepts, Organisations, Livres
-- **Reconciled Queries**: Combines Neo4j graph context with GraphRAG intelligence
-- **Real-time Statistics**: Graph metrics and visible node tracking
-- **Book Selection**: Browse available books with GraphRAG data indicators
+- GraphRAG search over literary knowledge graphs
+- Automatic book data download from Google Drive
+- Fallback test data system
+- Ready for Railway deployment
 
-## Technology Stack
+## Deployment
 
-- **Frontend**: Next.js, TypeScript, Tailwind CSS
-- **Visualization**: D3.js force simulation
-- **API Integration**: Reconciliation API client
-- **Deployment**: Vercel
-
-## Getting Started
-
-1. Install dependencies:
+1. Set environment variables:
    ```bash
-   npm install
+   BOOK_DATA_DRIVE_ID="your-google-drive-file-id"
+   OPENAI_API_KEY="your-openai-key"
+   PORT="5001"
    ```
 
-2. Set environment variables:
+2. Deploy to Railway:
    ```bash
-   NEXT_PUBLIC_RECONCILIATION_API_URL="https://reconciliation-api-production.up.railway.app"
+   railway up
    ```
 
-3. Run development server:
-   ```bash
-   npm run dev
-   ```
+The system automatically downloads book data from Google Drive during startup.
 
-## API Integration
+## API Endpoints
 
-The frontend connects exclusively to the Reconciliation API, which harmonizes data from:
-- **Neo4j Aura**: Graph database for entity relationships
-- **GraphRAG API**: Intelligent queries on book data from Google Drive
+- `GET /health` - Health check
+- `POST /search` - GraphRAG search
+- `GET /books` - List available books

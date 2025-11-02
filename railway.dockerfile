@@ -15,8 +15,9 @@ COPY requirements_api.txt .
 RUN pip install --no-cache-dir -r requirements_api.txt
 
 # Copy application
+COPY graphrag_api.py .
 COPY . .
 
 EXPOSE 5001
 
-CMD ["python", "start_production.py"]
+CMD ["python", "graphrag_api.py"]
