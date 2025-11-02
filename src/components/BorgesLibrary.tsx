@@ -79,7 +79,7 @@ export default function BorgesLibrary() {
       const nodesData = await reconciliationService.getNodes({ limit: 300 })
       if (nodesData.success && nodesData.nodes.length > 0) {
         const nodeIds = nodesData.nodes.map(node => node.id)
-        console.log(`📊 Loading graph with ${nodeIds.length} nodes...`)
+        console.log(`📊 Loading optimized graph with ${nodeIds.length} nodes...`)
 
         // Use a reasonable limit for relationships to avoid performance issues
         const relationshipsData = await reconciliationService.getRelationships(nodeIds, 800)
