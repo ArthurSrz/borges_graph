@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import * as d3 from 'd3'
+import { graphHighlighter } from '@/lib/utils/graphHighlight'
 
 interface Book {
   id: string
@@ -36,6 +37,7 @@ interface GraphVisualizationProps {
   neo4jGraphData: Neo4jGraphData | null
   isLoadingGraph: boolean
   onNodeVisibilityChange: (nodeIds: string[]) => void
+  searchPath?: any
 }
 
 interface D3Node extends d3.SimulationNodeDatum {
@@ -48,19 +50,27 @@ interface D3Node extends d3.SimulationNodeDatum {
   color: string
   size: number
   visible: boolean
+  highlighted?: boolean
+  dimmed?: boolean
+  searchOrder?: number
+  searchScore?: number
 }
 
 interface D3Link extends d3.SimulationLinkDatum<D3Node> {
   id: string
   relation: string
   weight: number
+  highlighted?: boolean
+  dimmed?: boolean
+  traversalOrder?: number
 }
 
 export default function GraphVisualization({
   book,
   neo4jGraphData,
   isLoadingGraph,
-  onNodeVisibilityChange
+  onNodeVisibilityChange,
+  searchPath
 }: GraphVisualizationProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [nodes, setNodes] = useState<D3Node[]>([])
@@ -192,9 +202,22 @@ export default function GraphVisualization({
       .enter()
       .append('line')
       .attr('class', 'link')
-      .attr('stroke', '#555')
-      .attr('stroke-opacity', 0.6)
-      .attr('stroke-width', d => Math.sqrt(d.weight))
+      .attr('stroke', d => {
+        if (d.highlighted) return '#fbbf24' // Amber for highlighted
+        if (d.dimmed) return '#374151' // Dark gray for dimmed
+        return '#555' // Default gray
+      })
+      .attr('stroke-opacity', d => {
+        if (d.highlighted) return 0.9
+        if (d.dimmed) return 0.2
+        return 0.6
+      })
+      .attr('stroke-width', d => {
+        const baseWidth = Math.sqrt(d.weight)
+        if (d.highlighted) return Math.max(baseWidth * 2, 3)
+        if (d.dimmed) return Math.max(baseWidth * 0.5, 1)
+        return baseWidth
+      })
 
     // Create node groups
     const nodeElements = container.selectAll('.node')
@@ -224,19 +247,56 @@ export default function GraphVisualization({
     nodeElements.append('circle')
       .attr('r', d => d.size)
       .attr('fill', d => d.color)
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 2)
-      .style('filter', 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))')
+      .attr('stroke', d => {
+        if (d.highlighted) return '#fbbf24' // Amber stroke for highlighted
+        if (d.dimmed) return '#6b7280' // Gray stroke for dimmed
+        return '#fff' // White stroke for normal
+      })
+      .attr('stroke-width', d => {
+        if (d.highlighted) return 3
+        if (d.dimmed) return 1
+        return 2
+      })
+      .style('filter', d => {
+        if (d.highlighted) return 'drop-shadow(0px 0px 8px rgba(251, 191, 36, 0.6))'
+        if (d.dimmed) return 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))'
+        return 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))'
+      })
+      .style('opacity', d => {
+        if (d.dimmed) return 0.4
+        return 1
+      })
 
     // Add labels to nodes
     nodeElements.append('text')
       .attr('dy', d => d.size + 15)
       .attr('text-anchor', 'middle')
-      .attr('fill', '#fff')
-      .attr('font-size', '11px')
-      .attr('font-weight', '500')
-      .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
-      .text(d => d.label.length > 15 ? d.label.slice(0, 15) + '...' : d.label)
+      .attr('fill', d => {
+        if (d.highlighted) return '#fbbf24' // Amber text for highlighted
+        if (d.dimmed) return '#9ca3af' // Gray text for dimmed
+        return '#fff' // White text for normal
+      })
+      .attr('font-size', d => {
+        if (d.highlighted) return '12px'
+        if (d.dimmed) return '10px'
+        return '11px'
+      })
+      .attr('font-weight', d => {
+        if (d.highlighted) return '600'
+        return '500'
+      })
+      .style('text-shadow', d => {
+        if (d.highlighted) return '1px 1px 2px rgba(0,0,0,0.8), 0px 0px 4px rgba(251, 191, 36, 0.4)'
+        return '1px 1px 2px rgba(0,0,0,0.8)'
+      })
+      .style('opacity', d => {
+        if (d.dimmed) return 0.6
+        return 1
+      })
+      .text(d => {
+        const maxLength = d.highlighted ? 20 : 15
+        return d.label.length > maxLength ? d.label.slice(0, maxLength) + '...' : d.label
+      })
 
     // Add hover effects
     nodeElements
@@ -287,6 +347,33 @@ export default function GraphVisualization({
       drawGraph()
     }
   }, [isLoadingGraph, nodes, links, selectedNodeTypes, drawGraph])
+
+  // Handle search path highlighting
+  useEffect(() => {
+    if (searchPath && nodes.length > 0 && links.length > 0) {
+      console.log('🎯 Applying search path highlighting:', searchPath)
+
+      const highlighted = graphHighlighter.highlightSearchPath(nodes, links, searchPath)
+      setNodes(highlighted.nodes)
+      setLinks(highlighted.links)
+
+      // Force redraw with highlighting
+      if (!isLoadingGraph) {
+        drawGraph()
+      }
+    } else if (!searchPath && nodes.length > 0) {
+      console.log('🧹 Clearing search path highlighting')
+
+      const cleared = graphHighlighter.clearHighlight(nodes, links)
+      setNodes(cleared.nodes)
+      setLinks(cleared.links)
+
+      // Force redraw without highlighting
+      if (!isLoadingGraph) {
+        drawGraph()
+      }
+    }
+  }, [searchPath, isLoadingGraph]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Get entity type counts
   const entityTypeCounts = nodes.reduce((acc, node) => {
@@ -369,6 +456,17 @@ export default function GraphVisualization({
               {book && (
                 <div>
                   <span className="text-gray-400">Livre sélectionné:</span> {book.title}
+                </div>
+              )}
+              {searchPath && (
+                <div className="pt-1 border-t border-gray-600">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                    <span className="text-amber-400">Chemin de recherche actif</span>
+                  </div>
+                  <div className="text-gray-400">
+                    {nodes.filter(n => n.highlighted).length} nœuds mis en évidence
+                  </div>
                 </div>
               )}
             </div>

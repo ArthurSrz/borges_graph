@@ -13,6 +13,8 @@ interface Book {
 interface QueryInterfaceProps {
   selectedBook: Book | null
   visibleNodeIds: string[]
+  onHighlightPath?: (searchPath: any) => void
+  onClearHighlight?: () => void
 }
 
 interface QueryResult {
@@ -31,7 +33,7 @@ interface QueryResult {
   }
 }
 
-export default function QueryInterface({ selectedBook, visibleNodeIds }: QueryInterfaceProps) {
+export default function QueryInterface({ selectedBook, visibleNodeIds, onHighlightPath, onClearHighlight }: QueryInterfaceProps) {
   const [query, setQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [lastResult, setLastResult] = useState<QueryResult | null>(null)
@@ -64,6 +66,12 @@ export default function QueryInterface({ selectedBook, visibleNodeIds }: QueryIn
         }
         setLastResult(newResult)
         setShowResult(true)
+
+        // Trigger highlighting if search path is available
+        if (result.search_path && onHighlightPath) {
+          console.log('🎯 Highlighting search path:', result.search_path)
+          onHighlightPath(result.search_path)
+        }
       } else {
         throw new Error('Erreur lors de la requête')
       }
@@ -165,7 +173,12 @@ export default function QueryInterface({ selectedBook, visibleNodeIds }: QueryIn
               <div className="text-borges-light font-medium text-sm">{lastResult.query}</div>
             </div>
             <button
-              onClick={() => setShowResult(false)}
+              onClick={() => {
+                setShowResult(false)
+                if (onClearHighlight) {
+                  onClearHighlight()
+                }
+              }}
               className="text-gray-400 hover:text-borges-light ml-3"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

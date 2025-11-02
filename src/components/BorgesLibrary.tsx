@@ -38,6 +38,7 @@ export default function BorgesLibrary() {
   const [neo4jGraphData, setNeo4jGraphData] = useState<Neo4jGraphData | null>(null)
   const [isLoadingGraph, setIsLoadingGraph] = useState(false)
   const [visibleNodeIds, setVisibleNodeIds] = useState<string[]>([])
+  const [searchPath, setSearchPath] = useState<any>(null)
 
   useEffect(() => {
     loadBooks()
@@ -120,6 +121,16 @@ export default function BorgesLibrary() {
     setSelectedBook(book)
   }
 
+  const handleHighlightPath = (searchPathData: any) => {
+    console.log('🎯 Received search path in BorgesLibrary:', searchPathData)
+    setSearchPath(searchPathData)
+  }
+
+  const handleClearHighlight = () => {
+    console.log('🧹 Clearing highlights in BorgesLibrary')
+    setSearchPath(null)
+  }
+
   return (
     <div className="min-h-screen bg-borges-dark text-borges-light">
       {/* Header */}
@@ -157,6 +168,8 @@ export default function BorgesLibrary() {
                     <QueryInterface
                       selectedBook={selectedBook}
                       visibleNodeIds={visibleNodeIds}
+                      onHighlightPath={handleHighlightPath}
+                      onClearHighlight={handleClearHighlight}
                     />
                   </div>
                   {/* Graph */}
@@ -166,6 +179,7 @@ export default function BorgesLibrary() {
                       neo4jGraphData={neo4jGraphData}
                       isLoadingGraph={isLoadingGraph}
                       onNodeVisibilityChange={setVisibleNodeIds}
+                      searchPath={searchPath}
                     />
                   </div>
                 </>
