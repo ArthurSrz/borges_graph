@@ -108,7 +108,7 @@ export default function QueryInterface({ selectedBook, visibleNodeIds, onHighlig
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={selectedBook ? `Explorez "${selectedBook.title}" avec une question...` : "Explorez le graphe de connaissances..."}
+                placeholder="Explorez la galaxie de connaissances avec une question..."
                 className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 pr-12 text-borges-light placeholder-gray-400 focus:outline-none focus:border-borges-accent"
                 disabled={isLoading}
               />

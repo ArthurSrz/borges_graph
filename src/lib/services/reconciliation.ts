@@ -79,7 +79,7 @@ export class ReconciliationService {
   private readonly apiUrl: string;
 
   constructor() {
-    this.apiUrl = process.env.NEXT_PUBLIC_RECONCILIATION_API_URL || 'https://reconciliation-api-production.up.railway.app';
+    this.apiUrl = process.env.NEXT_PUBLIC_RECONCILIATION_API_URL || 'http://localhost:5002';
   }
 
   /**

@@ -1,18 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import BookSelector from './BookSelector'
-import GraphVisualization from './GraphVisualization'
+import GraphVisualization3D from './GraphVisualization3D'
 import QueryInterface from './QueryInterface'
 import { reconciliationService } from '@/lib/services/reconciliation'
 
-interface Book {
-  id: string
-  title: string
-  author: string
-  graphData?: any
-  has_data?: boolean
-}
 
 interface Neo4jGraphData {
   nodes: Array<{
@@ -32,46 +24,15 @@ interface Neo4jGraphData {
 }
 
 export default function BorgesLibrary() {
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null)
-  const [books, setBooks] = useState<Book[]>([])
-  const [isLoadingBooks, setIsLoadingBooks] = useState(true)
   const [neo4jGraphData, setNeo4jGraphData] = useState<Neo4jGraphData | null>(null)
   const [isLoadingGraph, setIsLoadingGraph] = useState(false)
   const [visibleNodeIds, setVisibleNodeIds] = useState<string[]>([])
   const [searchPath, setSearchPath] = useState<any>(null)
 
   useEffect(() => {
-    loadBooks()
     loadNeo4jGraph()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadBooks = async () => {
-    try {
-      const data = await reconciliationService.getBooks()
-      const booksWithAuthors = data.books.map(book => ({
-        id: book.id,
-        title: book.name,
-        author: extractAuthorFromId(book.id),
-        has_data: book.has_data
-      }))
-      setBooks(booksWithAuthors)
-    } catch (error) {
-      console.error('Error loading books:', error)
-      // Fallback with mock data
-      setBooks([
-        { id: 'vallee_sans_hommes_frison', title: 'La Vallée sans hommes', author: 'Frison' },
-        { id: 'racines_ciel_gary', title: 'Les Racines du ciel', author: 'Romain Gary' },
-        { id: 'policeman_decoin', title: 'Policeman', author: 'Decoin' },
-        { id: 'a_rebours_huysmans', title: 'À rebours', author: 'Huysmans' },
-        { id: 'chien_blanc_gary', title: 'Chien blanc', author: 'Romain Gary' },
-        { id: 'peau_bison_frison', title: 'Peau de bison', author: 'Frison' },
-        { id: 'tilleul_soir_anglade', title: 'Le Tilleul du soir', author: 'Anglade' },
-        { id: 'villa_triste_modiano', title: 'Villa triste', author: 'Modiano' },
-      ])
-    } finally {
-      setIsLoadingBooks(false)
-    }
-  }
 
   const loadNeo4jGraph = async () => {
     setIsLoadingGraph(true)
@@ -100,9 +61,8 @@ export default function BorgesLibrary() {
           relationships
         })
 
-        // Set initial visible nodes (top 50 by centrality)
-        const topNodes = nodesData.nodes.slice(0, 50).map(node => node.id)
-        setVisibleNodeIds(topNodes)
+        // Set initial visible nodes (all nodes for galaxy view)
+        setVisibleNodeIds(nodesData.nodes.map(node => node.id))
       }
     } catch (error) {
       console.error('Error loading Neo4j graph:', error)
@@ -111,15 +71,6 @@ export default function BorgesLibrary() {
     }
   }
 
-  const extractAuthorFromId = (bookId: string): string => {
-    const parts = bookId.split('_')
-    const author = parts[parts.length - 1]
-    return author.charAt(0).toUpperCase() + author.slice(1)
-  }
-
-  const handleBookSelect = (book: Book) => {
-    setSelectedBook(book)
-  }
 
   const handleHighlightPath = (searchPathData: any) => {
     console.log('🎯 Received search path in BorgesLibrary:', searchPathData)
@@ -146,65 +97,25 @@ export default function BorgesLibrary() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
-          {/* Book Selection */}
-          <div className="lg:col-span-1">
-            <BookSelector
-              books={books}
-              selectedBook={selectedBook}
-              onBookSelect={handleBookSelect}
-              isLoading={isLoadingBooks}
+      <main className="h-[calc(100vh-120px)]">
+        <div className="h-full flex flex-col">
+          {/* Query Bar */}
+          <div className="p-4 bg-borges-secondary border-b border-gray-600">
+            <QueryInterface
+              selectedBook={null}
+              visibleNodeIds={visibleNodeIds}
+              onHighlightPath={handleHighlightPath}
+              onClearHighlight={handleClearHighlight}
             />
           </div>
 
-          {/* Graph Visualization */}
-          <div className="lg:col-span-2">
-            <div className="h-full bg-borges-secondary rounded-lg flex flex-col">
-              {neo4jGraphData ? (
-                <>
-                  {/* Query Bar */}
-                  <div className="p-4 border-b border-gray-600">
-                    <QueryInterface
-                      selectedBook={selectedBook}
-                      visibleNodeIds={visibleNodeIds}
-                      onHighlightPath={handleHighlightPath}
-                      onClearHighlight={handleClearHighlight}
-                    />
-                  </div>
-                  {/* Graph */}
-                  <div className="flex-1">
-                    <GraphVisualization
-                      book={selectedBook}
-                      neo4jGraphData={neo4jGraphData}
-                      isLoadingGraph={isLoadingGraph}
-                      onNodeVisibilityChange={setVisibleNodeIds}
-                      searchPath={searchPath}
-                    />
-                  </div>
-                </>
-              ) : isLoadingGraph ? (
-                <div className="h-full flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <div className="text-6xl mb-4 animate-pulse">🔄</div>
-                    <p className="text-xl">Chargement du graphe de connaissances...</p>
-                    <p className="text-sm mt-2 opacity-75">
-                      Connexion à Neo4j et récupération des données
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <div className="text-6xl mb-4">📚</div>
-                    <p className="text-xl">Explorez le graphe de connaissances</p>
-                    <p className="text-sm mt-2 opacity-75">
-                      Prêt pour l&apos;exploration
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* 3D Galaxy Visualization */}
+          <div className="flex-1 bg-black">
+            <GraphVisualization3D
+              neo4jGraphData={neo4jGraphData}
+              searchPath={searchPath}
+              onNodeVisibilityChange={setVisibleNodeIds}
+            />
           </div>
         </div>
       </main>
