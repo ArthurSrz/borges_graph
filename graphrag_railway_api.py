@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-API GraphRAG fonctionnelle pour déploiement Railway
+API GraphRAG fonctionnelle pour déploiement Railway - Mode local uniquement
 """
 
 from flask import Flask, request, jsonify
@@ -10,8 +10,86 @@ import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
 import random
+import requests
+import zipfile
 
 app = Flask(__name__)
+
+def download_from_google_drive(file_id, destination):
+    """Télécharge un fichier depuis Google Drive"""
+    try:
+        print(f"📥 Téléchargement depuis Google Drive: {destination}")
+
+        session = requests.Session()
+        initial_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        response = session.get(initial_url, stream=True)
+
+        # Gérer les gros fichiers avec avertissement antivirus
+        if response.status_code == 200 and ('confirm=' in response.text or 'virus scan warning' in response.text.lower()):
+            print("⚠️  Gros fichier détecté, extraction du lien...")
+
+            import re
+            confirm_match = re.search(r'confirm=([^&"]*)', response.text)
+            if confirm_match:
+                confirm_token = confirm_match.group(1)
+                confirm_url = f"https://drive.google.com/uc?export=download&confirm={confirm_token}&id={file_id}"
+                response = session.get(confirm_url, stream=True)
+
+        response.raise_for_status()
+
+        with open(destination, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+
+        print(f"✅ Téléchargement terminé: {destination}")
+        return True
+
+    except Exception as e:
+        print(f"❌ Erreur de téléchargement: {e}")
+        return False
+
+def download_and_extract_data():
+    """Télécharge et extrait les données de livres depuis Google Drive"""
+    required_dirs = [
+        'vallee_sans_hommes_frison', 'racines_ciel_gary', 'policeman_decoin',
+        'a_rebours_huysmans', 'chien_blanc_gary', 'peau_bison_frison',
+        'tilleul_soir_anglade', 'villa_triste_modiano'
+    ]
+
+    existing_dirs = [d for d in required_dirs if os.path.exists(d)]
+
+    if len(existing_dirs) == len(required_dirs):
+        print("✅ Toutes les données de livres sont déjà présentes")
+        return True
+
+    print(f"📚 Données manquantes: {len(required_dirs) - len(existing_dirs)} dossiers")
+
+    # Obtenir l'ID du fichier Google Drive
+    drive_file_id = os.environ.get('BOOK_DATA_DRIVE_ID', '1NTgs97rvlVHYozTfodNo5kKsambOpXr1')
+
+    if not drive_file_id:
+        print("❌ Variable BOOK_DATA_DRIVE_ID non trouvée")
+        return False
+
+    archive_name = "book_data.zip"
+
+    if download_from_google_drive(drive_file_id, archive_name):
+        print("📦 Extraction de l'archive...")
+
+        try:
+            with zipfile.ZipFile(archive_name, 'r') as zip_ref:
+                zip_ref.extractall('.')
+
+            os.remove(archive_name)
+            print("✅ Extraction terminée avec succès")
+            return True
+
+        except Exception as e:
+            print(f"❌ Erreur d'extraction: {e}")
+            return False
+
+    return False
 
 # CORS configuration for Railway deployment
 CORS(app, origins=[
@@ -234,6 +312,15 @@ if __name__ == '__main__':
     # Railway deployment configuration
     port = int(os.environ.get('PORT', 5000))
     print(f"🚀 Starting GraphRAG API Railway on port {port}")
+
+    # Download and extract data from Google Drive first
+    print("📥 === TÉLÉCHARGEMENT DES DONNÉES DEPUIS GOOGLE DRIVE ===")
+    data_success = download_and_extract_data()
+
+    if data_success:
+        print("✅ Données prêtes!")
+    else:
+        print("⚠️ Échec du téléchargement, API fonctionnera avec les données disponibles")
 
     # Show available books
     books = find_books()
