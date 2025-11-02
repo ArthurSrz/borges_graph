@@ -171,7 +171,7 @@ export default function GraphVisualization({
       .force('link', d3.forceLink<D3Node, D3Link>(visibleLinks).id(d => d.id).distance(80))
       .force('charge', d3.forceManyBody().strength(-300))
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(d => d.size + 2))
+      .force('collision', d3.forceCollide().radius(d => (d as D3Node).size + 2))
 
     // Create zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
