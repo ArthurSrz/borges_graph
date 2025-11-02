@@ -183,6 +183,12 @@ export default function GraphVisualization({
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(d => (d as D3Node).size + 2))
 
+    // Stop simulation after 5 seconds to stabilize the graph
+    setTimeout(() => {
+      newSimulation.stop()
+      console.log('🛑 Graph simulation stopped - graph is now stable')
+    }, 5000)
+
     // Create zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 10])

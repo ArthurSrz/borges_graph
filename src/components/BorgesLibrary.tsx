@@ -82,7 +82,7 @@ export default function BorgesLibrary() {
         console.log(`📊 Loading graph with ${nodeIds.length} nodes...`)
 
         // Use a reasonable limit for relationships to avoid performance issues
-        const relationshipsData = await reconciliationService.getRelationships(nodeIds, 5000)
+        const relationshipsData = await reconciliationService.getRelationships(nodeIds, 800)
 
         const relationships = relationshipsData.success ? relationshipsData.relationships : []
 
