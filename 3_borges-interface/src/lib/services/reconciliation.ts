@@ -119,6 +119,8 @@ interface ReconciledQueryResult {
   search_path?: GraphRAGSearchPath;
   nodes?: Neo4jNode[];
   relationships?: Neo4jRelationship[];
+  selected_nodes?: Neo4jNode[];
+  selected_relationships?: Neo4jRelationship[];
   graph?: {
     total_nodes: number;
     total_relationships: number;

@@ -399,7 +399,7 @@ export default function GraphVisualization3DForce({
 
               // Highlight matching nodes
               graphRef.current.nodeColor((node: any) => {
-                if (matchingNodes.some(m => m.id === node.id)) {
+                if (matchingNodes.some((m: any) => m.id === node.id)) {
                   return '#ffeb3b' // Bright yellow for currently processing entity
                 }
                 // Keep previously highlighted nodes orange
@@ -410,7 +410,7 @@ export default function GraphVisualization3DForce({
                     const prevName = prevEntity.name.toLowerCase()
                     return nName.includes(prevName) || prevName.includes(nName) || n.id.toString().toLowerCase().includes(prevName)
                   })
-                  return prevMatches.some(m => m.id === node.id)
+                  return prevMatches.some((m: any) => m.id === node.id)
                 })
 
                 if (wasPreviouslyHighlighted) {
@@ -447,8 +447,8 @@ export default function GraphVisualization3DForce({
                 return nodeName.includes(targetName) || targetName.includes(nodeName)
               })
 
-              return sourceMatches.some(s => s.id === (link.source.id || link.source)) &&
-                     targetMatches.some(t => t.id === (link.target.id || link.target))
+              return sourceMatches.some((s: any) => s.id === (link.source.id || link.source)) &&
+                     targetMatches.some((t: any) => t.id === (link.target.id || link.target))
             })
             return isHighlighted ? '#ff4757' : '#ffffff'
           })

@@ -210,12 +210,12 @@ export default function BorgesLibrary() {
             if (result.selected_nodes && result.selected_relationships) {
               setTimeout(() => {
                 console.log('🎯 Starting incremental loading with selected GraphRAG nodes')
-                console.log('🔍 Selected nodes length:', result.selected_nodes.length)
-                console.log('🔍 First selected node:', result.selected_nodes[0])
-                console.log('🔍 Selected relationships length:', result.selected_relationships.length)
+                console.log('🔍 Selected nodes length:', result.selected_nodes?.length || 0)
+                console.log('🔍 First selected node:', result.selected_nodes?.[0])
+                console.log('🔍 Selected relationships length:', result.selected_relationships?.length || 0)
                 setReconciliationData({
-                  nodes: result.selected_nodes,
-                  relationships: result.selected_relationships
+                  nodes: result.selected_nodes || [],
+                  relationships: result.selected_relationships || []
                 })
               }, 500) // Small delay to show the clearing effect
             }
