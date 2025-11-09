@@ -166,21 +166,36 @@ export default function QueryInterface({
       })
 
       if (result.success) {
+        // Convert nodes and relationships from GraphRAG extraction
+        const searchPath = {
+          entities: result.nodes?.map((node: any, idx: number) => ({
+            id: node.id,
+            score: (node.degree || 0) / 100,
+            order: idx
+          })) || [],
+          relations: result.relationships?.map((rel: any, idx: number) => ({
+            source: rel.source,
+            target: rel.target,
+            traversalOrder: idx
+          })) || [],
+          communities: []
+        }
+
         const newResult: QueryResult = {
           query: currentQuery,
           answer: result.answer,
           timestamp: new Date(),
           context: result.context,
-          search_path: result.search_path,
+          search_path: searchPath,
           debug_info: result.debug_info
         }
         setLastResult(newResult)
         setShowResult(true)
 
-        // Trigger highlighting if search path is available
-        if (result.search_path && onHighlightPath) {
-          console.log('🎯 Highlighting search path:', result.search_path)
-          onHighlightPath(result.search_path)
+        // Trigger highlighting with extracted nodes
+        if (onHighlightPath) {
+          console.log('🎯 Highlighting search path:', searchPath)
+          onHighlightPath(searchPath)
         }
       } else {
         throw new Error('Erreur lors de la requête')

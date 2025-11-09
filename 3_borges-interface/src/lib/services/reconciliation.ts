@@ -113,14 +113,20 @@ interface ReconciledQueryResult {
   success: boolean;
   query: string;
   answer: string;
-  context: {
-    visible_nodes_count: number;
-    node_context: string[];
+  context?: {
     mode: 'local' | 'global';
   };
-  search_path: GraphRAGSearchPath;
+  search_path?: GraphRAGSearchPath;
+  nodes?: Neo4jNode[];
+  relationships?: Neo4jRelationship[];
+  graph?: {
+    total_nodes: number;
+    total_relationships: number;
+    node_types?: string[];
+  };
   timestamp: string;
   debug_info?: DebugInfo;
+  processing_time?: number;
 }
 
 interface Book {
@@ -358,14 +364,14 @@ export class ReconciliationService {
   }
 
   /**
-   * Perform GraphRAG query
+   * Perform GraphRAG query with node extraction
    */
   async reconciledQuery(options: {
     query: string;
     mode?: 'local' | 'global';
     debug_mode?: boolean;
   }): Promise<ReconciledQueryResult> {
-    const response = await fetch(`${this.apiUrl}/query`, {
+    const response = await fetch(`${this.apiUrl}/graph/search-nodes`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
