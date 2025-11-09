@@ -202,9 +202,10 @@ export class ReconciliationService {
       };
     }
 
-    // Split into chunks to avoid URL length limits (browsers limit headers to ~8KB)
-    // Neo4j element_id is ~36 chars (UUID), so ~100 nodes * 36 = 3.6KB safe per request
-    const chunkSize = 100;
+    // Split into chunks to avoid URL length limits (HTTP header limit is ~4094 bytes)
+    // Neo4j element_id is ~43 chars, so ~50 nodes * 43 = 2.15KB safe per request
+    // Using smaller chunks (50) to stay well below HTTP header size limit
+    const chunkSize = 50;
     const chunks: string[][] = [];
     for (let i = 0; i < nodeIds.length; i += chunkSize) {
       chunks.push(nodeIds.slice(i, i + chunkSize));

@@ -42,20 +42,20 @@ export default function BorgesLibrary() {
   const loadReconciliationGraph = async () => {
     setIsLoadingGraph(true)
     try {
-      // Query ALL available nodes like test_query_analysis.py queries all books
-      console.log(`📚 Loading FULL knowledge base (all books/entities like test_query_analysis.py)...`)
-      console.log(`🚀 DEPLOYMENT UPDATE: Using comprehensive limits (10000 nodes, 10000 relationships)`)
-      const nodesData = await reconciliationService.getNodes({ limit: 10000 }) // Much higher limit
+      // Load top 500 nodes with relationships
+      console.log(`📚 Loading top 500 nodes (optimized for performance)...`)
+      console.log(`🚀 Using reasonable limits: 500 nodes, chunked relationships`)
+      const nodesData = await reconciliationService.getNodes({ limit: 500 })
       if (nodesData.success && nodesData.nodes.length > 0) {
         const nodeIds = nodesData.nodes.map(node => node.id)
-        console.log(`📊 Loaded comprehensive graph with ${nodeIds.length} nodes from full knowledge base`)
+        console.log(`📊 Loaded ${nodeIds.length} top nodes from knowledge base`)
 
-        // Get comprehensive relationships for the full dataset
+        // Get relationships with optimized chunking
         let relationships: any[] = []
         let relationshipsFiltered = false
         let relationshipsLimit = 0
         try {
-          const relationshipsData = await reconciliationService.getRelationships(nodeIds, 10000) // Much higher limit
+          const relationshipsData = await reconciliationService.getRelationships(nodeIds, 10000)
           relationships = relationshipsData.success ? relationshipsData.relationships : []
           relationshipsFiltered = relationshipsData.filtered || false
           relationshipsLimit = relationshipsData.limit_applied || 0
