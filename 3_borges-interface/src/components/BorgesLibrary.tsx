@@ -158,13 +158,23 @@ export default function BorgesLibrary() {
         })
 
         if (result.success) {
-          setCurrentProcessingPhase(`✓ Queried ${result.books_with_results} books`)
+          setCurrentProcessingPhase(`✓ Queried ${result.books_with_results || 0} books`)
 
           // Show answer from all books
-          const combinedAnswer = result.book_results
-            ?.filter((r: any) => r.answer && !r.error && r.answer !== "Sorry, I'm not able to provide an answer to that question.")
-            .map((r: any) => `📖 **${r.book_id.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}**:\n${r.answer}`)
-            .join('\n\n---\n\n') || 'No relevant results found across the books.'
+          let combinedAnswer = 'No relevant results found across the books.'
+
+          if (result.book_results && Array.isArray(result.book_results)) {
+            const validResults = result.book_results
+              .filter((r: any) => r && r.answer && !r.error && r.answer !== "Sorry, I'm not able to provide an answer to that question.")
+              .map((r: any) => {
+                const bookName = r.book_id ? r.book_id.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Unknown Book'
+                return `📖 **${bookName}**:\n${r.answer}`
+              })
+
+            if (validResults.length > 0) {
+              combinedAnswer = validResults.join('\n\n---\n\n')
+            }
+          }
 
           setQueryAnswer(combinedAnswer)
           setShowAnswer(true)
