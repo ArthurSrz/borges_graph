@@ -179,6 +179,7 @@ export class ReconciliationService {
   /**
    * Get relationships for specific node IDs
    * Uses GET with chunking to avoid URL length limits
+   * Includes retry logic for transient failures
    */
   async getRelationships(nodeIds: string[], limit: number = 10000): Promise<{
     success: boolean;
@@ -211,30 +212,77 @@ export class ReconciliationService {
 
     console.log(`📦 Chunking ${nodeIds.length} nodes into ${chunks.length} requests (${chunkSize} per chunk)`);
 
-    // Fetch relationships for each chunk in parallel
-    const chunkResults = await Promise.all(
-      chunks.map(async (chunk) => {
-        const params = new URLSearchParams();
-        params.append('node_ids', chunk.join(','));
-        params.append('limit', limit.toString());
+    // Helper function to fetch with retry logic
+    const fetchWithRetry = async (url: string, maxRetries: number = 3): Promise<any> => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`📡 Fetching (attempt ${attempt}/${maxRetries}), URL: ${url.substring(0, 150)}...`);
 
-        const url = `${this.apiUrl}/graph/relationships?${params}`;
-        console.log(`📡 Fetching chunk with ${chunk.length} nodes, URL: ${url.substring(0, 150)}...`);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
 
-        const response = await fetch(url);
+          const response = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+              'Cache-Control': 'no-cache',
+            }
+          });
 
-        if (!response.ok) {
-          console.error(`⚠️ Failed to fetch relationships for chunk: ${response.status}`);
-          return {
-            success: false,
-            relationships: [],
-            count: 0
-          };
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            console.error(`⚠️ Failed to fetch relationships (attempt ${attempt}): ${response.status}`);
+            if (attempt < maxRetries && response.status >= 500) {
+              // Retry on server errors
+              const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+              console.log(`⏳ Retrying in ${delay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+            return {
+              success: false,
+              relationships: [],
+              count: 0
+            };
+          }
+
+          const data = await response.json();
+          console.log(`✅ Chunk fetched successfully: ${data.relationships?.length || 0} relationships`);
+          return data;
+        } catch (error) {
+          console.error(`❌ Fetch error (attempt ${attempt}/${maxRetries}):`, error instanceof Error ? error.message : error);
+          if (attempt < maxRetries) {
+            const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+            console.log(`⏳ Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          } else {
+            return {
+              success: false,
+              relationships: [],
+              count: 0
+            };
+          }
         }
+      }
 
-        return response.json();
-      })
-    );
+      return {
+        success: false,
+        relationships: [],
+        count: 0
+      };
+    };
+
+    // Fetch relationships for each chunk with sequential requests to avoid overload
+    const chunkResults = [];
+    for (const chunk of chunks) {
+      const params = new URLSearchParams();
+      params.append('node_ids', chunk.join(','));
+      params.append('limit', limit.toString());
+
+      const url = `${this.apiUrl}/graph/relationships?${params}`;
+      const result = await fetchWithRetry(url, 3);
+      chunkResults.push(result);
+    }
 
     // Combine results from all chunks
     const allRelationships: Neo4jRelationship[] = [];
