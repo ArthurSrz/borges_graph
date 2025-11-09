@@ -44,6 +44,7 @@ export default function BorgesLibrary() {
     try {
       // Query ALL available nodes like test_query_analysis.py queries all books
       console.log(`📚 Loading FULL knowledge base (all books/entities like test_query_analysis.py)...`)
+      console.log(`🚀 DEPLOYMENT UPDATE: Using comprehensive limits (10000 nodes, 10000 relationships)`)
       const nodesData = await reconciliationService.getNodes({ limit: 10000 }) // Much higher limit
       if (nodesData.success && nodesData.nodes.length > 0) {
         const nodeIds = nodesData.nodes.map(node => node.id)

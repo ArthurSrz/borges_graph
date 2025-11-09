@@ -178,6 +178,7 @@ export class ReconciliationService {
 
   /**
    * Get relationships for specific node IDs
+   * Uses GET with chunking to avoid URL length limits
    */
   async getRelationships(nodeIds: string[], limit: number = 10000): Promise<{
     success: boolean;
@@ -187,28 +188,85 @@ export class ReconciliationService {
     limit_applied: number;
     filtered: boolean;
   }> {
-    const params = new URLSearchParams();
-    params.append('node_ids', nodeIds.join(','));
-    params.append('limit', limit.toString());
-
     console.log(`🔍 Fetching relationships for ${nodeIds.length} nodes with limit ${limit}`);
 
-    const response = await fetch(`${this.apiUrl}/graph/relationships?${params}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch relationships: ${response.status}`);
+    if (nodeIds.length === 0) {
+      return {
+        success: true,
+        relationships: [],
+        count: 0,
+        input_nodes: 0,
+        limit_applied: limit,
+        filtered: false
+      };
     }
 
-    const result = await response.json();
+    // Split into chunks to avoid URL length limits (browsers limit headers to ~8KB)
+    // Neo4j element_id is ~36 chars (UUID), so ~100 nodes * 36 = 3.6KB safe per request
+    const chunkSize = 100;
+    const chunks: string[][] = [];
+    for (let i = 0; i < nodeIds.length; i += chunkSize) {
+      chunks.push(nodeIds.slice(i, i + chunkSize));
+    }
 
-    // Log performance metrics
-    if (result.success) {
-      console.log(`✅ Relationships fetched: ${result.count} out of ${nodeIds.length} nodes`);
-      if (result.filtered) {
-        console.warn(`⚠️ Relationship limit reached (${limit}). Some relationships may be missing.`);
+    console.log(`📦 Chunking ${nodeIds.length} nodes into ${chunks.length} requests (${chunkSize} per chunk)`);
+
+    // Fetch relationships for each chunk in parallel
+    const chunkResults = await Promise.all(
+      chunks.map(async (chunk) => {
+        const params = new URLSearchParams();
+        params.append('node_ids', chunk.join(','));
+        params.append('limit', limit.toString());
+
+        const url = `${this.apiUrl}/graph/relationships?${params}`;
+        console.log(`📡 Fetching chunk with ${chunk.length} nodes, URL: ${url.substring(0, 150)}...`);
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          console.error(`⚠️ Failed to fetch relationships for chunk: ${response.status}`);
+          return {
+            success: false,
+            relationships: [],
+            count: 0
+          };
+        }
+
+        return response.json();
+      })
+    );
+
+    // Combine results from all chunks
+    const allRelationships: Neo4jRelationship[] = [];
+    let totalFiltered = false;
+
+    for (const result of chunkResults) {
+      if (result.success && result.relationships) {
+        allRelationships.push(...result.relationships);
+        if (result.filtered) {
+          totalFiltered = true;
+        }
       }
     }
 
-    return result;
+    // Remove duplicates by relationship ID
+    const uniqueRelationships = Array.from(
+      new Map(allRelationships.map(rel => [rel.id, rel])).values()
+    );
+
+    console.log(`✅ Relationships fetched: ${uniqueRelationships.length} from ${nodeIds.length} nodes across ${chunks.length} chunks`);
+    if (totalFiltered) {
+      console.warn(`⚠️ Some chunks hit relationship limit. Total may be incomplete.`);
+    }
+
+    return {
+      success: true,
+      relationships: uniqueRelationships,
+      count: uniqueRelationships.length,
+      input_nodes: nodeIds.length,
+      limit_applied: limit,
+      filtered: totalFiltered
+    };
   }
 
   /**
@@ -216,7 +274,7 @@ export class ReconciliationService {
    */
   async reconciledQuery(options: {
     query: string;
-    visible_node_ids: string[];
+    visible_node_ids?: string[];
     mode?: 'local' | 'global';
     debug_mode?: boolean;
   }): Promise<ReconciledQueryResult> {
@@ -227,7 +285,7 @@ export class ReconciliationService {
       },
       body: JSON.stringify({
         query: options.query,
-        visible_node_ids: options.visible_node_ids,
+        ...(options.visible_node_ids ? { visible_node_ids: options.visible_node_ids } : {}),
         mode: options.mode || 'local',
         debug_mode: options.debug_mode || false
       }),
