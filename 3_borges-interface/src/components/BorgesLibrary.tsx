@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import GraphVisualization3DForce from './GraphVisualization3DForce'
 import QueryInterface from './QueryInterface'
 import { reconciliationService } from '@/lib/services/reconciliation'
@@ -50,6 +50,19 @@ export default function BorgesLibrary() {
     loadBooks()
     loadReconciliationGraph()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Clear previous query results when book selection changes
+  useEffect(() => {
+    console.log(`📖 Book selection changed to: ${selectedBook}`)
+    // Clear previous query state to ensure fresh queries
+    setQueryAnswer('')
+    setShowAnswer(false)
+    setCurrentQuery('')
+    setSearchPath(null)
+    setDebugInfo(null)
+    setReconciliationData({ nodes: [], relationships: [] })
+    setCurrentProcessingPhase(null)
+  }, [selectedBook])
 
   const loadBooks = async () => {
     try {
@@ -140,8 +153,18 @@ export default function BorgesLibrary() {
     setCurrentProcessingPhase(null)
   }
 
-  const handleSimpleQuery = async (query: string) => {
+  const handleSimpleQuery = useCallback(async (query: string) => {
     console.log('🔍 Processing query:', query)
+    console.log('📖 Current selectedBook:', selectedBook)
+    console.log('🔧 Current mode:', mode)
+    console.log('📚 Multi-book mode:', multiBook)
+
+    // Clear previous query results to ensure fresh responses for each query
+    setQueryAnswer('')
+    setShowAnswer(false)
+    setSearchPath(null)
+    setDebugInfo(null)
+    setReconciliationData({ nodes: [], relationships: [] })
 
     setIsProcessing(true)
     setCurrentProcessingPhase('🔍 Running GraphRAG...')
@@ -180,18 +203,76 @@ export default function BorgesLibrary() {
           setQueryAnswer(combinedAnswer)
           setShowAnswer(true)
 
-          // Clear any existing highlights since multi-book doesn't return individual nodes
-          setSearchPath(null)
+          // Display aggregated nodes from multi-book query if available
+          if (result.selected_nodes && result.selected_relationships) {
+            console.log('🎯 Multi-book selected nodes:', result.selected_nodes.length)
+            console.log('🔗 Multi-book selected relationships:', result.selected_relationships.length)
+            setReconciliationData({
+              nodes: result.selected_nodes || [],
+              relationships: result.selected_relationships || []
+            })
+
+            // Create debug info for visualization consistency
+            const aggregatedDebugInfo = {
+              processing_phases: {
+                entity_selection: {
+                  entities: result.selected_nodes.map((node: any, index: number) => ({
+                    id: node.label,
+                    name: node.label,
+                    type: node.type,
+                    description: node.properties?.description || '',
+                    rank: index + 1,
+                    score: node.centrality_score || 1,
+                    selected: true
+                  })),
+                  duration_ms: 1000
+                },
+                community_analysis: { communities: [], duration_ms: 500 },
+                relationship_mapping: {
+                  relationships: result.selected_relationships.map((rel: any) => ({
+                    source: rel.source,
+                    target: rel.target,
+                    description: rel.properties?.description || '',
+                    weight: rel.properties?.weight || 1.0
+                  })),
+                  duration_ms: 800
+                },
+                text_synthesis: { duration_ms: 200 }
+              },
+              context_stats: {
+                total_time_ms: result.total_processing_time * 1000,
+                mode: 'multi-book',
+                prompt_length: query.length
+              },
+              animation_timeline: [
+                { phase: 'explosion', duration: 1000, description: 'Analyzing entities across books' },
+                { phase: 'filtering', duration: 500, description: 'Selecting relevant communities' },
+                { phase: 'synthesis', duration: 800, description: 'Mapping cross-book relationships' },
+                { phase: 'crystallization', duration: 200, description: 'Generating multi-book answer' }
+              ]
+            }
+            setDebugInfo(aggregatedDebugInfo);
+          } else {
+            // Clear search path if no nodes available
+            setSearchPath(null)
+          }
         }
       } else {
         // Single-book query - use reconciled endpoint
         console.log(`📖 Querying book: ${selectedBook}, mode: ${mode}`)
+        console.log('🚀 About to call reconciliationService.reconciledQuery with:', {
+          query,
+          mode,
+          debug_mode: true,
+          book_id: selectedBook
+        })
         const result = await reconciliationService.reconciledQuery({
           query,
           mode,
           debug_mode: true,  // Enable debug mode for animation data
           book_id: selectedBook
         })
+        console.log('✅ API call completed, result:', result.success ? 'success' : 'failed')
 
         if (result.success) {
           setCurrentProcessingPhase(`✓ Retrieved answer from ${selectedBook}`)
@@ -233,7 +314,7 @@ export default function BorgesLibrary() {
       setIsProcessing(false)
       setCurrentProcessingPhase(null)
     }
-  }
+  }, [selectedBook, mode, multiBook])
 
   return (
     <div className="min-h-screen bg-borges-dark text-borges-light">
