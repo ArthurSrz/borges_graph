@@ -17,6 +17,12 @@ interface Link {
   target: string | number
   type?: string
   relation?: string
+  // GraphML enriched metadata
+  graphml_weight?: number
+  graphml_description?: string
+  graphml_source_chunks?: string
+  graphml_order?: number
+  has_graphml_metadata?: boolean
 }
 
 interface ReconciliationData {
@@ -104,6 +110,7 @@ export default function GraphVisualization3DForce({
   const containerRef = useRef<HTMLDivElement>(null)
   const graphRef = useRef<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [hoveredLink, setHoveredLink] = useState<Link | null>(null)
 
   // Color mapping for different node types
   const getNodeColor = (labels: string[]) => {
@@ -155,6 +162,10 @@ export default function GraphVisualization3DForce({
           .linkColor(() => '#ffffff')
           .linkWidth(2)
           .enablePointerInteraction(true)
+          .onLinkHover((link: any) => {
+            console.log('🎯 Link hover detected!', link)
+            setHoveredLink(link || null)
+          })
 
         graphRef.current = graph
         setIsLoading(false)
@@ -340,22 +351,30 @@ export default function GraphVisualization3DForce({
 
     console.log(`🔗 After first validation: ${links.length}/${reconciliationData.relationships.length} links passed`)
 
+    // Only proceed if we have valid data to display
+    if (nodes.length === 0 && links.length === 0) {
+      console.warn('⚠️ No valid nodes or links found, keeping existing graph')
+      return
+    }
+
     // If debugInfo is present, do progressive loading. Otherwise load immediately
     if (debugInfo) {
       console.log('🎬 Starting progressive GraphRAG loading...')
-      // Clear the graph first
-      try {
-        graphRef.current.graphData({ nodes: [], links: [] })
-      } catch (error) {
-        console.error('Error clearing graph:', error)
-      }
-
-      // Add nodes progressively
-      addNodesProgressively(nodes, links, () => {
-        if (onNodeVisibilityChange) {
-          onNodeVisibilityChange(nodes.map(n => n.id))
+      // Only clear the graph if we have data to replace it with
+      if (nodes.length > 0) {
+        try {
+          graphRef.current.graphData({ nodes: [], links: [] })
+        } catch (error) {
+          console.error('Error clearing graph:', error)
         }
-      })
+
+        // Add nodes progressively
+        addNodesProgressively(nodes, links, () => {
+          if (onNodeVisibilityChange) {
+            onNodeVisibilityChange(nodes.map(n => n.id))
+          }
+        })
+      }
     } else {
       console.log('📊 Loading complete 3D Force Graph immediately...')
       // Show complete graph immediately
@@ -559,6 +578,85 @@ export default function GraphVisualization3DForce({
               <div className="w-3 h-3 rounded-full bg-gray-300 mr-2"></div>
               <span className="text-xs">Communautés</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Link Hover Tooltip */}
+      {hoveredLink && (
+        <div
+          className="absolute pointer-events-none bg-black bg-opacity-90 text-white p-3 rounded text-xs z-10 max-w-80"
+          style={{
+            left: `${window.innerWidth / 2}px`,
+            top: `${window.innerHeight / 2}px`,
+            transform: 'translate(-50%, -50%)'
+          }}
+        >
+          <div className="font-semibold text-blue-300 mb-1">🔗 Relation</div>
+
+          <div className="space-y-1">
+            <div>
+              <span className="text-gray-300">Type:</span>
+              <span className="text-white ml-1">{hoveredLink.type || hoveredLink.relation}</span>
+            </div>
+
+            <div>
+              <span className="text-gray-300">Entre:</span>
+              <div className="text-white ml-1">
+                {typeof hoveredLink.source === 'object' ? (hoveredLink.source as any)?.name || (hoveredLink.source as any)?.id || 'Unknown' : hoveredLink.source}
+                <span className="text-gray-400"> → </span>
+                {typeof hoveredLink.target === 'object' ? (hoveredLink.target as any)?.name || (hoveredLink.target as any)?.id || 'Unknown' : hoveredLink.target}
+              </div>
+            </div>
+
+            {hoveredLink.has_graphml_metadata && (
+              <>
+                <div className="border-t border-gray-600 pt-1 mt-2">
+                  <div className="text-yellow-300 text-xs font-medium">📊 Métadonnées GraphML</div>
+                </div>
+
+                {hoveredLink.graphml_weight && (
+                  <div>
+                    <span className="text-gray-300">Poids:</span>
+                    <span className="text-yellow-300 ml-1 font-mono">{hoveredLink.graphml_weight.toFixed(1)}</span>
+                  </div>
+                )}
+
+                {hoveredLink.graphml_description && (
+                  <div>
+                    <span className="text-gray-300">Description:</span>
+                    <div className="text-white ml-1 mt-1 text-xs leading-relaxed">
+                      {hoveredLink.graphml_description.length > 150
+                        ? hoveredLink.graphml_description.substring(0, 150) + "..."
+                        : hoveredLink.graphml_description
+                      }
+                    </div>
+                  </div>
+                )}
+
+                {hoveredLink.graphml_source_chunks && (
+                  <div>
+                    <span className="text-gray-300">Source:</span>
+                    <div className="text-gray-400 ml-1 text-xs">
+                      {hoveredLink.graphml_source_chunks.substring(0, 50)}...
+                    </div>
+                  </div>
+                )}
+
+                {hoveredLink.graphml_order && hoveredLink.graphml_order > 0 && (
+                  <div>
+                    <span className="text-gray-300">Ordre:</span>
+                    <span className="text-white ml-1">{hoveredLink.graphml_order}</span>
+                  </div>
+                )}
+              </>
+            )}
+
+            {!hoveredLink.has_graphml_metadata && (
+              <div className="text-gray-500 text-xs mt-2">
+                Aucune métadonnée GraphML enrichie
+              </div>
+            )}
           </div>
         </div>
       )}
