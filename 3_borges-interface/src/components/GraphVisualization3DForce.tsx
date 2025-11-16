@@ -297,50 +297,14 @@ export default function GraphVisualization3DForce({
       '4:d3905797-be64-4806-a783-4a9cdb24a462:13532'
     ]
 
-    // Create nodes with robust data validation
-    const nodes: Node[] = reconciliationData.nodes
-      .filter(node => {
-        if (!node || !node.id) return false
-        if (problematicNodeIds.includes(String(node.id))) {
-          console.warn(`⚠️ Excluding problematic node: ${node.id}`)
-          return false
-        }
-        return true
-      })
-      .map(node => {
-        // For GraphRAG nodes, use the label/name as the ID to match relationships
-        const isGraphRAGNode = node.properties?.graphrag_node === true
-        const nodeId = isGraphRAGNode
-          ? (node.properties?.name || node.properties?.title || String(node.id))
-          : String(node.id)
+    // Connected Subgraph First approach: Relations first → Connected nodes only
+    // This ensures NO orphan nodes (respects design constraint #1)
 
-        return {
-          id: nodeId,
-          name: node.properties?.name || node.properties?.title || String(node.id),
-          group: node.labels?.[0] || 'default',
-          color: getNodeColor(node.labels || []),
-          val: Math.max(1, (node.degree || 0) / 5) // Size based on degree with fallback
-        }
-      })
-
-    // Create a Set of valid node IDs for quick lookup
-    const validNodeIds = new Set(nodes.map(n => n.id))
-
-    console.log(`🔍 Valid node IDs for GraphRAG:`, Array.from(validNodeIds).slice(0, 5), `(showing first 5 of ${validNodeIds.size})`)
-
-    // Create links with strict validation - only include links where both nodes exist
-    const links: Link[] = reconciliationData.relationships
+    // First, create all possible links and identify connected nodes
+    const allValidLinks = reconciliationData.relationships
       .filter(rel => {
         if (!rel || !rel.source || !rel.target) return false
-
-        const sourceId = String(rel.source)
-        const targetId = String(rel.target)
-
-        const isValid = validNodeIds.has(sourceId) && validNodeIds.has(targetId)
-        if (!isValid) {
-          console.warn(`⚠️ First filter: Skipping invalid link: ${sourceId} -> ${targetId} (source exists: ${validNodeIds.has(sourceId)}, target exists: ${validNodeIds.has(targetId)})`)
-        }
-        return isValid
+        return true
       })
       .map(rel => ({
         source: String(rel.source),
@@ -349,7 +313,67 @@ export default function GraphVisualization3DForce({
         value: 1
       }))
 
-    console.log(`🔗 After first validation: ${links.length}/${reconciliationData.relationships.length} links passed`)
+    // Identify all nodes that participate in at least one relationship
+    const connectedNodeIds = new Set<string>()
+    allValidLinks.forEach(link => {
+      connectedNodeIds.add(link.source)
+      connectedNodeIds.add(link.target)
+    })
+
+    console.log(`📊 Connected Subgraph First - found ${connectedNodeIds.size} connected nodes from ${allValidLinks.length} relationships`)
+
+    // Create nodes only for those that have relationships, excluding problematic ones
+    const nodes: Node[] = reconciliationData.nodes
+      .filter(node => {
+        if (!node || !node.id) return false
+        if (problematicNodeIds.includes(String(node.id))) {
+          console.warn(`⚠️ Excluding problematic node: ${node.id}`)
+          return false
+        }
+        // CRITICAL: Only include nodes that participate in relationships
+        const nodeId = String(node.id)
+        return connectedNodeIds.has(nodeId)
+      })
+      .map(node => {
+        // For GraphRAG nodes, use the label/name as the ID to match relationships
+        const isGraphRAGNode = node.properties?.graphrag_node === true
+        const nodeId = isGraphRAGNode
+          ? (node.properties?.name || node.properties?.title || String(node.id))
+          : String(node.id)
+
+        // Principle #2: Books are the "core" entities and should be bigger
+        const isBookNode = node.type === 'Book' ||
+                          (node.labels && node.labels.includes('Livres')) ||
+                          (node.labels && node.labels.includes('BOOK')) ||
+                          String(nodeId).startsWith('LIVRE_')
+
+        const baseSize = Math.max(1, (node.degree || 0) / 5)
+        const bookMultiplier = isBookNode ? 3 : 1  // Books are 3x larger
+
+        return {
+          id: nodeId,
+          name: node.properties?.name || node.properties?.title || String(node.id),
+          group: node.labels?.[0] || 'default',
+          color: getNodeColor(node.labels || []),
+          val: baseSize * bookMultiplier // Books are significantly larger
+        }
+      })
+
+    // Create a Set of final valid node IDs for link filtering
+    const finalValidNodeIds = new Set(nodes.map(n => n.id))
+
+    console.log(`🔍 Final connected nodes (zero orphans):`, Array.from(finalValidNodeIds).slice(0, 5), `(showing first 5 of ${finalValidNodeIds.size})`)
+
+    // Filter links to only connect the final selected nodes
+    const links: Link[] = allValidLinks.filter(link => {
+      const isValid = finalValidNodeIds.has(link.source) && finalValidNodeIds.has(link.target)
+      if (!isValid) {
+        console.warn(`⚠️ Final filter: Skipping link between unselected nodes: ${link.source} -> ${link.target}`)
+      }
+      return isValid
+    })
+
+    console.log(`🔗 Connected Subgraph guaranteed: ${links.length}/${allValidLinks.length} links connect ${nodes.length} nodes (all nodes have ≥1 relation)`)
 
     // Only proceed if we have valid data to display
     if (nodes.length === 0 && links.length === 0) {
