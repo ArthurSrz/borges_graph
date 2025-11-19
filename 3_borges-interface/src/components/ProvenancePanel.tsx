@@ -177,13 +177,13 @@ export default function ProvenancePanel({
                       </div>
                       <div className="text-xs text-gray-400">
                         Type: <span className="text-borges-accent">{entity.entity_type}</span>
-                        {entity.book_name && (
-                          <> • Book: <span className="text-gray-300">{entity.book_name}</span></>
+                        {entity.book_title && (
+                          <> • Book: <span className="text-gray-300">{entity.book_title}</span></>
                         )}
                       </div>
-                      {entity.contribution_summary && (
+                      {entity.description && (
                         <div className="mt-2 text-sm text-gray-300">
-                          {entity.contribution_summary}
+                          {entity.description}
                         </div>
                       )}
                     </div>
@@ -252,20 +252,20 @@ export default function ProvenancePanel({
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs px-2 py-0.5 bg-yellow-900/50 rounded text-yellow-300">
-                      📖 {chunk.book_name}
+                      📖 {chunk.book_title}
                     </span>
-                    {chunk.page_number && (
+                    {chunk.page && (
                       <span className="text-xs text-gray-400">
-                        Page {chunk.page_number}
+                        Page {chunk.page}
                       </span>
                     )}
                   </div>
                   <div className="text-sm text-gray-300 line-clamp-3">
                     {chunk.content}
                   </div>
-                  {chunk.entity_mentions && chunk.entity_mentions.length > 0 && (
+                  {chunk.entity_highlights && chunk.entity_highlights.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {chunk.entity_mentions.map((entity, idx) => (
+                      {chunk.entity_highlights.map((entity, idx) => (
                         <span
                           key={idx}
                           className="text-xs px-2 py-0.5 bg-gray-800 rounded text-gray-400"

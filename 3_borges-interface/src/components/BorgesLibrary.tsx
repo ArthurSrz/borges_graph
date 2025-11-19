@@ -172,22 +172,22 @@ function BorgesLibrary() {
   const handleEntityClick = (entity: EntityColorInfo) => {
     console.log('🎯 Entity clicked:', entity.id)
 
-    // Find the actual Neo4j node ID by matching the label
+    // Find the actual Neo4j node ID by matching the labels or id
     // Search in both queryResultNodes (from GraphRAG query) and reconciliationData (full graph)
     let matchingNode = queryResultNodes.find(
-      node => node.label === entity.id || node.id === entity.id
+      node => node.labels?.includes(entity.id) || node.id === entity.id
     )
 
     if (!matchingNode) {
       matchingNode = reconciliationData?.nodes.find(
-        node => node.label === entity.id || node.id === entity.id
+        node => node.labels?.includes(entity.id) || node.id === entity.id
       )
     }
 
     if (matchingNode) {
-      console.log(`✅ Found matching node: ${matchingNode.id} (${matchingNode.label})`)
+      console.log(`✅ Found matching node: ${matchingNode.id} (${matchingNode.labels?.[0]})`)
       setSelectedEntityId(matchingNode.id)
-      setSelectedEntityName(matchingNode.label)
+      setSelectedEntityName(matchingNode.labels?.[0] || matchingNode.id)
     } else {
       console.warn(`⚠️ No matching node found for entity: ${entity.id}`)
       // Still open the modal with the label as ID (will show "not found" message)
@@ -463,8 +463,8 @@ function BorgesLibrary() {
               processing_phases: {
                 entity_selection: {
                   entities: result.selected_nodes.map((node: any, index: number) => ({
-                    id: node.label,
-                    name: node.label,
+                    id: node.labels?.[0] || node.id,
+                    name: node.labels?.[0] || node.id,
                     type: node.type,
                     description: node.properties?.description || '',
                     rank: index + 1,
@@ -536,7 +536,7 @@ function BorgesLibrary() {
                   console.log(`⚠️ Using selected_nodes fallback for book ${bookResult.book_id}`)
 
                   const bookEntities = bookResult.selected_nodes.map((node: any, idx: number) => ({
-                    id: node.properties?.name || node.id || node.label,
+                    id: node.properties?.name || node.id || node.labels?.[0],
                     type: node.labels?.[0] || node.type || 'CONCEPT',
                     description: node.properties?.description,
                     score: (node.degree || node.centrality_score || 1) / 100,

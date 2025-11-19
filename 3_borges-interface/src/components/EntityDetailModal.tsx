@@ -17,18 +17,19 @@ import HighlightedText from './HighlightedText';
 
 interface ReconciliationNode {
   id: string;
-  label: string;
-  type: string;
-  properties?: Record<string, any>;
-  book_id?: string;
-  book_name?: string;
+  labels: string[];
+  properties: Record<string, any>;
+  degree: number;
+  centrality_score: number;
 }
 
 interface ReconciliationRelationship {
+  id: string;
   source: string;
   target: string;
   type: string;
   properties?: Record<string, any>;
+  source_chunk_ids?: string[];
 }
 
 interface ReconciliationGraphData {
@@ -91,7 +92,7 @@ export default function EntityDetailModal({
     if (entitySourceId && typeof entitySourceId === 'string') {
       // Split by <SEP> separator to get individual chunk IDs
       const chunkIds = entitySourceId.split('<SEP>').filter(id => id.trim());
-      const bookId = foundEntity?.book_id || foundEntity?.properties?.book_id;
+      const bookId = foundEntity?.properties?.book_id;
 
       chunkIds.forEach(chunkId => {
         const trimmedChunkId = chunkId.trim();
@@ -117,7 +118,7 @@ export default function EntityDetailModal({
         // Check if this contains <SEP> separated chunk IDs
         if (chunkText.includes('<SEP>')) {
           const chunkIds = chunkText.split('<SEP>').filter(id => id.trim());
-          const bookId = foundEntity?.book_id || rel.properties?.book_id;
+          const bookId = foundEntity?.properties?.book_id || rel.properties?.book_id;
 
           chunkIds.forEach(chunkId => {
             const trimmedChunkId = chunkId.trim();
@@ -143,7 +144,7 @@ export default function EntityDetailModal({
             source: rel.source,
             target: rel.target,
             chunkId: isChunkId ? chunkText : undefined,
-            bookId: isChunkId ? (foundEntity?.book_id || rel.properties?.book_id) : undefined,
+            bookId: isChunkId ? (foundEntity?.properties?.book_id || rel.properties?.book_id) : undefined,
             isChunkId,
           });
         }
@@ -155,7 +156,7 @@ export default function EntityDetailModal({
         // Check if this contains <SEP> separated chunk IDs
         if (sourceChunk.includes('<SEP>')) {
           const chunkIds = sourceChunk.split('<SEP>').filter(id => id.trim());
-          const bookId = foundEntity?.book_id || rel.properties?.book_id;
+          const bookId = foundEntity?.properties?.book_id || rel.properties?.book_id;
 
           chunkIds.forEach(chunkId => {
             const trimmedChunkId = chunkId.trim();
@@ -181,7 +182,7 @@ export default function EntityDetailModal({
             source: rel.source,
             target: rel.target,
             chunkId: isChunkId ? sourceChunk : undefined,
-            bookId: isChunkId ? (foundEntity?.book_id || rel.properties?.book_id) : undefined,
+            bookId: isChunkId ? (foundEntity?.properties?.book_id || rel.properties?.book_id) : undefined,
             isChunkId,
           });
         }
@@ -265,7 +266,7 @@ export default function EntityDetailModal({
 
   const getNodeLabel = (nodeId: string): string => {
     const node = reconciliationData?.nodes.find(n => n.id === nodeId);
-    return node?.label || nodeId;
+    return node?.properties?.name || node?.labels?.[0] || nodeId;
   };
 
   return (
@@ -276,16 +277,16 @@ export default function EntityDetailModal({
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h2 className="text-2xl font-semibold text-white mb-2">
-                {entity?.label || entityName || 'Entity Details'}
+                {entity?.properties?.name || entity?.labels?.[0] || entityName || 'Entity Details'}
               </h2>
               {entity && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs px-2 py-1 bg-borges-accent text-black rounded font-medium">
-                    {entity.type}
+                    {entity.properties?.entity_type || entity.labels?.[0] || 'Entity'}
                   </span>
-                  {entity.book_name && (
+                  {entity.properties?.book_name && (
                     <span className="text-xs px-2 py-1 bg-yellow-900/50 text-yellow-300 rounded">
-                      📖 {entity.book_name}
+                      📖 {entity.properties.book_name}
                     </span>
                   )}
                   <span className="text-xs px-2 py-1 bg-blue-900/50 text-blue-300 rounded">
@@ -373,7 +374,7 @@ export default function EntityDetailModal({
                           <div className="flex items-center gap-2 text-sm mb-2">
                             {isSource ? (
                               <>
-                                <span className="text-white font-medium">{entity.label}</span>
+                                <span className="text-white font-medium">{entity.properties?.name || entity.labels?.[0]}</span>
                                 <span className="text-borges-accent">--[{rel.type}]→</span>
                                 <span className="text-gray-300">{otherLabel}</span>
                               </>
@@ -381,7 +382,7 @@ export default function EntityDetailModal({
                               <>
                                 <span className="text-gray-300">{otherLabel}</span>
                                 <span className="text-borges-accent">--[{rel.type}]→</span>
-                                <span className="text-white font-medium">{entity.label}</span>
+                                <span className="text-white font-medium">{entity.properties?.name || entity.labels?.[0]}</span>
                               </>
                             )}
                           </div>
@@ -447,7 +448,12 @@ export default function EntityDetailModal({
                           ) : (
                             <HighlightedText
                               text={chunk.text}
-                              entities={entity ? [{ id: entity.id, name: entity.label }] : []}
+                              entities={entity ? [{
+                                id: entity.id,
+                                type: entity.properties?.entity_type || entity.labels?.[0] || 'Entity',
+                                color: '#fbbf24',
+                                score: 1.0
+                              }] : []}
                             />
                           )}
                         </div>
@@ -474,7 +480,7 @@ export default function EntityDetailModal({
               <div className="pt-4 border-t border-gray-700">
                 <p className="text-xs text-gray-500 italic">
                   🏛️ Principe de conception #5 : Interprétabilité de bout-en-bout -
-                  Navigation du chunk de texte jusqu'à la réponse RAG
+                  Navigation du chunk de texte jusqu&apos;à la réponse RAG
                 </p>
               </div>
             </>
