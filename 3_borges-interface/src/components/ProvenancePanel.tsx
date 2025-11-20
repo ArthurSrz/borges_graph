@@ -60,9 +60,10 @@ export default function ProvenancePanel({
   if (!queryId) {
     return (
       <div className="flex items-center justify-center h-full p-8 text-gray-400">
-        <div className="text-center">
+        <div className="text-center max-w-md">
           <div className="text-4xl mb-4">🔍</div>
-          <p>Submit a query to view provenance</p>
+          <p className="text-lg mb-2 text-white">Answer Provenance Panel</p>
+          <p className="text-sm">Submit a query to see which entities, relationships, and source text chunks were used to build the answer. Click through to trace each element back to the original books.</p>
         </div>
       </div>
     );
@@ -107,14 +108,17 @@ export default function ProvenancePanel({
     <div className="flex flex-col h-full bg-borges-secondary border-l border-gray-700">
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
-        <h2 className="text-xl font-semibold text-white mb-2">🔗 Provenance Chain</h2>
-        <p className="text-sm text-gray-400">
-          Query: <span className="text-white font-mono text-xs">{queryId}</span>
+        <h2 className="text-xl font-semibold text-white mb-2">🔗 Answer Provenance</h2>
+        <p className="text-sm text-gray-400 mb-3">
+          <strong className="text-white">See how the answer was built:</strong> View the entities, relationships, and source text that GraphRAG used to construct this answer.
         </p>
-        <div className="flex gap-4 mt-2 text-sm text-gray-400">
+        <p className="text-xs text-gray-500 mb-2">
+          Query ID: <span className="text-white font-mono">{queryId}</span>
+        </p>
+        <div className="flex gap-4 text-sm text-gray-400">
           <span>📊 {entities.length} entities</span>
           <span>🔗 {relationships.length} relationships</span>
-          <span>📄 {chunks.length} chunks</span>
+          <span>📄 {chunks.length} source chunks</span>
         </div>
       </div>
 

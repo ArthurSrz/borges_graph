@@ -407,22 +407,38 @@ function BorgesLibrary() {
         if (result.success) {
           setCurrentProcessingPhase(`✓ Queried ${result.books_with_results || 0} books`)
 
+          console.log('📚 Multi-book query result:', result)
+          console.log('📖 Book results:', result.book_results)
+
           // Show answer from all books
           let combinedAnswer = 'No relevant results found across the books.'
 
           if (result.book_results && Array.isArray(result.book_results)) {
+            console.log(`📋 Processing ${result.book_results.length} book results`)
+
             const validResults = result.book_results
-              .filter((r: any) => r && r.answer && !r.error && r.answer !== "Sorry, I'm not able to provide an answer to that question.")
+              .filter((r: any) => {
+                const isValid = r && r.answer && !r.error && r.answer !== "Sorry, I'm not able to provide an answer to that question."
+                console.log(`  ${r.book_id}: valid=${isValid}, answer length=${r.answer?.length || 0}`)
+                return isValid
+              })
               .map((r: any) => {
                 const bookName = r.book_id ? r.book_id.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Unknown Book'
                 return `📖 **${bookName}**:\n${r.answer}`
               })
 
+            console.log(`✅ ${validResults.length} valid results after filtering`)
+
             if (validResults.length > 0) {
               combinedAnswer = validResults.join('\n\n---\n\n')
+            } else {
+              console.warn('⚠️ No valid results - all answers were filtered out')
             }
+          } else {
+            console.warn('⚠️ book_results is not an array or is missing')
           }
 
+          console.log(`📝 Final combined answer length: ${combinedAnswer.length}`)
           setQueryAnswer(combinedAnswer)
           setShowAnswer(true)
 
