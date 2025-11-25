@@ -91,7 +91,8 @@ export default function EntityDetailModal({
     const entityDescription = foundEntity?.properties?.description;
     if (entityDescription && typeof entityDescription === 'string' && entityDescription.length > 0) {
       // Use the description directly - it already contains the source text
-      const bookId = foundEntity?.properties?.source_id; // This is actually the book ID
+      // API FIX (2025-11-25): book_id is now separate from source_id (which contains chunk IDs)
+      const bookId = foundEntity?.properties?.book_id || foundEntity?.properties?.source_id;
       extractedChunks.push({
         text: entityDescription,
         relationshipType: 'ENTITY_DESCRIPTION',
@@ -102,6 +103,28 @@ export default function EntityDetailModal({
       });
     }
 
+    // Also extract chunk IDs from entity's source_id property (contains chunk IDs separated by <SEP>)
+    const entitySourceId = foundEntity?.properties?.source_id;
+    const entityBookId = foundEntity?.properties?.book_id;
+    if (entitySourceId && typeof entitySourceId === 'string' && entitySourceId.includes('chunk-')) {
+      // source_id now contains chunk IDs, not book ID
+      const chunkIds = entitySourceId.split('<SEP>').filter(id => id.trim() && id.includes('chunk-'));
+      chunkIds.forEach(chunkId => {
+        const trimmedChunkId = chunkId.trim();
+        if (trimmedChunkId && entityBookId) {
+          extractedChunks.push({
+            text: trimmedChunkId,
+            relationshipType: 'EXTRACTED_FROM',
+            source: entityId,
+            target: trimmedChunkId,
+            chunkId: trimmedChunkId,
+            bookId: entityBookId,
+            isChunkId: true,
+          });
+        }
+      });
+    }
+
     // Then extract chunks from relationships
     relatedRelationships.forEach(rel => {
       // Check for graphml_source_chunks property
@@ -109,7 +132,11 @@ export default function EntityDetailModal({
       if (chunkText && typeof chunkText === 'string') {
         // Check if this contains <SEP> separated chunk IDs
         if (chunkText.includes('<SEP>')) {
-          const chunkIds = chunkText.split('<SEP>').filter(id => id.trim());
+          // Filter: only include valid chunk IDs (starting with 'chunk-'), skip 'book_linkage' metadata
+          const chunkIds = chunkText.split('<SEP>').filter(id => {
+            const trimmed = id.trim();
+            return trimmed && trimmed.startsWith('chunk-') && trimmed !== 'book_linkage';
+          });
           const bookId = foundEntity?.properties?.book_id || rel.properties?.book_id;
 
           chunkIds.forEach(chunkId => {
@@ -128,7 +155,13 @@ export default function EntityDetailModal({
           });
         } else {
           // Single chunk ID or actual text
-          const isChunkId = chunkText.startsWith('chunk-') || chunkText === 'book_linkage';
+          // ONLY chunk IDs starting with 'chunk-' are valid - 'book_linkage' is metadata, not a chunk
+          const isChunkId = chunkText.startsWith('chunk-');
+
+          // Skip 'book_linkage' metadata - it's not actual content
+          if (chunkText === 'book_linkage') {
+            return; // Skip this chunk
+          }
 
           extractedChunks.push({
             text: chunkText,
@@ -147,7 +180,11 @@ export default function EntityDetailModal({
       if (sourceChunk && typeof sourceChunk === 'string' && sourceChunk !== chunkText) {
         // Check if this contains <SEP> separated chunk IDs
         if (sourceChunk.includes('<SEP>')) {
-          const chunkIds = sourceChunk.split('<SEP>').filter(id => id.trim());
+          // Filter: only include valid chunk IDs (starting with 'chunk-'), skip 'book_linkage' metadata
+          const chunkIds = sourceChunk.split('<SEP>').filter(id => {
+            const trimmed = id.trim();
+            return trimmed && trimmed.startsWith('chunk-') && trimmed !== 'book_linkage';
+          });
           const bookId = foundEntity?.properties?.book_id || rel.properties?.book_id;
 
           chunkIds.forEach(chunkId => {
@@ -166,7 +203,13 @@ export default function EntityDetailModal({
           });
         } else {
           // Single chunk ID or actual text
-          const isChunkId = sourceChunk.startsWith('chunk-') || sourceChunk === 'book_linkage';
+          // ONLY chunk IDs starting with 'chunk-' are valid - 'book_linkage' is metadata, not a chunk
+          const isChunkId = sourceChunk.startsWith('chunk-');
+
+          // Skip 'book_linkage' metadata - it's not actual content
+          if (sourceChunk === 'book_linkage') {
+            return; // Skip this chunk
+          }
 
           extractedChunks.push({
             text: sourceChunk,
