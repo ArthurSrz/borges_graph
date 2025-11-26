@@ -1419,15 +1419,15 @@ function BorgesLibrary() {
         />
       )}
 
-      {/* Answer Panel - Responsive: Bottom sheet on mobile, side panel on desktop */}
+      {/* Answer Panel - Responsive: Compact bottom sheet on mobile, side panel on desktop */}
       {showAnswer && (
-        <div className="borges-panel fixed bottom-0 left-0 right-0 md:bottom-4 md:left-4 md:right-auto w-full md:w-[400px] max-h-[50vh] md:max-h-[45vh] overflow-auto text-borges-light shadow-borges-lg z-30 rounded-t-2xl md:rounded-borges-md safe-area-bottom swipe-panel">
+        <div className="borges-panel fixed bottom-0 left-0 right-0 md:bottom-4 md:left-4 md:right-auto w-full md:w-[400px] max-h-[30vh] md:max-h-[45vh] overflow-auto text-borges-light shadow-borges-lg z-30 rounded-t-2xl md:rounded-borges-md safe-area-bottom swipe-panel">
           {/* Mobile drag handle */}
-          <div className="md:hidden flex justify-center py-2">
+          <div className="md:hidden flex justify-center py-1">
             <div className="w-12 h-1 bg-borges-border rounded-full"></div>
           </div>
-          <div className="flex justify-between items-start mb-3 px-1">
-            <h3 className="text-h3-mobile md:text-h3 text-borges-light">La réponse du GraphRAG</h3>
+          <div className="flex justify-between items-start mb-2 md:mb-3 px-1">
+            <h3 className="text-sm md:text-h3 text-borges-light font-medium">La réponse du GraphRAG</h3>
             <button
               onClick={() => setShowAnswer(false)}
               className="borges-btn-ghost text-lg touch-target flex items-center justify-center"
@@ -1437,9 +1437,9 @@ function BorgesLibrary() {
             </button>
           </div>
 
-          {/* GraphRAG Context Analysis - Basile Minimalism */}
+          {/* GraphRAG Context Analysis - Hidden on mobile for space */}
           {searchPath && (
-            <div className="mb-3 p-3 bg-borges-dark rounded-borges-sm border border-borges-border">
+            <div className="hidden md:block mb-3 p-3 bg-borges-dark rounded-borges-sm border border-borges-border">
               <div className="text-xs font-medium text-borges-light mb-2">Knowledge Base Analysis</div>
               <div className="text-xs space-y-1">
                 <div className="flex justify-between">
@@ -1472,8 +1472,8 @@ function BorgesLibrary() {
           )}
 
           <div>
-            <div className="text-xs text-borges-light-muted mb-1">Réponse:</div>
-            <div className="max-h-80 overflow-y-auto pr-2">
+            <div className="text-xs text-borges-light-muted mb-1 hidden md:block">Réponse:</div>
+            <div className="max-h-40 md:max-h-80 overflow-y-auto pr-2">
               <HighlightedText
                 text={queryAnswer}
                 entities={coloredEntities}
