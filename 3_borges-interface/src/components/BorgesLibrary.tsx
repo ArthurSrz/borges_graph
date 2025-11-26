@@ -95,6 +95,7 @@ import { GraphErrorBoundary } from './GraphErrorBoundary'
 import QueryInterface from './QueryInterface'
 import HighlightedText from './HighlightedText'
 import LoadingWheel3D from './LoadingWheel3D'
+import TutorialOverlay from './TutorialOverlay'
 import TextChunkModal from './TextChunkModal'
 import ProvenancePanel from './ProvenancePanel'
 import EntityDetailModal from './EntityDetailModal'
@@ -164,7 +165,9 @@ function BorgesLibrary() {
     setSelectedEntityName(null)
   }
   const [reconciliationData, setReconciliationData] = useState<ReconciliationGraphData | null>(null)
-  const [isLoadingGraph, setIsLoadingGraph] = useState(false)
+  const [isLoadingGraph, setIsLoadingGraph] = useState(true) // Start as true to show loading
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false) // For returning users
   const [visibleNodeIds, setVisibleNodeIds] = useState<string[]>([])
   const [searchPath, setSearchPath] = useState<any>(null)
   const [debugInfo, setDebugInfo] = useState<any>(null)
@@ -277,6 +280,22 @@ function BorgesLibrary() {
     loadBooks()
     loadReconciliationGraph()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Check localStorage for tutorial skip on mount
+  useEffect(() => {
+    const tutorialSeen = localStorage.getItem('borges-tutorial-seen')
+    if (!tutorialSeen) {
+      setShowTutorial(true)
+    } else {
+      // For returning users, show loading overlay while data loads
+      setShowLoadingOverlay(true)
+    }
+  }, [])
+
+  // Handler for tutorial completion
+  const handleTutorialComplete = () => {
+    setShowTutorial(false)
+  }
 
   // Clear previous query results when book selection changes
   useEffect(() => {
@@ -429,6 +448,7 @@ function BorgesLibrary() {
       console.error('Error loading connected knowledge base:', error)
     } finally {
       setIsLoadingGraph(false)
+      setShowLoadingOverlay(false) // Hide loading overlay once data is loaded
     }
   }
 
@@ -863,12 +883,13 @@ function BorgesLibrary() {
                 <button
                   onClick={() => setMultiBook(!multiBook)}
                   disabled={isProcessing}
-                  className={`borges-btn-secondary text-sm disabled:opacity-50 ${
+                  className={`borges-btn-secondary text-sm disabled:opacity-50 flex items-center ${
                     multiBook ? 'border-borges-light text-borges-light' : ''
                   }`}
-                  title="Query all books at once"
+                  title="Interroger tout le catalogue"
                 >
-                  All Books
+                  <span className="mr-1 grayscale">📚</span>
+                  Tout le catalogue
                 </button>
 
                 {/* Search Input */}
@@ -894,24 +915,39 @@ function BorgesLibrary() {
                   <button
                     onClick={() => setMode('local')}
                     disabled={isProcessing}
-                    className={`px-2 py-1 text-xs rounded-borges-sm font-medium transition-colors disabled:opacity-50 ${
+                    className={`flex items-center px-2 py-1 text-xs rounded-borges-sm font-medium transition-colors disabled:opacity-50 ${
                       mode === 'local'
                         ? 'bg-borges-light text-borges-dark'
                         : 'text-borges-light-muted hover:text-borges-light'
                     }`}
+                    title="Du texte vers le livre"
                   >
-                    Local
+                    <svg className="w-4 h-4 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+                      {/* Lines ascending to book */}
+                      <path d="M1 13h5M1 11h4M1 9h3" strokeWidth="1.5" strokeLinecap="round"/>
+                      <path d="M8 6l2-2" strokeWidth="1.5" strokeLinecap="round"/>
+                      <path d="M11 2v8l3 1.5V3.5L11 2z" strokeWidth="1.5" strokeLinejoin="round"/>
+                    </svg>
+                    Ascendant
                   </button>
                   <button
                     onClick={() => setMode('global')}
                     disabled={isProcessing}
-                    className={`px-2 py-1 text-xs rounded-borges-sm font-medium transition-colors disabled:opacity-50 ${
+                    className={`flex items-center px-2 py-1 text-xs rounded-borges-sm font-medium transition-colors disabled:opacity-50 ${
                       mode === 'global'
                         ? 'bg-borges-light text-borges-dark'
                         : 'text-borges-light-muted hover:text-borges-light'
                     }`}
+                    title="Des livres vers le texte"
                   >
-                    Global
+                    <svg className="w-4 h-4 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+                      {/* Books descending to lines */}
+                      <path d="M1 2v6l2.5 1.25V3.25L1 2z" strokeWidth="1.5" strokeLinejoin="round"/>
+                      <path d="M4.5 2v6l2.5 1.25V3.25L4.5 2z" strokeWidth="1.5" strokeLinejoin="round"/>
+                      <path d="M6 11l2 2" strokeWidth="1.5" strokeLinecap="round"/>
+                      <path d="M10 14h5M10 12h4M10 10h3" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    Descendant
                   </button>
                 </div>
 
@@ -928,7 +964,7 @@ function BorgesLibrary() {
                   }}
                   className="borges-btn-primary disabled:opacity-50"
                 >
-                  {isProcessing ? 'Processing...' : 'Search'}
+                  {isProcessing ? 'Processing...' : 'Recherche Borges'}
                 </button>
 
               </div>
@@ -1017,106 +1053,98 @@ function BorgesLibrary() {
                   sidePanelOpen={!!selectedEntityId}
               />
 
-            {/* Loading Overlay with Hexagon Library Animation */}
-            {/* Using fixed positioning to prevent movement when graph container resizes */}
-            {isLoadingGraph && (
-              <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+            {/* Interactive Tutorial Overlay */}
+            {showTutorial && (
+              <TutorialOverlay
+                onComplete={handleTutorialComplete}
+                isDataLoading={isLoadingGraph}
+              />
+            )}
+
+            {/* Loading Overlay for returning users (tutorial already seen) */}
+            {showLoadingOverlay && !showTutorial && (
+              <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center">
                 <div className="text-center">
                   {/* Hexagon Library Assembly Animation */}
-                  <div className="relative w-72 h-72 mx-auto mb-8">
-                    <svg viewBox="0 0 200 200" className="w-full h-full">
-                      <style>{`
-                        @keyframes hexFloat1 { 0%, 100% { transform: translate(0, 0); opacity: 0.3; } 50% { transform: translate(-5px, -3px); opacity: 0.9; } }
-                        @keyframes hexFloat2 { 0%, 100% { transform: translate(0, 0); opacity: 0.25; } 50% { transform: translate(5px, -5px); opacity: 0.85; } }
-                        @keyframes hexFloat3 { 0%, 100% { transform: translate(0, 0); opacity: 0.2; } 50% { transform: translate(-3px, 5px); opacity: 0.8; } }
-                        @keyframes hexFloat4 { 0%, 100% { transform: translate(0, 0); opacity: 0.15; } 50% { transform: translate(4px, 3px); opacity: 0.75; } }
-                        @keyframes hexFloat5 { 0%, 100% { transform: translate(0, 0); opacity: 0.1; } 50% { transform: translate(-4px, -4px); opacity: 0.7; } }
-                        @keyframes bookSlide { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }
-                        @keyframes glowPulse { 0%, 100% { filter: drop-shadow(0 0 2px #a0a0a0); } 50% { filter: drop-shadow(0 0 8px #f5f5f5); } }
-                        .hex-main { animation: hexFloat1 3s ease-in-out infinite, glowPulse 2s ease-in-out infinite; }
-                        .hex-top { animation: hexFloat2 3.5s ease-in-out 0.3s infinite; }
-                        .hex-bl { animation: hexFloat3 3.2s ease-in-out 0.6s infinite; }
-                        .hex-br { animation: hexFloat4 3.8s ease-in-out 0.9s infinite; }
-                        .hex-left { animation: hexFloat5 4s ease-in-out 1.2s infinite; }
-                        .hex-right { animation: hexFloat5 3.6s ease-in-out 1.5s infinite; }
-                        .book-shelf { animation: bookSlide 2s ease-in-out infinite; }
-                      `}</style>
+                  <svg className="w-48 h-48 mx-auto mb-4" viewBox="0 0 200 200" fill="none">
+                    <style>{`
+                      @keyframes hexAssemble1 { 0% { opacity: 0; transform: translate(-30px, -20px); } 50% { opacity: 0.6; } 100% { opacity: 0.8; transform: translate(0, 0); } }
+                      @keyframes hexAssemble2 { 0% { opacity: 0; transform: translate(30px, -20px); } 50% { opacity: 0.5; } 100% { opacity: 0.7; transform: translate(0, 0); } }
+                      @keyframes hexAssemble3 { 0% { opacity: 0; transform: translate(0, 30px); } 50% { opacity: 0.4; } 100% { opacity: 0.6; transform: translate(0, 0); } }
+                      @keyframes hexAssemble4 { 0% { opacity: 0; transform: translate(-20px, 20px); } 50% { opacity: 0.3; } 100% { opacity: 0.5; transform: translate(0, 0); } }
+                      @keyframes hexAssemble5 { 0% { opacity: 0; transform: translate(20px, 20px); } 50% { opacity: 0.2; } 100% { opacity: 0.4; transform: translate(0, 0); } }
+                      @keyframes bookShimmer { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+                      .hex1-overlay { animation: hexAssemble1 2s ease-out infinite; }
+                      .hex2-overlay { animation: hexAssemble2 2s ease-out 0.2s infinite; }
+                      .hex3-overlay { animation: hexAssemble3 2s ease-out 0.4s infinite; }
+                      .hex4-overlay { animation: hexAssemble4 2s ease-out 0.6s infinite; }
+                      .hex5-overlay { animation: hexAssemble5 2s ease-out 0.8s infinite; }
+                      .book-line-overlay { animation: bookShimmer 3s ease-in-out infinite; }
+                    `}</style>
 
-                      {/* Central hexagon - main library cell */}
-                      <polygon
-                        className="hex-main"
-                        points="100,35 135,55 135,95 100,115 65,95 65,55"
-                        stroke="#a0a0a0"
-                        strokeWidth="2"
-                        fill="none"
-                      />
+                    {/* Central hexagon - main library cell */}
+                    <polygon
+                      className="hex1-overlay"
+                      points="100,40 130,57.5 130,92.5 100,110 70,92.5 70,57.5"
+                      stroke="#a0a0a0"
+                      strokeWidth="1.5"
+                      fill="none"
+                    />
 
-                      {/* Book shelves inside central hexagon */}
-                      <line className="book-shelf" x1="75" y1="60" x2="125" y2="60" stroke="#a0a0a0" strokeWidth="1" style={{ animationDelay: '0s' }} />
-                      <line className="book-shelf" x1="78" y1="72" x2="122" y2="72" stroke="#a0a0a0" strokeWidth="1" style={{ animationDelay: '0.3s' }} />
-                      <line className="book-shelf" x1="80" y1="84" x2="120" y2="84" stroke="#a0a0a0" strokeWidth="1" style={{ animationDelay: '0.6s' }} />
-                      <line className="book-shelf" x1="83" y1="96" x2="117" y2="96" stroke="#a0a0a0" strokeWidth="1" style={{ animationDelay: '0.9s' }} />
+                    {/* Top hexagon */}
+                    <polygon
+                      className="hex2-overlay"
+                      points="100,10 125,25 125,55 100,70 75,55 75,25"
+                      stroke="#a0a0a0"
+                      strokeWidth="1"
+                      fill="none"
+                    />
 
-                      {/* Top hexagon */}
-                      <polygon
-                        className="hex-top"
-                        points="100,5 130,22 130,56 100,73 70,56 70,22"
-                        stroke="#a0a0a0"
-                        strokeWidth="1"
-                        fill="none"
-                      />
+                    {/* Bottom left hexagon */}
+                    <polygon
+                      className="hex3-overlay"
+                      points="70,95 95,110 95,140 70,155 45,140 45,110"
+                      stroke="#a0a0a0"
+                      strokeWidth="1"
+                      fill="none"
+                    />
 
-                      {/* Bottom left hexagon */}
-                      <polygon
-                        className="hex-bl"
-                        points="65,95 95,112 95,146 65,163 35,146 35,112"
-                        stroke="#a0a0a0"
-                        strokeWidth="1"
-                        fill="none"
-                      />
+                    {/* Bottom right hexagon */}
+                    <polygon
+                      className="hex4-overlay"
+                      points="130,95 155,110 155,140 130,155 105,140 105,110"
+                      stroke="#a0a0a0"
+                      strokeWidth="1"
+                      fill="none"
+                    />
 
-                      {/* Bottom right hexagon */}
-                      <polygon
-                        className="hex-br"
-                        points="135,95 165,112 165,146 135,163 105,146 105,112"
-                        stroke="#a0a0a0"
-                        strokeWidth="1"
-                        fill="none"
-                      />
+                    {/* Far left hexagon */}
+                    <polygon
+                      className="hex5-overlay"
+                      points="50,60 75,75 75,105 50,120 25,105 25,75"
+                      stroke="#a0a0a0"
+                      strokeWidth="0.8"
+                      fill="none"
+                    />
 
-                      {/* Far left hexagon */}
-                      <polygon
-                        className="hex-left"
-                        points="40,55 65,70 65,100 40,115 15,100 15,70"
-                        stroke="#a0a0a0"
-                        strokeWidth="0.8"
-                        fill="none"
-                      />
+                    {/* Far right hexagon */}
+                    <polygon
+                      className="hex5-overlay"
+                      points="150,60 175,75 175,105 150,120 125,105 125,75"
+                      stroke="#a0a0a0"
+                      strokeWidth="0.8"
+                      fill="none"
+                      style={{ animationDelay: '1s' }}
+                    />
 
-                      {/* Far right hexagon */}
-                      <polygon
-                        className="hex-right"
-                        points="160,55 185,70 185,100 160,115 135,100 135,70"
-                        stroke="#a0a0a0"
-                        strokeWidth="0.8"
-                        fill="none"
-                      />
-
-                      {/* Additional outer hexagons for depth */}
-                      <polygon
-                        className="hex-left"
-                        points="100,130 125,145 125,175 100,190 75,175 75,145"
-                        stroke="#a0a0a0"
-                        strokeWidth="0.6"
-                        fill="none"
-                        style={{ animationDelay: '1.8s' }}
-                      />
-                    </svg>
+                    {/* Book lines inside central hexagon - simulating shelves */}
+                    <line className="book-line-overlay" x1="80" y1="65" x2="120" y2="65" stroke="#a0a0a0" strokeWidth="0.5" />
+                    <line className="book-line-overlay" x1="82" y1="75" x2="118" y2="75" stroke="#a0a0a0" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
+                    <line className="book-line-overlay" x1="84" y1="85" x2="116" y2="85" stroke="#a0a0a0" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
+                  </svg>
+                  <div className="text-borges-light-muted text-xs italic max-w-lg text-center px-4">
+                    « L&apos;univers (que d&apos;autres appellent la Bibliothèque) se compose d&apos;un nombre indéfini, et peut-être infini, de galeries hexagonales... »
                   </div>
-
-                  <p className="text-sm text-borges-light mb-2 font-light tracking-wide max-w-lg text-center italic">« L&apos;univers (que d&apos;autres appellent la Bibliothèque) se compose d&apos;un nombre indéfini, et peut-être infini, de galeries hexagonales... »</p>
-                  <p className="text-sm text-borges-muted italic">— Jorge Luis Borges</p>
-
                 </div>
               </div>
             )}

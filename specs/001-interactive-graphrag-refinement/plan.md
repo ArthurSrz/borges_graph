@@ -317,3 +317,54 @@ The book ingestion pipeline leverages nano-graphRAG for:
 **Constitutional Compliance**: ✅ All 6 principles maintained
 - Principle I (End-to-end interpretability): Enhanced with fast chunk access
 - Principle III (No orphan nodes): Verified (105 connected nodes)
+
+---
+
+### Implementation Progress (2025-11-25) - EntityDetailModal Standardization
+
+#### 7. Standardize Legend Node Data Display (PLANNED)
+
+**Problem**: EntityDetailModal displays inconsistent data between nodes:
+1. `<SEP>` characters not escaped in descriptions (unreadable)
+2. Duplicate relationships displayed (same relationship shown multiple times)
+3. Inconsistent property display order
+4. Missing standardized fields
+
+**User Requirements**:
+- Display: `name`, `entity_type`, `description` (with `<SEP>` → readable newlines)
+- Unique relationships only (deduplicated by source→target+type)
+- Source text chunks
+
+**Implementation Plan**:
+
+**Step 1: Escape `<SEP>` in descriptions**
+- Replace `<SEP>` with `\n` or `; ` in description display
+- Add helper function: `formatDescription(text: string): string`
+
+**Step 2: Deduplicate relationships**
+- Create unique key: `${source}:${target}:${type}`
+- Use Map/Set to filter duplicates before display
+- Keep relationship with most properties (or first occurrence)
+
+**Step 3: Standardize property display order**
+- Always show: name, entity_type, description, book_dir
+- Then: other properties alphabetically
+- Exclude internal properties: clusters, observations (unless requested)
+
+**Step 4: Standardize relationship display**
+- Unique relationships only
+- Show: source → [TYPE] → target
+- Properties: description, weight (hide internal: order, has_graphml_metadata)
+
+**Files to Modify**:
+- `/3_borges-interface/src/components/EntityDetailModal.tsx`
+
+**Acceptance Criteria**:
+- [ ] Description displays with `<SEP>` → readable separators
+- [ ] No duplicate relationships in modal
+- [ ] Consistent property order across all entity types
+- [ ] Source text chunks displayed correctly
+
+**Constitutional Compliance**:
+- Principle I (Interpretability): Enhanced - cleaner data display
+- All other principles: Unchanged

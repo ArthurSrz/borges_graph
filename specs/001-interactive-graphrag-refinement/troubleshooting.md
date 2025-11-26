@@ -13,7 +13,10 @@ This document captures known issues, their solutions, and debugging strategies f
 1. [Neo4j Cypher Query Issues](#neo4j-cypher-query-issues)
 2. [Next.js Build Issues](#nextjs-build-issues)
 3. [Book Data Issues](#book-data-issues)
-4. [Quick Reference](#quick-reference)
+4. [Railway Deployment Issues](#railway-deployment-issues)
+5. [Development Tools Issues](#development-tools-issues)
+6. [Python Type Conversion Issues](#python-type-conversion-issues)
+7. [Quick Reference](#quick-reference)
 
 ---
 
@@ -524,6 +527,244 @@ tail -20 /tmp/api_test.log | grep -E "(shutdown|Neo4j)"
 
 ---
 
+## Development Tools Issues
+
+### Issue 5: Playwright MCP Browser Lock / White Screen (2025-11-25)
+
+**Severity**: LOW (Development only)
+
+#### Symptoms
+
+1. **Browser already in use error**:
+   ```
+   Error: Browser is already in use for /Users/arthursarazin/Library/Caches/ms-playwright/mcp-chrome-0ee373c,
+   use --isolated to run multiple instances of the same browser
+   ```
+
+2. **White/blank screen** when Playwright browser opens
+
+3. **Navigation fails** even after calling `browser_close`
+
+**Affected Tool**: Playwright MCP (`mcp__microsoft-playwright-mcp__*`)
+**Affected Environment**: Claude Code development sessions
+
+#### Root Cause
+
+**Stale browser lock file** persists when:
+1. Previous Claude Code session terminated abnormally
+2. Browser process crashed but lock file wasn't cleaned
+3. Multiple sessions tried to use the same browser profile
+4. Chromium process hung and wasn't properly terminated
+
+The lock file at `~/Library/Caches/ms-playwright/mcp-chrome-*/SingletonLock` prevents new browser instances from starting.
+
+#### Solution
+
+**Recommended Fix (Confirmed Working 2025-11-25)**:
+
+```bash
+# Full cleanup: remove entire cache directory and kill all Chrome processes
+rm -rf ~/Library/Caches/ms-playwright/mcp-chrome-* && pkill -9 -f "Chromium" 2>/dev/null; pkill -9 -f "chrome" 2>/dev/null; sleep 3
+```
+
+This removes the entire browser profile (including lock files) and kills any hung processes. The next `browser_navigate` call will recreate the profile automatically.
+
+**Alternative: Minimal Fix (may not always work)**
+
+```bash
+# Remove only the lock file
+rm -rf ~/Library/Caches/ms-playwright/mcp-chrome-*/SingletonLock
+pkill -9 -f "Chromium"
+sleep 2
+```
+
+**Option 3: Use browser_install Tool**
+
+If you get "browser not installed" after cleanup:
+```
+Use mcp__microsoft-playwright-mcp__browser_install tool
+```
+
+#### Verification
+
+After cleanup, test browser navigation:
+
+```bash
+# In Claude Code, call:
+mcp__microsoft-playwright-mcp__browser_navigate with url: "http://localhost:3000"
+
+# Expected: Browser opens and navigates successfully
+# Should NOT see: "Browser is already in use" error
+```
+
+#### Prevention
+
+**Best practices for Playwright MCP usage**:
+
+1. ✅ **DO**: Always call `browser_close` before ending a session
+2. ✅ **DO**: Check for stuck processes before starting new browser sessions
+3. ✅ **DO**: Use `browser_snapshot` instead of `browser_take_screenshot` when possible
+4. ❌ **DON'T**: Start new Claude Code sessions with browser still open from previous session
+5. ❌ **DON'T**: Force-quit Claude Code while browser is active
+
+**Pre-session cleanup script** (add to shell profile):
+
+```bash
+# ~/.zshrc or ~/.bashrc
+alias playwright-cleanup='rm -rf ~/Library/Caches/ms-playwright/mcp-chrome-*/SingletonLock && pkill -9 -f Chromium 2>/dev/null'
+```
+
+#### Impact Assessment
+
+**Current Impact**: LOW
+- Only affects development workflow
+- No production impact
+- Workaround available (manual cleanup)
+- Does not affect API or frontend functionality
+
+#### References
+
+- **Playwright Docs**: [Browser Contexts](https://playwright.dev/docs/browser-contexts)
+- **MCP Playwright**: [@anthropics/mcp-server-playwright](https://github.com/anthropics/mcp-servers)
+- **Chrome Profile Locking**: [Chromium SingletonLock](https://chromium.googlesource.com/chromium/src/+/master/docs/user_data_dir.md)
+
+---
+
+## Python Type Conversion Issues
+
+### Issue 6: float(None) Crash in GraphRAG Node Extraction (2025-11-25)
+
+**Severity**: CRITICAL (Regression - broke dynamic node visualization)
+
+#### Symptoms
+
+1. **GraphRAG queries return 0 nodes for animation**:
+   ```json
+   {
+     "selected_nodes": 0,
+     "selected_relationships": 0,
+     "debug_info": { "entities": 20 }
+   }
+   ```
+
+2. **API logs show type conversion error**:
+   ```
+   ERROR:__main__:❌ Error extracting selected nodes: float() argument must be a string or a real number, not 'NoneType'
+   ```
+
+3. **Dynamic node visualization broken**: Nodes no longer appear progressively during GraphRAG queries
+
+**Affected File**: `reconciliation_api.py` (lines 711, 1023, 1049, 1684)
+**Affected Function**: `extract_selected_nodes_from_graphrag()`
+
+#### Root Cause
+
+**Python's `.get()` method only returns default when key is MISSING, NOT when value is `None`.**
+
+```python
+# The problematic pattern:
+rel_data = {'weight': None}  # Key exists but value is None
+
+# BROKEN: .get() returns None (key exists), not the default 1.0
+float(rel_data.get('weight', 1.0))  # ❌ float(None) → TypeError
+
+# This is Python's dict.get() behavior:
+>>> {'weight': None}.get('weight', 1.0)
+None  # ← Returns None, NOT 1.0, because key EXISTS
+
+>>> {'other': 'value'}.get('weight', 1.0)
+1.0  # ← Returns 1.0 because key is MISSING
+```
+
+**Why this happens in our codebase**:
+- Neo4j returns relationships where `weight` property may be `None`
+- GraphML files may have empty weight attributes
+- Entity data from various sources may have null values
+
+#### Solution
+
+**Use the `or` operator pattern for safe type conversion**:
+
+```python
+# BEFORE (broken)
+'weight': float(rel_data.get('weight', 1.0))        # ❌ Crashes on None
+
+# AFTER (fixed)
+'weight': float(rel_data.get('weight') or 1.0)      # ✅ Handles None values
+```
+
+**Why this works**:
+```python
+>>> float(None or 1.0)
+1.0  # ✅ None is falsy, so `or` returns 1.0
+
+>>> float(0 or 1.0)
+1.0  # Note: 0 is also falsy, which may or may not be desired
+
+>>> float(5.5 or 1.0)
+5.5  # ✅ Truthy value returns as-is
+```
+
+**Files fixed** (4 locations in `reconciliation_api.py`):
+
+| Line | Context | Fix |
+|------|---------|-----|
+| 711 | GraphML edge weight | `float(graphml_edge_data.get('weight') or 1.0)` |
+| 1023 | Relationship data extraction | `float(rel_data.get('weight') or 1.0)` |
+| 1049 | Edge data for animation | `float(edge_data.get('weight') or 1.0)` |
+| 1684 | Graph node building | `float(edge_data.get('weight') or 1.0)` |
+
+#### Verification
+
+```bash
+# Test GraphRAG query
+curl -X POST "http://localhost:5002/graphrag/query" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "test query", "include_graph_data": true}' | jq '{selected_nodes, selected_relationships}'
+
+# BEFORE fix:
+{ "selected_nodes": 0, "selected_relationships": 0 }  # ❌ Broken
+
+# AFTER fix:
+{ "selected_nodes": 128, "selected_relationships": 146 }  # ✅ Working
+```
+
+#### Prevention
+
+**Rule**: NEVER use `float(dict.get('key', default))` for potentially nullable values.
+
+| Pattern | Safety | Use When |
+|---------|--------|----------|
+| `float(d.get('key', 1.0))` | ❌ UNSAFE | Only if you're 100% certain value is never None |
+| `float(d.get('key') or 1.0)` | ✅ SAFE | Value might be None, and 0 should also become default |
+| `float(d.get('key', 0) or 1.0)` | ✅ SAFE | Value might be missing OR None |
+| `float(d['key']) if d.get('key') is not None else 1.0` | ✅ SAFE | Need to distinguish 0 from None |
+
+**Add to code review checklist**:
+- [ ] All `float()`, `int()`, `str()` conversions handle `None` values
+- [ ] Dictionary `.get()` with default is not used before type conversion
+- [ ] Use `value or default` pattern for safe fallbacks
+
+#### Impact Assessment
+
+**User Impact**: HIGH
+- Dynamic node visualization completely broken
+- GraphRAG queries appeared to work but animation data was empty
+- Silent failure - no visible error to users
+
+**Fix Complexity**: LOW
+- Simple pattern change at 4 locations
+- No architectural changes required
+- Backwards compatible
+
+#### References
+
+- **Commit**: TBD - "Fix float(None) crash in GraphRAG node extraction"
+- **Python Docs**: [dict.get()](https://docs.python.org/3/library/stdtypes.html#dict.get)
+- **Related Constitution Principle**: See Defensive Coding Standards in constitution.md
+
+---
+
 ## Quick Reference
 
 ### Common Error Messages
@@ -535,6 +776,8 @@ tail -20 /tmp/api_test.log | grep -E "(shutdown|Neo4j)"
 | "params: Promise<{ ... }>" type error | #2 | Add `await params` |
 | Book missing from dropdown (local) | #3 | Use absolute symlink path |
 | "Failed to write data to connection" (Railway) | #4 | Add graceful shutdown handler |
+| "Browser is already in use" (Playwright) | #5 | `rm -rf ~/Library/Caches/ms-playwright/mcp-chrome-*/SingletonLock && pkill -9 Chromium` |
+| "float() argument must be... not 'NoneType'" | #6 | Use `value or default` instead of `.get('key', default)` |
 
 ### Debugging Commands
 
@@ -621,5 +864,5 @@ Format:
 
 ---
 
-**Last Reviewed**: 2025-11-24
+**Last Reviewed**: 2025-11-25 (Issue #6 added)
 **Review Frequency**: After each production issue resolution
