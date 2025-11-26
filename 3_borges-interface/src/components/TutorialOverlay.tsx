@@ -39,12 +39,12 @@ const tutorialSteps: TutorialStep[] = [
   },
   {
     title: 'Mode ascendant',
-    description: 'Part du texte pour remonter vers les entités (Personne, Lieu, Concept, Livre et Événement).',
+    description: 'Part du texte pour remonter vers les entités (Personne, Lieu, Concept, Livre et Événement). Idéal pour des questions précises sur des passages spécifiques. Explore en profondeur un contexte local.',
     highlight: 'ascendant'
   },
   {
     title: 'Mode descendant',
-    description: 'Part des entités de haut niveau pour descendre vers les textes. Idéal pour des questions thématiques ou conceptuelles.',
+    description: 'Part des entités de haut niveau pour descendre vers les textes. Idéal pour des questions thématiques ou conceptuelles. Explore la structure globale du graphe.',
     highlight: 'descendant'
   },
   {
@@ -54,7 +54,7 @@ const tutorialSteps: TutorialStep[] = [
   },
   {
     title: 'Qu\'est-ce que le GraphRAG ?',
-    description: 'Ce graphe devient alors une carte de connaissance dans laquelle un Large Language Model peut naviguer pour répondre précisément à une question.',
+    description: 'Le GraphRAG (Graph Retrieval-Augmented Generation) extrait des entités et relations de vos textes pour créer un graphe de connaissances. Ce graphe devient alors une carte de connaissance dans laquelle un Large Language Model peut naviguer pour répondre précisément à une question.',
     highlight: 'graphrag-explain'
   },
   {
