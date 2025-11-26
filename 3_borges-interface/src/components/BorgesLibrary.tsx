@@ -1267,7 +1267,7 @@ function BorgesLibrary() {
                   </svg>
 
                   {/* Project concept introduction */}
-                  <h2 className="text-xl font-semibold text-borges-light mb-3 tracking-wide">Le Graphe de Borges</h2>
+                  <h2 className="text-xl font-semibold text-borges-light mb-3 tracking-wide">Le graphe de Borges</h2>
                   <p className="text-borges-light-muted text-sm mb-6 leading-relaxed">
                     Révéler les connexions invisibles entre des univers littéraires qui ne se parlent jamais.
                     Inspiré de la <span className="text-borges-light">Bibliothèque de Babel</span> imaginée par Jorge Luis Borges,
