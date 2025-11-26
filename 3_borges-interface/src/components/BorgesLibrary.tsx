@@ -856,14 +856,12 @@ function BorgesLibrary() {
       {/* Header - Basile Minimalism: content-first, subtle geometric accent */}
       <header className={`p-6 border-b border-borges-border relative transition-all duration-300 ${selectedEntityId ? 'mr-[450px]' : ''}`}>
         <div className="max-w-7xl mx-auto flex items-center gap-4">
-          {/* Subtle hexagonal brand accent */}
-          <svg className="w-8 h-8 flex-shrink-0 opacity-60" viewBox="0 0 100 100" fill="none">
-            <polygon
-              points="50,10 85,30 85,70 50,90 15,70 15,30"
-              stroke="#a0a0a0"
-              strokeWidth="2"
-              fill="none"
-            />
+          {/* Nested hexagons logo - matches favicon */}
+          <svg className="w-8 h-8 flex-shrink-0" viewBox="0 0 32 32" fill="none">
+            <polygon points="16,1 29,8.5 29,23.5 16,31 3,23.5 3,8.5" fill="none" stroke="#E8D5B7" strokeWidth="1.5"/>
+            <polygon points="16,5 25,10.5 25,21.5 16,27 7,21.5 7,10.5" fill="none" stroke="#E8D5B7" strokeWidth="1.2"/>
+            <polygon points="16,9 21,12.5 21,19.5 16,23 11,19.5 11,12.5" fill="none" stroke="#E8D5B7" strokeWidth="1"/>
+            <polygon points="16,12.5 18.5,14 18.5,18 16,19.5 13.5,18 13.5,14" fill="#E8D5B7"/>
           </svg>
           <div>
             <h1 className="text-display text-borges-light tracking-wide font-semibold">

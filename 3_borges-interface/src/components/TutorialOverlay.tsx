@@ -94,7 +94,7 @@ const InterfaceSchematic: React.FC<{ highlightedArea: HighlightArea }> = ({ high
       <g className={`transition-opacity duration-300 ${getAreaOpacity('welcome')}`}>
         <text x="250" y="32" textAnchor="middle"
           className="fill-borges-light text-xs font-medium">
-          Le Graphe de Borges
+          Le graphe de Borges
         </text>
       </g>
 
