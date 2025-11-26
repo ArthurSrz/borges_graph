@@ -150,6 +150,40 @@ As a user appreciating the Library of Babel theme, I want geometric accents (esp
 - **Navigation Item**: A clickable element providing access to a core function (label, icon, route, visibility condition)
 - **Animation Definition**: A motion effect with purpose classification (loading/transition/feedback), duration, easing
 
+### Responsive Design *(Constitution Principle VIII)*
+
+<!--
+  Per Constitution Principle VIII - Mobile-First Responsiveness:
+  The interface MUST be fully functional and usable on mobile devices.
+  The Basile Minimalism principle MUST be applied across ALL device sizes.
+-->
+
+**Breakpoints**:
+- Mobile (< 768px): Single-column layout; navigation collapses to hamburger menu; panels stack vertically
+- Tablet (768-1024px): Two-column layout where appropriate; expanded navigation
+- Desktop (> 1024px): Full multi-panel layout with side-by-side views
+
+**Touch Interactions**:
+- Tap to select nodes and navigate (replaces click)
+- Pinch to zoom the knowledge graph
+- Swipe to navigate between panels/views
+- Double-tap to focus on entity clusters
+- Touch targets MUST be at least 44x44 pixels
+
+**Mobile-Specific Considerations**:
+- [ ] Navigation collapses to hamburger menu or bottom navigation bar
+- [ ] Modals and detail panels are scrollable and dismissible with swipe gestures
+- [ ] Font sizes use relative units (rem/em) with minimum 16px body text
+- [ ] Color palette and minimalist aesthetic apply equally on mobile
+- [ ] Hexagonal accents scale appropriately without overflow
+- [ ] Performance target: < 3s First Contentful Paint on 3G
+
+**Graph Visualization (Critical)**:
+- Touch gestures: tap (select), pinch (zoom), drag (pan), double-tap (focus)
+- Graph physics simulation adapts for limited GPU devices
+- Minimalist node styling preserved on all screen sizes
+- Typography legibility maintained through responsive scaling
+
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
@@ -179,12 +213,13 @@ As a user appreciating the Library of Babel theme, I want geometric accents (esp
 - Complete graph visualization library replacement
 - Backend API changes
 - New features or functionality (this is purely a visual restyling)
-- Mobile-specific layouts (responsive but not mobile-first redesign)
 - User preference persistence for theme settings
+
+> **Note**: Mobile-first responsive layouts are now IN SCOPE per Constitution Principle VIII - Mobile-First Responsiveness. The minimalist aesthetic MUST apply across all device sizes.
 
 ## Constitution Compliance
 
-This specification implements **Constitution Principle VII - Basile Minimalism** in tribute to Jonathan Basile's libraryofbabel.info. Every requirement traces back to the principle's core tenets:
+This specification implements **Constitution Principle VII - Basile Minimalism** and **Principle VIII - Mobile-First Responsiveness**. Every requirement traces back to these principles:
 
 | Tenet | Requirements |
 |-------|-------------|
@@ -195,5 +230,8 @@ This specification implements **Constitution Principle VII - Basile Minimalism**
 | Hexagonal symbolism | FR-010 |
 | Graph animations preserved | FR-008, FR-009 |
 | Accessibility | FR-013 |
+| Mobile-first responsiveness | Responsive Design section, touch interactions, breakpoints |
 
-**CRITICAL CONSTRAINT**: Graph visualization animations are EXEMPT from minimalism rules. The Basile Minimalism principle applies exclusively to static visual elements (fonts, colors, buttons, panels). All graph physics, node expansion, zoom, pan, and interactive animations must remain fully functional.
+**CRITICAL CONSTRAINTS**:
+1. Graph visualization animations are EXEMPT from minimalism rules. The Basile Minimalism principle applies exclusively to static visual elements (fonts, colors, buttons, panels). All graph physics, node expansion, zoom, pan, and interactive animations must remain fully functional.
+2. Per Principle VIII, the minimalist aesthetic MUST work seamlessly on mobile devices with touch-optimized interactions and responsive breakpoints.

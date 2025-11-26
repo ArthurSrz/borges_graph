@@ -136,6 +136,40 @@ After correcting relationships in the graph, the user wants to re-run their orig
 - **Query Iteration**: A versioned query execution with corresponding graph state (properties: query_text, graph_snapshot_id, answer, provenance, timestamp)
 - **Book Ingestion**: A book processing job through the nano-graphRAG pipeline (properties: book_id, file_path, metadata, status, progress, chunks_count, entities_extracted, relationships_created, started_at, completed_at, error_log)
 
+### Responsive Design *(Constitution Principle VIII)*
+
+<!--
+  Per Constitution Principle VIII - Mobile-First Responsiveness:
+  The interface MUST be fully functional and usable on mobile devices.
+-->
+
+**Breakpoints**:
+- Mobile (< 768px): Attribution graph displays in vertical orientation; provenance chain navigable via tap-through cards; edit modals stack vertically
+- Tablet (768-1024px): Attribution graph in horizontal split view; side panel for node details
+- Desktop (> 1024px): Full multi-panel view with graph, details, and edit history simultaneously visible
+
+**Touch Interactions**:
+- Tap on attribution graph nodes to select and view details (replaces click)
+- Pinch to zoom the attribution graph
+- Swipe to navigate between provenance chain steps
+- Long-press on relationships to access edit modal
+- Double-tap to focus on a specific entity cluster
+- Touch targets MUST be at least 44x44 pixels
+
+**Mobile-Specific Considerations**:
+- [ ] Attribution graph navigation adapts to mobile format (collapsible panels)
+- [ ] Provenance chain displayed as swipeable cards on small screens
+- [ ] Edit modals are scrollable and dismissible with swipe gestures
+- [ ] Font sizes use relative units (rem/em) with minimum 16px body text
+- [ ] Side-by-side comparison view collapses to tabbed view on mobile
+- [ ] Performance target: < 3s First Contentful Paint on 3G
+
+**Graph Visualization (Critical)**:
+- Touch gestures: tap (select), pinch (zoom), drag (pan), double-tap (focus)
+- Attribution graph physics simulation graceful degradation for limited GPU devices
+- Node density automatically reduces on mobile for performance
+- Relationship labels scale based on zoom level for readability
+
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
@@ -196,9 +230,10 @@ After correcting relationships in the graph, the user wants to re-run their orig
 - Natural language edit interfaces ("make this relationship stronger")
 - Multi-language support beyond the current corpus
 - Integration with external knowledge bases (e.g., Wikidata, DBpedia)
-- Mobile-optimized editing interfaces
 - Fine-grained access control for graph editing permissions
 - Automated pattern validation against ground-truth ontologies
+
+> **Note**: Mobile-responsive editing interfaces are now IN SCOPE per Constitution Principle VIII - Mobile-First Responsiveness
 
 ## Dependencies *(optional)*
 
