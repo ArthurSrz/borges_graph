@@ -1037,7 +1037,10 @@ function BorgesLibrary() {
                       // Keep query visible in search bar during processing
                     }
                   }}
-                  className="borges-btn-primary disabled:opacity-50"
+                  className={`borges-btn-primary disabled:opacity-50 ${isProcessing ? 'animate-pulse-brightness' : ''}`}
+                  style={isProcessing ? {
+                    animation: 'pulseBrightness 1.2s ease-in-out infinite'
+                  } : undefined}
                 >
                   {isProcessing ? 'Processing...' : 'Recherche'}
                 </button>

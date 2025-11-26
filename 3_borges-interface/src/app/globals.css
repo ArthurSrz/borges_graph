@@ -92,6 +92,16 @@ body {
   }
 }
 
+/* Processing button brightness pulse - lighter/darker effect */
+@keyframes pulseBrightness {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.4);
+  }
+}
+
 /* ===== Phase 2: Foundational Utility Classes ===== */
 
 /* T005: Button styling utility classes */
