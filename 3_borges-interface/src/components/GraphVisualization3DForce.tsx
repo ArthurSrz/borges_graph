@@ -123,6 +123,9 @@ export default function GraphVisualization3DForce({
   const [pinnedLinkPos, setPinnedLinkPos] = useState({ x: 0, y: 0 })
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
+  // Legend expand state for mobile
+  const [isLegendExpanded, setIsLegendExpanded] = useState(false)
+
   // TextChunkModal state
   const [isChunkModalOpen, setIsChunkModalOpen] = useState(false)
   const [chunkModalData, setChunkModalData] = useState<{
@@ -816,7 +819,7 @@ export default function GraphVisualization3DForce({
         </div>
       )}
 
-      {/* Legend - Compact on mobile, hidden when side panel is open */}
+      {/* Legend - Expandable on mobile, hidden when side panel is open */}
       {reconciliationData && !isLoading && !sidePanelOpen && (
         <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-borges-secondary border border-borges-border p-2 md:p-3 rounded-borges-md text-xs">
           {/* Desktop: Full legend */}
@@ -853,15 +856,64 @@ export default function GraphVisualization3DForce({
               </div>
             </div>
           </div>
-          {/* Mobile: Compact color dots only */}
-          <div className="md:hidden flex flex-wrap gap-1">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ff4757' }} title="Personnes"></div>
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#00d2d3' }} title="Lieux"></div>
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#5352ed' }} title="Événements"></div>
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#7bed9f' }} title="Concepts"></div>
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ffa502' }} title="Organisations"></div>
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ffd700' }} title="Livres"></div>
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ff69b4' }} title="Communautés"></div>
+          {/* Mobile: Expandable legend */}
+          <div
+            className="md:hidden cursor-pointer"
+            onClick={() => setIsLegendExpanded(!isLegendExpanded)}
+          >
+            {isLegendExpanded ? (
+              /* Expanded: Full legend with labels */
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-borges-light">Légende</span>
+                  <span className="text-borges-muted text-xs">▲</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ff4757' }}></div>
+                    <span className="text-borges-light-muted">Personnes</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#00d2d3' }}></div>
+                    <span className="text-borges-light-muted">Lieux</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#5352ed' }}></div>
+                    <span className="text-borges-light-muted">Événements</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#7bed9f' }}></div>
+                    <span className="text-borges-light-muted">Concepts</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ffa502' }}></div>
+                    <span className="text-borges-light-muted">Organisations</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ffd700' }}></div>
+                    <span className="text-borges-light-muted">Livres</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ff69b4' }}></div>
+                    <span className="text-borges-light-muted">Communautés</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Collapsed: Color dots with expand indicator */
+              <div className="flex items-center gap-1">
+                <div className="flex flex-wrap gap-1">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ff4757' }}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#00d2d3' }}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#5352ed' }}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#7bed9f' }}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ffa502' }}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ffd700' }}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ff69b4' }}></div>
+                </div>
+                <span className="text-borges-muted text-xs ml-1">▼</span>
+              </div>
+            )}
           </div>
         </div>
       )}
