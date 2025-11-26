@@ -131,6 +131,10 @@ interface Book {
  * Composant principal de la bibliothèque de Borges
  */
 function BorgesLibrary() {
+  // Mobile navigation state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false)
+
   // Enhanced node click handler for provenance integration
   const handleNodeClick = (nodeId: string, nodeLabel: string, bookId?: string) => {
     console.log(`🎯 Node clicked: ${nodeId} (${nodeLabel})`)
@@ -934,21 +938,106 @@ function BorgesLibrary() {
 
   return (
     <div className="min-h-screen bg-borges-dark text-borges-light">
-      {/* Header - Basile Minimalism: content-first, subtle geometric accent */}
-      <header className={`p-6 border-b border-borges-border relative transition-all duration-300 ${selectedEntityId ? 'mr-[450px]' : ''}`}>
-        <div className="max-w-7xl mx-auto flex items-center gap-4">
+      {/* Mobile Navigation Menu */}
+      <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-xl text-borges-light font-semibold">Navigation</h2>
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="touch-target flex items-center justify-center text-borges-light"
+            aria-label="Fermer le menu"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile Book Selector */}
+        <div className="mobile-nav-item">
+          <label className="text-borges-light-muted text-sm mb-2 block">Livre sélectionné</label>
+          <select
+            value={selectedBook}
+            onChange={(e) => {
+              setSelectedBook(e.target.value)
+              setIsMobileMenuOpen(false)
+            }}
+            disabled={multiBook || isProcessing}
+            className="borges-input w-full"
+          >
+            {books.map((book) => (
+              <option key={book.id} value={book.id}>
+                {book.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Mobile Multi-book Toggle */}
+        <button
+          onClick={() => {
+            setMultiBook(!multiBook)
+            setIsMobileMenuOpen(false)
+          }}
+          disabled={isProcessing}
+          className={`mobile-nav-item w-full text-left flex items-center justify-between ${
+            multiBook ? 'text-borges-accent' : ''
+          }`}
+        >
+          <span>📚 Tout le catalogue</span>
+          {multiBook && <span className="text-borges-accent">✓</span>}
+        </button>
+
+        {/* Mobile Mode Toggle */}
+        <div className="mobile-nav-item">
+          <label className="text-borges-light-muted text-sm mb-2 block">Mode de recherche</label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setMode('local')}
+              className={`flex-1 py-3 rounded-borges-sm text-center ${
+                mode === 'local' ? 'bg-borges-light text-borges-dark' : 'bg-borges-secondary text-borges-light'
+              }`}
+            >
+              Ascendant
+            </button>
+            <button
+              onClick={() => setMode('global')}
+              className={`flex-1 py-3 rounded-borges-sm text-center ${
+                mode === 'global' ? 'bg-borges-light text-borges-dark' : 'bg-borges-secondary text-borges-light'
+              }`}
+            >
+              Descendant
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Header - Responsive: Basile Minimalism with mobile support */}
+      <header className={`p-4 md:p-6 border-b border-borges-border relative transition-all duration-300 ${selectedEntityId ? 'md:mr-[450px]' : ''}`}>
+        <div className="max-w-7xl mx-auto flex items-center gap-3 md:gap-4">
+          {/* Mobile Menu Toggle */}
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="mobile-nav-toggle md:hidden"
+            aria-label="Ouvrir le menu"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
           {/* Nested hexagons logo - matches favicon */}
-          <svg className="w-8 h-8 flex-shrink-0" viewBox="0 0 32 32" fill="none">
+          <svg className="w-6 h-6 md:w-8 md:h-8 flex-shrink-0" viewBox="0 0 32 32" fill="none">
             <polygon points="16,1 29,8.5 29,23.5 16,31 3,23.5 3,8.5" fill="none" stroke="#E8D5B7" strokeWidth="1.5"/>
             <polygon points="16,5 25,10.5 25,21.5 16,27 7,21.5 7,10.5" fill="none" stroke="#E8D5B7" strokeWidth="1.2"/>
             <polygon points="16,9 21,12.5 21,19.5 16,23 11,19.5 11,12.5" fill="none" stroke="#E8D5B7" strokeWidth="1"/>
             <polygon points="16,12.5 18.5,14 18.5,18 16,19.5 13.5,18 13.5,14" fill="#E8D5B7"/>
           </svg>
-          <div>
-            <h1 className="text-display text-borges-light tracking-wide font-semibold">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-display-mobile md:text-display text-borges-light tracking-wide font-semibold truncate">
               Le graphe de Borges
             </h1>
-            <p className="text-borges-light-muted mt-1 text-sm italic max-w-2xl">
+            <p className="text-borges-light-muted mt-1 text-xs md:text-sm italic max-w-2xl hidden sm:block">
               « Tous les livres, quelque divers qu&apos;ils soient, comportent des éléments égaux : l&apos;espace, le point, la virgule, les vingt-deux lettres de l&apos;alphabet. »
             </p>
           </div>
@@ -956,60 +1045,85 @@ function BorgesLibrary() {
       </header>
 
       {/* Main Content - Adapts when side panel is open */}
-      <main className={`h-[calc(100vh-120px)] transition-all duration-300 ${selectedEntityId ? 'mr-[450px]' : ''}`}>
+      <main className={`h-[calc(100vh-80px)] md:h-[calc(100vh-120px)] transition-all duration-300 ${selectedEntityId ? 'md:mr-[450px]' : ''}`}>
         <div className="h-full flex flex-col">
-          {/* Enhanced Query Bar with Controls - Basile Minimalism */}
-          <div className="p-4 bg-borges-secondary border-b border-borges-border">
-            <div className="max-w-6xl mx-auto space-y-3">
-              {/* Main Search Row */}
-              <div className="flex gap-2">
-                {/* Book Selector */}
-                <select
-                  value={selectedBook}
-                  onChange={(e) => setSelectedBook(e.target.value)}
-                  disabled={multiBook || isProcessing}
-                  className="borges-input max-w-[200px] disabled:opacity-50"
-                >
-                  {books.map((book) => (
-                    <option key={book.id} value={book.id}>
-                      {book.name}
-                    </option>
-                  ))}
-                </select>
+          {/* Enhanced Query Bar with Controls - Responsive Basile Minimalism */}
+          <div className="p-3 md:p-4 bg-borges-secondary border-b border-borges-border">
+            <div className="max-w-6xl mx-auto space-y-2 md:space-y-3">
+              {/* Main Search Row - Responsive */}
+              <div className="responsive-search">
+                {/* Desktop-only: Book Selector & Multi-Book Toggle */}
+                <div className="hidden md:flex gap-2">
+                  {/* Book Selector */}
+                  <select
+                    value={selectedBook}
+                    onChange={(e) => setSelectedBook(e.target.value)}
+                    disabled={multiBook || isProcessing}
+                    className="borges-input max-w-[200px] disabled:opacity-50"
+                  >
+                    {books.map((book) => (
+                      <option key={book.id} value={book.id}>
+                        {book.name}
+                      </option>
+                    ))}
+                  </select>
 
-                {/* Multi-Book Toggle */}
-                <button
-                  onClick={() => setMultiBook(!multiBook)}
-                  disabled={isProcessing}
-                  className={`borges-btn-secondary text-sm disabled:opacity-50 flex items-center ${
-                    multiBook ? 'border-borges-light text-borges-light' : ''
-                  }`}
-                  title="Interroger tout le catalogue"
-                >
-                  <span className="mr-1 grayscale">📚</span>
-                  Tout le catalogue
-                </button>
+                  {/* Multi-Book Toggle */}
+                  <button
+                    onClick={() => setMultiBook(!multiBook)}
+                    disabled={isProcessing}
+                    className={`borges-btn-secondary text-sm disabled:opacity-50 flex items-center ${
+                      multiBook ? 'border-borges-light text-borges-light' : ''
+                    }`}
+                    title="Interroger tout le catalogue"
+                  >
+                    <span className="mr-1 grayscale">📚</span>
+                    Tout le catalogue
+                  </button>
+                </div>
 
-                {/* Search Input */}
-                <input
-                  type="text"
-                  placeholder="Posez une question..."
-                  disabled={isProcessing}
-                  id="search-input"
-                  className="borges-input flex-1 disabled:opacity-50"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !isProcessing) {
-                      const query = (e.target as HTMLInputElement).value.trim()
-                      if (query) {
-                        handleSimpleQuery(query)
-                        // Keep query visible in search bar
+                {/* Search Input - Full width on mobile */}
+                <div className="flex gap-2 flex-1">
+                  <input
+                    type="text"
+                    placeholder="Posez une question..."
+                    disabled={isProcessing}
+                    id="search-input"
+                    className="borges-input flex-1 disabled:opacity-50 text-base"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !isProcessing) {
+                        const query = (e.target as HTMLInputElement).value.trim()
+                        if (query) {
+                          handleSimpleQuery(query)
+                        }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
 
-                {/* Mode Toggle */}
-                <div className="flex gap-1 bg-borges-dark rounded-borges-sm p-1 border border-borges-border">
+                  {/* Search Button */}
+                  <button
+                    disabled={isProcessing}
+                    onClick={() => {
+                      const searchInput = document.getElementById('search-input') as HTMLInputElement
+                      const query = searchInput?.value.trim()
+                      if (query && !isProcessing) {
+                        handleSimpleQuery(query)
+                      }
+                    }}
+                    className={`borges-btn-primary disabled:opacity-50 min-w-touch ${isProcessing ? 'animate-pulse-brightness' : ''}`}
+                    style={isProcessing ? {
+                      animation: 'pulseBrightness 1.2s ease-in-out infinite'
+                    } : undefined}
+                  >
+                    {isProcessing ? <span className="animate-blue-white-glow">...</span> : <span className="hidden sm:inline">Recherche</span>}
+                    <svg className="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Desktop-only: Mode Toggle */}
+                <div className="hidden md:flex gap-1 bg-borges-dark rounded-borges-sm p-1 border border-borges-border">
                   <button
                     onClick={() => setMode('local')}
                     disabled={isProcessing}
@@ -1021,7 +1135,6 @@ function BorgesLibrary() {
                     title="Du texte vers le livre"
                   >
                     <svg className="w-4 h-4 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-                      {/* Lines ascending to book */}
                       <path d="M1 13h5M1 11h4M1 9h3" strokeWidth="1.5" strokeLinecap="round"/>
                       <path d="M8 6l2-2" strokeWidth="1.5" strokeLinecap="round"/>
                       <path d="M11 2v8l3 1.5V3.5L11 2z" strokeWidth="1.5" strokeLinejoin="round"/>
@@ -1039,7 +1152,6 @@ function BorgesLibrary() {
                     title="Des livres vers le texte"
                   >
                     <svg className="w-4 h-4 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-                      {/* Books descending to lines */}
                       <path d="M1 2v6l2.5 1.25V3.25L1 2z" strokeWidth="1.5" strokeLinejoin="round"/>
                       <path d="M4.5 2v6l2.5 1.25V3.25L4.5 2z" strokeWidth="1.5" strokeLinejoin="round"/>
                       <path d="M6 11l2 2" strokeWidth="1.5" strokeLinecap="round"/>
@@ -1048,26 +1160,13 @@ function BorgesLibrary() {
                     Descendant
                   </button>
                 </div>
+              </div>
 
-                {/* Search Button */}
-                <button
-                  disabled={isProcessing}
-                  onClick={() => {
-                    const searchInput = document.getElementById('search-input') as HTMLInputElement
-                    const query = searchInput?.value.trim()
-                    if (query && !isProcessing) {
-                      handleSimpleQuery(query)
-                      // Keep query visible in search bar during processing
-                    }
-                  }}
-                  className={`borges-btn-primary disabled:opacity-50 ${isProcessing ? 'animate-pulse-brightness' : ''}`}
-                  style={isProcessing ? {
-                    animation: 'pulseBrightness 1.2s ease-in-out infinite'
-                  } : undefined}
-                >
-                  {isProcessing ? <span className="animate-blue-white-glow">Processing...</span> : 'Recherche'}
-                </button>
-
+              {/* Mobile-only: Current settings indicator */}
+              <div className="flex md:hidden items-center justify-between text-xs text-borges-light-muted">
+                <span>📖 {books.find(b => b.id === selectedBook)?.name || selectedBook}</span>
+                <span>{mode === 'local' ? '↑ Ascendant' : '↓ Descendant'}</span>
+                {multiBook && <span className="text-borges-accent">📚 Tout</span>}
               </div>
             </div>
           </div>
@@ -1320,14 +1419,19 @@ function BorgesLibrary() {
         />
       )}
 
-      {/* Answer Panel - Bottom Left with GraphRAG Context - Basile Minimalism */}
+      {/* Answer Panel - Responsive: Bottom sheet on mobile, side panel on desktop */}
       {showAnswer && (
-        <div className="borges-panel fixed bottom-4 left-4 w-[400px] max-h-[45vh] overflow-auto text-borges-light shadow-borges-lg z-30">
-          <div className="flex justify-between items-start mb-3">
-            <h3 className="text-h3 text-borges-light">La réponse du GraphRAG de Borges</h3>
+        <div className="borges-panel fixed bottom-0 left-0 right-0 md:bottom-4 md:left-4 md:right-auto w-full md:w-[400px] max-h-[50vh] md:max-h-[45vh] overflow-auto text-borges-light shadow-borges-lg z-30 rounded-t-2xl md:rounded-borges-md safe-area-bottom swipe-panel">
+          {/* Mobile drag handle */}
+          <div className="md:hidden flex justify-center py-2">
+            <div className="w-12 h-1 bg-borges-border rounded-full"></div>
+          </div>
+          <div className="flex justify-between items-start mb-3 px-1">
+            <h3 className="text-h3-mobile md:text-h3 text-borges-light">La réponse du GraphRAG</h3>
             <button
               onClick={() => setShowAnswer(false)}
-              className="borges-btn-ghost text-lg"
+              className="borges-btn-ghost text-lg touch-target flex items-center justify-center"
+              aria-label="Fermer"
             >
               ×
             </button>

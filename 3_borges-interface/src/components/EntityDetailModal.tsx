@@ -697,21 +697,26 @@ export default function EntityDetailModal({
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md bg-borges-secondary border-l border-borges-border shadow-borges-lg overflow-hidden flex flex-col">
-      {/* Header - Side Panel style for graph exploration */}
-      <div className="p-4 border-b border-borges-border">
+    <div className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 z-40 w-full md:max-w-md bg-borges-secondary md:border-l border-borges-border shadow-borges-lg overflow-hidden flex flex-col safe-area-top safe-area-bottom">
+      {/* Mobile drag handle */}
+      <div className="md:hidden flex justify-center py-2 bg-borges-secondary">
+        <div className="w-12 h-1 bg-borges-border rounded-full"></div>
+      </div>
+
+      {/* Header - Responsive Side Panel style */}
+      <div className="p-3 md:p-4 border-b border-borges-border">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-h2 text-borges-light mb-2 truncate">
+            <h2 className="text-h2-mobile md:text-h2 text-borges-light mb-2 truncate">
               {entity?.properties?.name || entity?.labels?.[0] || entityName || 'Entity Details'}
             </h2>
             {entity && (
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 md:gap-2 flex-wrap">
                 <span className="text-xs px-2 py-1 bg-borges-light text-borges-dark rounded-borges-sm font-medium">
                   {entity.properties?.entity_type || entity.labels?.[0] || 'Entity'}
                 </span>
                 {entity.properties?.book_name && (
-                  <span className="text-xs px-2 py-1 bg-borges-dark border border-borges-border text-borges-light rounded-borges-sm">
+                  <span className="text-xs px-2 py-1 bg-borges-dark border border-borges-border text-borges-light rounded-borges-sm hidden sm:inline-block">
                     {entity.properties.book_name}
                   </span>
                 )}
@@ -726,7 +731,7 @@ export default function EntityDetailModal({
           </div>
           <button
             onClick={onClose}
-            className="borges-btn-ghost ml-2 p-1"
+            className="borges-btn-ghost ml-2 p-2 touch-target flex items-center justify-center"
             aria-label="Close panel"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1086,11 +1091,11 @@ export default function EntityDetailModal({
         )}
       </div>
 
-      {/* Footer - Side Panel style */}
-      <div className="p-3 border-t border-borges-border bg-borges-secondary flex justify-end">
+      {/* Footer - Responsive Side Panel style */}
+      <div className="p-3 md:p-4 border-t border-borges-border bg-borges-secondary flex justify-end safe-area-bottom">
         <button
           onClick={onClose}
-          className="borges-btn-secondary text-sm"
+          className="borges-btn-secondary text-sm min-h-touch px-4"
         >
           Close
         </button>
