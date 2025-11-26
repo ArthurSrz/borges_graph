@@ -1080,44 +1080,51 @@ function BorgesLibrary() {
               {/* Positioned inside graph container to avoid viewport-relative shifts */}
               {/* Only shows during query processing, NOT during initial graph loading */}
               {isProcessing && !isLoadingGraph && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[60] pointer-events-none">
-                  {/* Hexagon Assembly Animation - positioned just below search bar, no countdown */}
-                  <div className="relative w-20 h-20">
+                <div className="absolute top-8 left-1/2 -translate-x-1/2 z-[60] pointer-events-none">
+                  {/* Hexagon Assembly Animation - LARGER and MORE VISIBLE with blue glow */}
+                  <div className="relative w-40 h-40">
                     <svg viewBox="0 0 200 200" className="w-full h-full">
                       <style>{`
-                        @keyframes hexPulse1 { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.9; } }
-                        @keyframes hexPulse2 { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.85; } }
-                        @keyframes hexPulse3 { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.8; } }
-                        @keyframes shelfPulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }
-                        @keyframes glowPulse { 0%, 100% { filter: drop-shadow(0 0 2px #a0a0a0); } 50% { filter: drop-shadow(0 0 6px #f5f5f5); } }
-                        .proc-hex-main { animation: hexPulse1 2s ease-in-out infinite, glowPulse 2s ease-in-out infinite; }
-                        .proc-hex-top { animation: hexPulse2 2.5s ease-in-out 0.2s infinite; }
-                        .proc-hex-bl { animation: hexPulse3 2.2s ease-in-out 0.4s infinite; }
-                        .proc-hex-br { animation: hexPulse3 2.4s ease-in-out 0.6s infinite; }
-                        .proc-shelf { animation: shelfPulse 1.5s ease-in-out infinite; }
+                        @keyframes hexPulse1 { 0%, 100% { opacity: 0.5; stroke: #60a5fa; } 50% { opacity: 1; stroke: #3b82f6; } }
+                        @keyframes hexPulse2 { 0%, 100% { opacity: 0.4; stroke: #60a5fa; } 50% { opacity: 0.9; stroke: #3b82f6; } }
+                        @keyframes hexPulse3 { 0%, 100% { opacity: 0.3; stroke: #60a5fa; } 50% { opacity: 0.85; stroke: #3b82f6; } }
+                        @keyframes shelfPulse { 0%, 100% { opacity: 0.3; stroke: #93c5fd; } 50% { opacity: 1; stroke: #3b82f6; } }
+                        @keyframes glowPulse { 0%, 100% { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4)); } 50% { filter: drop-shadow(0 0 25px rgba(59, 130, 246, 0.9)); } }
+                        @keyframes rotateHex { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                        .proc-hex-main { animation: hexPulse1 1.5s ease-in-out infinite, glowPulse 1.5s ease-in-out infinite; }
+                        .proc-hex-top { animation: hexPulse2 1.8s ease-in-out 0.1s infinite; }
+                        .proc-hex-bl { animation: hexPulse3 1.6s ease-in-out 0.2s infinite; }
+                        .proc-hex-br { animation: hexPulse3 1.7s ease-in-out 0.3s infinite; }
+                        .proc-shelf { animation: shelfPulse 1s ease-in-out infinite; }
+                        .proc-rotate { animation: rotateHex 8s linear infinite; transform-origin: center; }
                       `}</style>
 
-                      {/* Central hexagon */}
+                      {/* Rotating outer ring */}
+                      <g className="proc-rotate">
+                        <circle cx="100" cy="75" r="70" stroke="#3b82f6" strokeWidth="1" fill="none" opacity="0.3" strokeDasharray="8 4" />
+                      </g>
+
+                      {/* Central hexagon - LARGER stroke */}
                       <polygon
                         className="proc-hex-main"
                         points="100,35 135,55 135,95 100,115 65,95 65,55"
-                        stroke="#f5f5f5"
-                        strokeWidth="2"
-                        fill="none"
+                        stroke="#3b82f6"
+                        strokeWidth="3"
+                        fill="rgba(59, 130, 246, 0.1)"
                       />
 
-                      {/* Book shelves inside */}
-                      <line className="proc-shelf" x1="75" y1="60" x2="125" y2="60" stroke="#a0a0a0" strokeWidth="1" style={{ animationDelay: '0s' }} />
-                      <line className="proc-shelf" x1="78" y1="72" x2="122" y2="72" stroke="#a0a0a0" strokeWidth="1" style={{ animationDelay: '0.2s' }} />
-                      <line className="proc-shelf" x1="80" y1="84" x2="120" y2="84" stroke="#a0a0a0" strokeWidth="1" style={{ animationDelay: '0.4s' }} />
-                      <line className="proc-shelf" x1="83" y1="96" x2="117" y2="96" stroke="#a0a0a0" strokeWidth="1" style={{ animationDelay: '0.6s' }} />
+                      {/* Book shelves inside - brighter */}
+                      <line className="proc-shelf" x1="75" y1="60" x2="125" y2="60" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0s' }} />
+                      <line className="proc-shelf" x1="78" y1="72" x2="122" y2="72" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0.15s' }} />
+                      <line className="proc-shelf" x1="80" y1="84" x2="120" y2="84" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0.3s' }} />
+                      <line className="proc-shelf" x1="83" y1="96" x2="117" y2="96" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0.45s' }} />
 
                       {/* Top hexagon */}
                       <polygon
                         className="proc-hex-top"
                         points="100,10 125,24 125,52 100,66 75,52 75,24"
-                        stroke="#a0a0a0"
-                        strokeWidth="1"
+                        stroke="#60a5fa"
+                        strokeWidth="2"
                         fill="none"
                       />
 
@@ -1125,8 +1132,8 @@ function BorgesLibrary() {
                       <polygon
                         className="proc-hex-bl"
                         points="65,95 90,109 90,137 65,151 40,137 40,109"
-                        stroke="#a0a0a0"
-                        strokeWidth="1"
+                        stroke="#60a5fa"
+                        strokeWidth="2"
                         fill="none"
                       />
 
@@ -1134,11 +1141,15 @@ function BorgesLibrary() {
                       <polygon
                         className="proc-hex-br"
                         points="135,95 160,109 160,137 135,151 110,137 110,109"
-                        stroke="#a0a0a0"
-                        strokeWidth="1"
+                        stroke="#60a5fa"
+                        strokeWidth="2"
                         fill="none"
                       />
                     </svg>
+                  </div>
+                  {/* Processing text below hexagon */}
+                  <div className="text-center mt-2 text-blue-400 text-sm font-medium animate-pulse">
+                    Exploration en cours...
                   </div>
                 </div>
               )}
