@@ -765,6 +765,160 @@ curl -X POST "http://localhost:5002/graphrag/query" \
 
 ---
 
+## Vercel Deployment Issues
+
+### Issue 7: Dynamic API Routes Return 404 on Vercel (2025-11-26)
+
+**Severity**: CRITICAL (Production blocker - all dynamic routes broken)
+
+#### Symptoms
+
+1. **Dynamic API routes return 404** on Vercel production:
+   ```
+   GET /api/reconciliation/chunks/tilleul_soir_anglade/chunk-591bb53189567b87e5803c23a905183f
+   → 404 Not Found
+
+   GET /api/books/tilleul_soir_anglade/graph
+   → 404 Not Found
+   ```
+
+2. **Static routes work fine**:
+   ```
+   GET /api/reconciliation/health → 200 OK
+   GET /api/reconciliation/graph/nodes → 200 OK
+   ```
+
+3. **Local development works** - same routes return data successfully
+
+4. **Backend (Railway) works** - direct calls to `reconciliation-api-production.up.railway.app` succeed
+
+5. **Vercel build warning**:
+   ```
+   WARN! Due to `builds` existing in your configuration file, the Build and Development
+   Settings defined in your Project Settings will not apply.
+   ```
+
+**Affected Routes**: ALL routes using `[param]` dynamic segments
+**Affected Endpoints**:
+- `/api/reconciliation/chunks/[bookId]/[chunkId]` → Chunk content loading in entity modals
+- `/api/books/[bookId]/graph` → Per-book graph data
+
+#### Root Cause
+
+**Legacy `vercel.json` configuration** in repository root breaks Next.js App Router dynamic routes:
+
+```json
+// vercel.json (BROKEN - legacy format)
+{
+  "builds": [
+    {
+      "src": "3_borges-interface/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "3_borges-interface/$1"
+    }
+  ]
+}
+```
+
+**Why it breaks**:
+1. The `builds` key triggers legacy Vercel builder mode
+2. Manual `routes` configuration intercepts requests BEFORE Next.js processes them
+3. Next.js dynamic route matching (`[param]`) is bypassed
+4. Vercel's regex route `/(.*) → 3_borges-interface/$1` doesn't understand `[bookId]` folders
+
+**Why static routes work**:
+- Static routes like `/api/reconciliation/health/route.ts` have no `[param]` segments
+- The regex catch-all routes them correctly to the file at that exact path
+
+#### Solution
+
+**Delete `vercel.json`** from repository root and use Vercel Project Settings instead:
+
+```bash
+# Remove the legacy config file
+rm /Users/arthursarazin/Documents/nano-graphrag/vercel.json
+git add -A
+git commit -m "🐛 Fix Vercel dynamic routes - remove legacy vercel.json"
+git push
+```
+
+**Configure in Vercel Dashboard**:
+1. Go to Project Settings → General → Root Directory
+2. Set Root Directory to: `3_borges-interface`
+3. Framework Preset: `Next.js` (auto-detected)
+4. Build Command: `npm run build` (default)
+5. Output Directory: `.next` (default)
+
+**Alternative**: Modern `vercel.json` format (if needed for other settings):
+
+```json
+{
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build"
+}
+```
+
+Note: Do NOT include `builds` or `routes` keys - these trigger legacy mode.
+
+#### Verification
+
+After removing `vercel.json` and redeploying:
+
+```bash
+# Test dynamic routes on production
+curl "https://borges-library-web.vercel.app/api/reconciliation/chunks/tilleul_soir_anglade/chunk-591bb53189567b87e5803c23a905183f"
+# Expected: 200 OK with chunk content
+
+curl "https://borges-library-web.vercel.app/api/books/tilleul_soir_anglade/graph"
+# Expected: 200 OK with graph data
+
+# Verify no more warning in build logs
+# Should NOT see: "Due to `builds` existing in your configuration file..."
+```
+
+#### Prevention
+
+**Vercel configuration best practices**:
+
+1. ✅ **DO**: Use Vercel Dashboard for root directory and framework settings
+2. ✅ **DO**: Let Vercel auto-detect Next.js configuration
+3. ✅ **DO**: Use modern `vercel.json` format if config file is needed
+4. ❌ **DON'T**: Use `builds` key in `vercel.json` (legacy format)
+5. ❌ **DON'T**: Use `routes` key to manually route requests (breaks Next.js routing)
+6. ❌ **DON'T**: Override Next.js's built-in route handling
+
+**Check for this issue**:
+```bash
+# If you see this in build logs, you have legacy config:
+grep -l "builds" vercel.json 2>/dev/null && echo "⚠️ Legacy vercel.json detected!"
+```
+
+#### Impact Assessment
+
+**User Impact**: HIGH
+- Chunk content never loads in entity modals → "Loading..." stuck forever
+- Per-book graph views broken
+- Core feature (end-to-end traceability) completely non-functional in production
+
+**Fix Complexity**: LOW
+- Delete one file
+- No code changes required
+- Immediate fix after Vercel redeploy
+
+#### References
+
+- **Vercel Docs**: [Project Configuration](https://vercel.com/docs/projects/project-configuration)
+- **Vercel Docs**: [Legacy vs Framework Configuration](https://vercel.com/docs/build-output-api/v3#builds-vs-framework)
+- **Next.js Docs**: [Dynamic Routes](https://nextjs.org/docs/app/building-your-application/routing/dynamic-routes)
+
+---
+
 ## Quick Reference
 
 ### Common Error Messages
@@ -778,6 +932,7 @@ curl -X POST "http://localhost:5002/graphrag/query" \
 | "Failed to write data to connection" (Railway) | #4 | Add graceful shutdown handler |
 | "Browser is already in use" (Playwright) | #5 | `rm -rf ~/Library/Caches/ms-playwright/mcp-chrome-*/SingletonLock && pkill -9 Chromium` |
 | "float() argument must be... not 'NoneType'" | #6 | Use `value or default` instead of `.get('key', default)` |
+| Dynamic API routes 404 on Vercel (local works) | #7 | Delete `vercel.json` from root, use Vercel dashboard settings |
 
 ### Debugging Commands
 
