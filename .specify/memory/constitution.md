@@ -1,33 +1,34 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version Change: 1.1.0 → 1.2.0 (Minor - Added Extensible Literature Foundation Principle)
+Version Change: 1.4.0 → 1.4.1 (Patch - Clarified Basile Minimalism scope)
 
 Modified Principles:
-- None modified
+- Principle VII - Basile Minimalism: Added SCOPE LIMITATION clarifying visual-only changes
 
 Added Principles:
-- NEW: Principle VI - Extensible Literature Foundation (nano-graphRAG integration and easy book addition)
+- None
 
 Removed Principles:
 - None removed
 
-Added Sections:
-- Principle VI formalizes the relationship with nano-graphRAG and the easy book addition requirement
+Clarifications Added:
+- Principle VII now explicitly states: VISUAL STYLING ONLY (fonts, colors, buttons, panels)
+- Functionality MUST remain 100% unchanged
+- Graph animations (physics, zoom, pan, expansion) MUST be fully preserved
+- Updated "No gratuitous animation" to clarify UI chrome only, graph animations exempt
+- Updated implementation requirements to preserve all graph motion
 
 Templates Requiring Updates:
-✅ plan-template.md - Constitution Check section will reference 6 principles (I-VI)
-✅ spec-template.md - User stories must consider book addition workflows
-✅ tasks-template.md - Tasks must validate against extensibility requirements
+- None (clarification only)
 
 Follow-up TODOs:
-- None - all placeholders have been filled
+- None
 
 Change Rationale:
-- MINOR version (1.2.0) because new principle added without breaking existing ones
-- Extensible Literature Foundation formalizes the nano-graphRAG foundation and book addition requirement
-- This principle ensures the system remains open to new literary content
-- Implementation requirements align with nano-graphRAG architecture and modular design
+- PATCH version (1.4.1) because clarification only, no semantic change to principle intent
+- Prevents misinterpretation that could lead to removing essential graph animations
+- Ensures functionality remains unchanged during visual redesign
 -->
 
 # The Borges Library constitution
@@ -196,6 +197,48 @@ growing repository that can incorporate world literature progressively.
 
 ---
 
+### VII. Basile minimalism (tribute to libraryofbabel.info)
+
+**The interface MUST embody Jonathan Basile's minimalistic design philosophy from libraryofbabel.info: functional simplicity, content-centric layout, and restrained visual hierarchy.**
+
+**SCOPE LIMITATION**: This principle applies to VISUAL STYLING ONLY (fonts, colors, buttons, panels).
+Functionality MUST remain 100% unchanged. Graph animations MUST be fully preserved.
+
+In tribute to Jonathan Basile's iconic digital implementation of Borges' vision, the Borges Library
+adopts his design principles as its visual constitution:
+
+- **Functional minimalism**: Every UI element MUST serve a clear purpose. Decorative elements
+  are prohibited unless they reinforce the Library of Babel's thematic identity
+- **Content-centric layout**: Text and knowledge exploration are the primary visual content.
+  The interface exists to serve the literary content, not to showcase itself
+- **Typography as visual anchor**: Text MUST be the dominant visual element. Font choices,
+  spacing, and hierarchy communicate meaning through restraint
+- **Restrained color palette**: A limited, muted color scheme that does not compete with content.
+  Dark backgrounds with light text evoke the infinite galleries of Babel
+- **Hexagonal/geometric symbolism**: Where visual accents are necessary, geometric forms
+  (especially hexagons) reinforce the architectural metaphor of Borges' infinite library
+- **No gratuitous animation** (UI chrome only): Motion in buttons, panels, and menus MUST be purposeful—indicating
+  loading, transitions, or user feedback. **EXCEPTION**: Graph visualization animations (physics simulations,
+  node expansion, zoom, pan, interactive motions) are ESSENTIAL for exploration and MUST be fully preserved
+
+**Rationale**: Jonathan Basile's libraryofbabel.info (https://libraryofbabel.info/) stands as the
+definitive digital interpretation of Borges' concept. By adopting his design philosophy, we honor
+both the literary source material and its most faithful digital incarnation. Minimalism serves the
+intellectual mission: users come to explore knowledge, not to admire interface design.
+
+**Implementation requirements**:
+- UI components MUST pass a "purpose test": if an element cannot justify its existence, remove it
+- Color palette MUST be limited to 4-5 primary colors maximum
+- Typography MUST use a maximum of 2 font families (one for body, one for accent/headings)
+- White space MUST be used deliberately to separate content areas and reduce cognitive load
+- Navigation MUST be streamlined: Browse, Search, Random, and contextual actions only
+- Loading states MUST be minimal and non-distracting (subtle spinners, not elaborate animations)
+- Error states MUST be informative but visually understated
+- The graph visualization is the ONE exception where visual complexity is permitted—all physics
+  simulations, node expansion, zoom, pan, and interactive animations MUST be preserved unchanged.
+  Only node/edge styling (colors, sizes) follows minimalist rules; motion is essential for exploration
+- Accessibility options (e.g., "Browse without JavaScript") MUST be provided for inclusive design
+- All design decisions MUST be defensible by answering: "How does this serve knowledge exploration?"
 
 ---
 
@@ -214,6 +257,31 @@ growing repository that can incorporate world literature progressively.
 - Entity extractions MUST link back to originating chunks
 - Modifications to the graph MUST preserve audit trails
 - Source texts MUST remain immutable; annotations are separate layers
+
+### Defensive Type Conversion
+
+**All type conversions MUST handle `None` values explicitly.**
+
+Python's `dict.get('key', default)` only returns the default when the key is **missing**,
+NOT when the value is `None`. This subtle behavior causes silent failures:
+
+```python
+# ❌ UNSAFE: Crashes when weight key exists with None value
+float(data.get('weight', 1.0))  # TypeError: float() argument must be... not 'NoneType'
+
+# ✅ SAFE: Handles both missing keys AND None values
+float(data.get('weight') or 1.0)
+```
+
+**Implementation requirements**:
+- Type conversions (`float()`, `int()`, `str()`) MUST use `value or default` pattern
+- Code review MUST check for unsafe `.get('key', default)` before type conversion
+- Dictionary values from external sources (Neo4j, GraphML, APIs) MUST be treated as potentially `None`
+- Silent failures MUST be prevented - prefer explicit errors over corrupted data
+
+**Rationale**: A single `float(None)` crash in the GraphRAG pipeline can silently break
+entire features (like dynamic node visualization) while appearing to work. The
+`value or default` pattern provides defense in depth against nullable data.
 
 ---
 
@@ -272,4 +340,4 @@ This constitution is maintained in version control at `.specify/memory/constitut
 For development workflow guidance, consult the runtime documentation in `README.md`
 and project-specific instructions in `CLAUDE.md`.
 
-**Version**: 1.2.0 | **Ratified**: 2025-11-18 | **Last Amended**: 2025-11-23
+**Version**: 1.4.1 | **Ratified**: 2025-11-18 | **Last Amended**: 2025-11-25

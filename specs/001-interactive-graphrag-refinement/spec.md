@@ -126,8 +126,10 @@ After correcting relationships in the graph, the user wants to re-run their orig
 
 ### Key Entities
 
-- **Entity**: A concept, person, place, event, or object extracted from text or manually added (properties: name, type, description, source_chunks, confidence_score, manual_flag, creator)
-- **Relationship**: A directed or undirected connection between two entities (properties: type, source, target, properties, evidence_chunks, confidence_score, manual_flag, creator, edit_history)
+> **Note**: Canonical schema defined in [data-model.md](./data-model.md). Properties below align with live Neo4j schema.
+
+- **Entity**: A concept, person, place, event, or object extracted from text or manually added (properties: id, name, entity_type, description, source_id, book_dir, observations, clusters). Linked to books via `CONTAINS_ENTITY` relationship.
+- **Relationship**: A directed connection between two entities via `RELATED_TO` edge (properties: description, weight, book_dir, source_id, mentioned_in_report)
 - **Provenance Chain**: The complete traceable path from a RAG answer to source knowledge (properties: query, answer, entities_used, relationships_traversed, communities_cited, text_chunks)
 - **Graph Edit**: A modification to the graph structure (properties: edit_type, target_id, old_value, new_value, justification, editor, timestamp)
 - **Ontological Pattern**: A recurring relationship structure across domains (properties: pattern_name, motif_structure, instances, frequency, cross_domain_count, significance_score)
@@ -179,6 +181,15 @@ After correcting relationships in the graph, the user wants to re-run their orig
 - Pattern discovery focuses on structural patterns, not semantic similarity
 - The system does not handle real-time multi-user collaborative editing in the MVP
 
+## Clarifications
+
+### Session 2025-11-25
+
+- Q: For Entity schema properties, which document should be the canonical source of truth? → A: data-model.md (Neo4j schema with `source_id`, `book_dir`, no `book_id` on Entity)
+- Q: How should book association be determined for Entity nodes? → A: Use `CONTAINS_ENTITY` relationship only (remove `book_id` property, keep `book_dir` as short directory name)
+- Q: When re-running a query after graph edits, how should query results be stored? → A: Create new Query version (preserves full history, enables timeline view per US4)
+- Q: What format should `book_dir` use consistently? → A: Short directory name only (e.g., `peau_bison_frison`)
+
 ## Out of Scope *(optional)*
 
 - Automatic graph correction based on machine learning
@@ -204,8 +215,8 @@ After correcting relationships in the graph, the user wants to re-run their orig
 
 ## Open Questions *(optional)*
 
-- How do we handle contradictory edits from different domain experts? (Voting system? Trust scores?)
+- How do we handle contradictory edits from different domain experts? (Voting system? Trust scores?) — *Deferred to later phase*
 - Should pattern discovery use graph isomorphism algorithms or approximate pattern matching?
 - What granularity of edit history should we store? (Every keystroke vs. committed changes only)
-- Should re-querying create new query versions or overwrite previous results?
+- ~~Should re-querying create new query versions or overwrite previous results?~~ — *Resolved: Create new Query versions*
 - How do we visualize complex ontological patterns in an intuitive way?
