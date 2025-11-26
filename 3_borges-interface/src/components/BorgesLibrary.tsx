@@ -1269,7 +1269,7 @@ function BorgesLibrary() {
       {showAnswer && (
         <div className="borges-panel fixed bottom-4 left-4 w-[400px] max-h-[45vh] overflow-auto text-borges-light shadow-borges-lg z-30">
           <div className="flex justify-between items-start mb-3">
-            <h3 className="text-h3 text-borges-light">GraphRAG Analysis</h3>
+            <h3 className="text-h3 text-borges-light">La réponse du GraphRAG de Borges</h3>
             <button
               onClick={() => setShowAnswer(false)}
               className="borges-btn-ghost text-lg"
