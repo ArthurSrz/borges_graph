@@ -820,7 +820,8 @@ export default function GraphVisualization3D({
       // First try entity_type property (most reliable)
       if (node.properties?.entity_type) {
         const rawType = node.properties.entity_type.toString().trim()
-        return entityTypeToFrench[rawType] || rawType
+        const mapped = entityTypeToFrench[rawType] || rawType
+        return mapped
       }
       // Then try the second label (first is usually "Entity")
       if (node.labels.length > 1) {
@@ -831,6 +832,14 @@ export default function GraphVisualization3D({
       const firstLabel = node.labels[0] || 'default'
       return entityTypeToFrench[firstLabel] || firstLabel
     }
+
+    // Debug: Log first few nodes to verify entity_type mapping
+    console.log('🎨 Entity type mapping debug - first 5 nodes:', sortedNodes.slice(0, 5).map(n => ({
+      name: n.properties.name,
+      entity_type: n.properties.entity_type,
+      labels: n.labels,
+      mappedType: getEntityType(n)
+    })))
 
     // Color mapping synchronized with legend (exact hex matches)
     const typeColors: Record<string, string> = {
@@ -1609,11 +1618,44 @@ export default function GraphVisualization3D({
                 <div className="text-xs text-gray-400 mb-1">Type</div>
                 <div className="text-sm">{(clickedItem.data as Node3D).type || 'Non défini'}</div>
               </div>
+              {/* Appears in Books - find connected BOOK nodes */}
+              {(() => {
+                const nodeId = (clickedItem.data as Node3D).id;
+                const connectedLinks = linksRef.current.filter(link =>
+                  link.source === nodeId || link.target === nodeId
+                );
+                const bookNodes = connectedLinks
+                  .map(link => {
+                    const otherNodeId = link.source === nodeId ? link.target : link.source;
+                    return nodesRef.current.find(n => n.id === otherNodeId);
+                  })
+                  .filter(node => node && (node.type === 'BOOK' || node.label?.startsWith('LIVRE_')))
+                  .filter((node, index, self) => self.findIndex(n => n?.id === node?.id) === index); // Dedupe
+
+                if (bookNodes.length > 0) {
+                  return (
+                    <div>
+                      <div className="text-xs text-gray-400 mb-1">📚 Appears in {bookNodes.length} {bookNodes.length === 1 ? 'Book' : 'Books'}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {bookNodes.map(book => (
+                          <span
+                            key={book?.id}
+                            className="text-xs px-2 py-0.5 bg-yellow-900/30 border border-yellow-700/50 rounded-full text-yellow-300"
+                          >
+                            📖 {book?.label?.replace(/^LIVRE_/, '').replace(/"/g, '') || 'Unknown'}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               {(clickedItem.data as Node3D).properties?.description && (
                 <div>
                   <div className="text-xs text-gray-400 mb-1">Description</div>
                   <div className="text-xs text-gray-300 leading-relaxed">
-                    {(clickedItem.data as Node3D).properties?.description?.substring(0, 200)}
+                    {(clickedItem.data as Node3D).properties?.description?.substring(0, 200).replace(/<SEP>/g, '; ')}
                     {(clickedItem.data as Node3D).properties?.description && (clickedItem.data as Node3D).properties?.description?.length > 200 && '...'}
                   </div>
                 </div>
