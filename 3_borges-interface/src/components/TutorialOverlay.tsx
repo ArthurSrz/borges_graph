@@ -18,7 +18,7 @@ interface TutorialOverlayProps {
 
 const tutorialSteps: TutorialStep[] = [
   {
-    title: 'Bienvenue dans Le Graphe de Borges',
+    title: 'Bienvenue dans le graphe de Borges',
     description: 'Une cartographie littéraire vivante qui révèle les connexions cachées entre vos livres.',
     highlight: 'welcome'
   },
@@ -94,7 +94,7 @@ const InterfaceSchematic: React.FC<{ highlightedArea: HighlightArea }> = ({ high
       <g className={`transition-opacity duration-300 ${getAreaOpacity('welcome')}`}>
         <text x="250" y="32" textAnchor="middle"
           className="fill-borges-light text-xs font-medium">
-          Le Graphe de Borges
+          Le graphe de Borges
         </text>
       </g>
 
