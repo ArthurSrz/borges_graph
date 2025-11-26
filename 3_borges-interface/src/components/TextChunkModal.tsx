@@ -85,32 +85,35 @@ export default function TextChunkModal({
 
   const modal = (
     <div
-      className="borges-modal-overlay flex items-center justify-center"
+      className="borges-modal-overlay flex items-center justify-center p-0 md:p-4"
       onClick={handleBackdropClick}
     >
-      {/* Modal Container */}
-      <div className="relative w-full h-full max-w-6xl max-h-[95vh] bg-borges-dark border border-borges-border shadow-borges-lg overflow-hidden">
+      {/* Modal Container - Full screen on mobile, centered on desktop */}
+      <div className="relative w-full h-full md:max-w-6xl md:max-h-[95vh] bg-borges-dark md:border border-borges-border shadow-borges-lg overflow-hidden flex flex-col safe-area-top safe-area-bottom">
 
-        {/* Header - Basile Minimalism */}
-        <div className="flex items-center justify-between p-6 border-b border-borges-border bg-borges-secondary">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-h2 text-borges-light">
-                Source Text
-              </h2>
-            </div>
+        {/* Mobile drag handle */}
+        <div className="md:hidden flex justify-center py-2 bg-borges-secondary">
+          <div className="w-12 h-1 bg-borges-border rounded-full"></div>
+        </div>
+
+        {/* Header - Responsive Basile Minimalism */}
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-borges-border bg-borges-secondary">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 flex-1 min-w-0">
+            <h2 className="text-h2-mobile md:text-h2 text-borges-light truncate">
+              Source Text
+            </h2>
 
             {bookId && (
-              <div className="text-sm text-borges-light-muted">
+              <div className="text-xs md:text-sm text-borges-light-muted truncate">
                 <span className="text-borges-accent">{bookId}</span>
-                {chunkId && <span className="text-borges-muted ml-2">• {chunkId}</span>}
+                {chunkId && <span className="text-borges-muted ml-2 hidden sm:inline">• {chunkId}</span>}
               </div>
             )}
           </div>
 
-          {/* Relationship info if available */}
+          {/* Relationship info - desktop only */}
           {relationshipInfo && (
-            <div className="hidden md:flex items-center gap-2 text-sm text-borges-light-muted">
+            <div className="hidden lg:flex items-center gap-2 text-sm text-borges-light-muted">
               <span className="text-borges-light">{relationshipInfo.sourceNode}</span>
               <span className="text-borges-muted">→</span>
               <span className="text-borges-light">{relationshipInfo.targetNode}</span>
@@ -118,11 +121,12 @@ export default function TextChunkModal({
             </div>
           )}
 
-          {/* Close Button */}
+          {/* Close Button - Touch-friendly */}
           <button
             onClick={onClose}
-            className="borges-btn-ghost p-2 hover:bg-borges-dark-hover rounded-borges-sm transition-all"
+            className="borges-btn-ghost p-2 touch-target flex items-center justify-center hover:bg-borges-dark-hover rounded-borges-sm transition-all ml-2"
             title="Close (Esc)"
+            aria-label="Close modal"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -130,34 +134,34 @@ export default function TextChunkModal({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="max-w-4xl mx-auto">
 
-            {/* Pipeline Traceability - Basile Minimalism */}
-            <div className="mb-6 p-4 bg-borges-secondary rounded-borges-md border-l-4 border-borges-accent">
-              <h3 className="text-sm font-medium text-borges-light-muted mb-2">Traceability Pipeline</h3>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className="bg-borges-dark text-borges-light px-2 py-1 rounded-borges-sm">Source Text</span>
+            {/* Pipeline Traceability - Responsive */}
+            <div className="mb-4 md:mb-6 p-3 md:p-4 bg-borges-secondary rounded-borges-md border-l-4 border-borges-accent">
+              <h3 className="text-xs md:text-sm font-medium text-borges-light-muted mb-2">Traceability Pipeline</h3>
+              <div className="flex flex-wrap gap-1 md:gap-2 text-xs">
+                <span className="bg-borges-dark text-borges-light px-2 py-1 rounded-borges-sm">Source</span>
                 <span className="text-borges-muted">→</span>
                 <span className="bg-borges-dark text-borges-light px-2 py-1 rounded-borges-sm">GraphRAG</span>
                 <span className="text-borges-muted">→</span>
                 <span className="bg-borges-dark text-borges-light px-2 py-1 rounded-borges-sm">Neo4j</span>
                 <span className="text-borges-muted">→</span>
-                <span className="bg-borges-dark text-borges-accent px-2 py-1 rounded-borges-sm">3D Visualization</span>
+                <span className="bg-borges-dark text-borges-accent px-2 py-1 rounded-borges-sm">3D</span>
               </div>
             </div>
 
             {/* Main Text Content with Entity Highlighting */}
-            <div className="bg-borges-dark rounded-borges-md p-6 border border-borges-border">
-              <div className="text-lg leading-relaxed text-borges-light">
+            <div className="bg-borges-dark rounded-borges-md p-4 md:p-6 border border-borges-border">
+              <div className="text-base md:text-lg leading-relaxed text-borges-light">
                 {entities.length > 0 ? (
                   <HighlightedText
                     text={chunkText}
                     entities={entities}
                     onEntityClick={handleEntityClick}
                     showTooltip={true}
-                    className="leading-loose text-lg"
+                    className="leading-loose text-base md:text-lg"
                   />
                 ) : (
                   <div className="whitespace-pre-wrap">{chunkText}</div>
@@ -165,28 +169,29 @@ export default function TextChunkModal({
               </div>
             </div>
 
-            {/* Metadata - Basile Minimalism */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="bg-borges-secondary p-4 rounded-borges-sm border border-borges-border">
-                <h4 className="text-borges-muted mb-1">Length</h4>
-                <p className="text-borges-light">{chunkText.length} characters</p>
+            {/* Metadata - Responsive grid */}
+            <div className="mt-4 md:mt-6 grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm">
+              <div className="bg-borges-secondary p-2 md:p-4 rounded-borges-sm border border-borges-border">
+                <h4 className="text-borges-muted mb-1 text-xs">Length</h4>
+                <p className="text-borges-light truncate">{chunkText.length}</p>
               </div>
 
-              <div className="bg-borges-secondary p-4 rounded-borges-sm border border-borges-border">
-                <h4 className="text-borges-muted mb-1">Detected Entities</h4>
-                <p className="text-borges-light">{entities.length} entities</p>
+              <div className="bg-borges-secondary p-2 md:p-4 rounded-borges-sm border border-borges-border">
+                <h4 className="text-borges-muted mb-1 text-xs">Entities</h4>
+                <p className="text-borges-light">{entities.length}</p>
               </div>
 
-              <div className="bg-borges-secondary p-4 rounded-borges-sm border border-borges-border">
-                <h4 className="text-borges-muted mb-1">Source</h4>
-                <p className="text-borges-light">{bookId || 'Unknown book'}</p>
+              <div className="bg-borges-secondary p-2 md:p-4 rounded-borges-sm border border-borges-border">
+                <h4 className="text-borges-muted mb-1 text-xs">Source</h4>
+                <p className="text-borges-light truncate">{bookId || 'Unknown'}</p>
               </div>
             </div>
 
-            {/* Instructions - Basile Minimalism: no emoji */}
-            <div className="mt-6 text-xs text-borges-muted text-center">
-              <p>Click highlighted entities to explore their connections in the 3D graph</p>
-              <p>Press Escape or click outside to close</p>
+            {/* Instructions - Responsive */}
+            <div className="mt-4 md:mt-6 text-xs text-borges-muted text-center">
+              <p className="hidden md:block">Click highlighted entities to explore their connections in the 3D graph</p>
+              <p className="md:hidden">Tap entities to explore connections</p>
+              <p className="hidden md:block">Press Escape or click outside to close</p>
             </div>
           </div>
         </div>

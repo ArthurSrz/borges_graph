@@ -222,3 +222,147 @@ body {
 .borges-modal-title {
   @apply text-h2 text-borges-light mb-4;
 }
+
+/* ===== Phase 8: Mobile Responsiveness (Constitution Principle VIII) ===== */
+
+/* T048: Responsive typography - minimum 16px body text on mobile */
+html {
+  font-size: 16px; /* Base size - never smaller on mobile */
+}
+
+@media (max-width: 767px) {
+  /* Mobile-first adjustments */
+  html {
+    font-size: 16px; /* Enforce minimum */
+    -webkit-text-size-adjust: 100%; /* Prevent iOS text inflation */
+  }
+
+  /* Responsive display text */
+  .text-display {
+    font-size: 1.75rem !important;
+  }
+
+  .text-h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .text-h2 {
+    font-size: 1.25rem !important;
+  }
+
+  .text-h3 {
+    font-size: 1.125rem !important;
+  }
+}
+
+/* T046: Touch-friendly targets - minimum 44x44px */
+.touch-target {
+  @apply min-w-touch min-h-touch;
+}
+
+/* Mobile-friendly button sizes */
+@media (max-width: 767px) {
+  .borges-btn-primary,
+  .borges-btn-secondary,
+  .borges-btn-ghost {
+    @apply min-h-touch px-4 py-3;
+  }
+
+  /* Larger tap targets for mobile */
+  button,
+  [role="button"],
+  a {
+    min-height: 44px;
+  }
+
+  /* Input fields need comfortable height on mobile */
+  .borges-input,
+  input,
+  select {
+    min-height: 44px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
+
+/* Mobile-friendly panels */
+@media (max-width: 767px) {
+  .borges-panel {
+    @apply p-3 rounded-borges-sm;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .borges-modal {
+    @apply p-4 m-4 max-h-[90vh] overflow-y-auto;
+    width: calc(100vw - 2rem);
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .borges-panel {
+    max-width: 90vw;
+  }
+}
+
+/* Mobile navigation - hamburger menu styles */
+.mobile-nav-toggle {
+  @apply md:hidden flex items-center justify-center w-touch h-touch;
+}
+
+.mobile-nav-menu {
+  @apply fixed inset-0 bg-borges-dark/95 z-50 flex flex-col p-6;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.mobile-nav-menu.open {
+  transform: translateX(0);
+}
+
+.mobile-nav-item {
+  @apply py-4 text-lg text-borges-light border-b border-borges-border;
+}
+
+/* Hide on mobile, show on desktop */
+.desktop-only {
+  @apply hidden md:block;
+}
+
+/* Hide on desktop, show on mobile */
+.mobile-only {
+  @apply block md:hidden;
+}
+
+/* Responsive flex layouts */
+.responsive-row {
+  @apply flex flex-col md:flex-row gap-2;
+}
+
+.responsive-search {
+  @apply flex flex-col md:flex-row gap-2 w-full;
+}
+
+/* Mobile-friendly answer panel positioning */
+@media (max-width: 767px) {
+  .answer-panel-mobile {
+    @apply fixed inset-x-0 bottom-0 left-0 right-0 w-full max-w-none;
+    max-height: 50vh;
+    border-radius: 1rem 1rem 0 0;
+  }
+}
+
+/* Swipe-dismissible panel */
+.swipe-panel {
+  touch-action: pan-y;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+}
