@@ -96,3 +96,79 @@ SET b.filesystem_id = CASE b.id
 END
 ```
 2. Update `/books` endpoint to return `filesystem_id` as the `id` field
+
+### Issue #4: Chunk Data Inconsistency (Entity source_id Mismatch)
+
+**Symptom**: Chunks stuck in loading state. Logs show "Chunk not found in book, searching all books..." repeatedly.
+
+**Root Cause**: Entity `source_id` references chunk IDs that don't exist in Neo4j Chunk nodes or filesystem.
+
+**Why It Happens**: Chunk IDs are MD5 hashes of content (`chunk-{MD5(content)}`). They change if:
+- Chunk size parameters change
+- Tokenizer changes
+- Document is re-processed
+
+Entity `source_id` values are "frozen" at extraction time in the GraphML file. If chunks were regenerated later, the IDs won't match.
+
+**Additional Complexity**: Some entities have compound source_ids with multiple chunks:
+```
+chunk-aaa<SEP>chunk-bbb<SEP>chunk-ccc
+```
+
+**Detection**:
+```cypher
+// Count chunks referenced by entities but missing from Chunk nodes
+MATCH (e:Entity)
+WHERE e.source_id IS NOT NULL AND e.source_id CONTAINS 'chunk-'
+WITH DISTINCT e.source_id as source_id
+OPTIONAL MATCH (c:Chunk {id: source_id})
+WHERE c IS NULL
+RETURN count(source_id) as missing_chunks
+```
+
+**Solution**: Neo4j as MDM (Master Data Management) Index
+
+1. **Index all filesystem chunks** into Neo4j with `book_filesystem_id`:
+```bash
+python -m cli.reconcile_chunks
+```
+
+2. **Chunk nodes become lightweight index** (no content, just mapping):
+```cypher
+MERGE (c:Chunk {id: $chunk_id})
+SET c.book_filesystem_id = $filesystem_id,
+    c.indexed_at = datetime()
+REMOVE c.content
+```
+
+3. **Link entities to chunks**:
+```cypher
+MATCH (e:Entity)
+WHERE e.source_id IS NOT NULL
+WITH e, split(e.source_id, '<SEP>') as chunk_ids
+UNWIND chunk_ids as chunk_id
+MATCH (c:Chunk {id: trim(chunk_id)})
+MERGE (e)-[:EXTRACTED_FROM]->(c)
+```
+
+4. **Chunk retrieval uses MDM lookup**:
+```
+GET /chunks/book_id/chunk-xxx
+    → Neo4j: Chunk.book_filesystem_id
+    → Filesystem: {book}/kv_store_text_chunks.json
+    → Return content
+```
+
+**Usage**:
+```bash
+# Check reconciliation status
+python -m cli.reconcile_chunks --status
+
+# Run full reconciliation
+python -m cli.reconcile_chunks
+
+# Index only (skip entity linking)
+python -m cli.reconcile_chunks --index-only
+```
+
+**Note**: ~2,000 entities may have permanently unresolvable chunk references (legacy data where original chunks no longer exist)
