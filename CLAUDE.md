@@ -172,3 +172,11 @@ python -m cli.reconcile_chunks --index-only
 ```
 
 **Note**: ~2,000 entities may have permanently unresolvable chunk references (legacy data where original chunks no longer exist)
+
+**Permanent Fix**: `sync_to_neo4j.py` now automatically:
+- Sets `filesystem_id` on BOOK nodes
+- Creates index-only Chunk nodes (no content duplication)
+- Links chunks to books via `HAS_CHUNK`
+- Creates `Entity→Chunk` via `EXTRACTED_FROM`
+
+New books synced with `python -m cli.sync_to_neo4j` will have proper chunk indexing.
