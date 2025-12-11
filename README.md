@@ -1,8 +1,33 @@
-# Borges Library
+<p align="center">
+  <img src="assets/header.webp" alt="Borges Library - Infinite Library of Knowledge" width="100%">
+</p>
 
-> Interactive 3D knowledge graph explorer for literary analysis, built on GraphRAG.
+<h1 align="center">Borges Library</h1>
 
-Named after Jorge Luis Borges' "The Library of Babel" - a universe in the form of a vast library containing all possible books.
+<p align="center">
+  <strong>Interactive 3D knowledge graph explorer for literary analysis</strong>
+</p>
+
+<p align="center">
+  <a href="https://borges-library-web.vercel.app">
+    <img src="https://img.shields.io/badge/demo-live-brightgreen?style=for-the-badge" alt="Live Demo">
+  </a>
+  <a href="https://nextjs.org">
+    <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" alt="Next.js 16">
+  </a>
+  <a href="https://react.dev">
+    <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react" alt="React 19">
+  </a>
+  <a href="https://www.typescriptlang.org">
+    <img src="https://img.shields.io/badge/TypeScript-5.2-3178C6?style=for-the-badge&logo=typescript" alt="TypeScript">
+  </a>
+</p>
+
+<p align="center">
+  Named after Jorge Luis Borges' <em>"The Library of Babel"</em> — a universe in the form of a vast library containing all possible books.
+</p>
+
+---
 
 ## What is Borges Library?
 
@@ -32,7 +57,11 @@ Borges Library lets you explore literary works through their knowledge graphs. A
 
 ## Live Demo
 
-**[borges-library-web.vercel.app](https://borges-library-web.vercel.app)**
+<p align="center">
+  <a href="https://borges-library-web.vercel.app">
+    <img src="https://img.shields.io/badge/Try%20it%20now-borges--library--web.vercel.app-blue?style=for-the-badge" alt="Try Demo">
+  </a>
+</p>
 
 ## Architecture
 
@@ -48,16 +77,20 @@ Borges Library lets you explore literary works through their knowledge graphs. A
 
 ### Key Components
 
-- **BorgesLibrary.tsx** - Main application shell
-- **GraphVisualization3DForce.tsx** - 3D graph rendering
-- **QueryInterface.tsx** - Natural language search
-- **ProvenancePanel.tsx** - Answer source tracing
-- **EntityDetailModal.tsx** - Entity details and connections
-- **TextChunkModal.tsx** - Source text viewer
+| Component | Description |
+|-----------|-------------|
+| `BorgesLibrary.tsx` | Main application shell |
+| `GraphVisualization3DForce.tsx` | 3D graph rendering |
+| `QueryInterface.tsx` | Natural language search |
+| `ProvenancePanel.tsx` | Answer source tracing |
+| `EntityDetailModal.tsx` | Entity details and connections |
+| `TextChunkModal.tsx` | Source text viewer |
 
 ## Related Repositories
 
-- **[reconciliation-api](https://github.com/ArthurSrz/reconciliation-api)** - Backend API for graph queries, chunk retrieval, and GraphRAG search
+| Repository | Description |
+|------------|-------------|
+| [reconciliation-api](https://github.com/ArthurSrz/reconciliation-api) | Backend API for graph queries, chunk retrieval, and GraphRAG search |
 
 ## Development
 
@@ -107,3 +140,9 @@ The frontend connects to the reconciliation API deployed on Railway.
 ## License
 
 MIT
+
+---
+
+<p align="center">
+  <sub>Built with GraphRAG | Inspired by Borges</sub>
+</p>
