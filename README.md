@@ -1,55 +1,109 @@
-# GraphRAG API - Minimal Deployment
+# Borges Library
 
-Flask API for GraphRAG (Graph Retrieval-Augmented Generation) with automatic Google Drive data download.
+> Interactive 3D knowledge graph explorer for literary analysis, built on GraphRAG.
+
+Named after Jorge Luis Borges' "The Library of Babel" - a universe in the form of a vast library containing all possible books.
+
+## What is Borges Library?
+
+Borges Library lets you explore literary works through their knowledge graphs. Ask questions in natural language, and see how entities (people, places, concepts) connect across different books.
+
+**Key capabilities:**
+- Query multiple books simultaneously using natural language
+- Visualize extracted entities as interactive 3D nodes
+- Trace answers back to source text passages (end-to-end interpretability)
 
 ## Features
 
-- GraphRAG search over literary knowledge graphs
-- Automatic book data download from Google Drive
-- Fallback test data system
-- Ready for Railway deployment
+| Feature | Description |
+|---------|-------------|
+| Multi-book querying | Ask questions across your entire library at once |
+| 3D force-directed graph | Interactive visualization with color-coded entity types |
+| End-to-end interpretability | Click any entity to see the source text that generated it |
+| Mobile responsive | Works on desktop, tablet, and mobile devices |
 
-## 📚 Documentation & Specifications
+## Tech Stack
 
-### Feature: Interactive GraphRAG Refinement System
+| Category | Technologies |
+|----------|-------------|
+| Framework | Next.js 16, React 19, TypeScript 5.2 |
+| Visualization | 3d-force-graph, Three.js, D3.js |
+| Styling | Tailwind CSS, Heroicons |
 
-**Core Documentation:**
-- [Specification](specs/001-interactive-graphrag-refinement/spec.md) - Feature requirements and user stories
-- [Implementation Plan](specs/001-interactive-graphrag-refinement/plan.md) - Technical architecture and file structure
-- [Data Model](specs/001-interactive-graphrag-refinement/data-model.md) - Entities, relationships, and graph structure
-- [Research Notes](specs/001-interactive-graphrag-refinement/research.md) - Technical decisions and constraints
-- [Tasks](specs/001-interactive-graphrag-refinement/tasks.md) - Implementation checklist and progress
+## Live Demo
 
-**API Contracts:**
-- [Provenance API](specs/001-interactive-graphrag-refinement/contracts/provenance-api.yaml) - Track answer sources
-- [Edit API](specs/001-interactive-graphrag-refinement/contracts/edit-api.yaml) - Graph refinement operations
-- [Pattern API](specs/001-interactive-graphrag-refinement/contracts/pattern-api.yaml) - Ontological pattern discovery
-- [Query Comparison API](specs/001-interactive-graphrag-refinement/contracts/query-comparison-api.yaml) - Answer version comparison
+**[borges-library-web.vercel.app](https://borges-library-web.vercel.app)**
 
-**Quality Assurance:**
-- [Requirements Checklist](specs/001-interactive-graphrag-refinement/checklists/requirements.md) - Specification validation
+## Architecture
 
-**Implementation Notes:**
-- [Frontend Implementation](specs/001-interactive-graphrag-refinement/US1-FRONTEND-IMPLEMENTATION.md) - User Story 1 details
+```
+3_borges-interface/
+├── src/
+│   ├── app/           # Next.js App Router (pages + API routes)
+│   ├── components/    # React components (graph, modals, query interface)
+│   ├── hooks/         # Custom React hooks
+│   ├── lib/           # Services and utilities
+│   └── types/         # TypeScript definitions
+```
+
+### Key Components
+
+- **BorgesLibrary.tsx** - Main application shell
+- **GraphVisualization3DForce.tsx** - 3D graph rendering
+- **QueryInterface.tsx** - Natural language search
+- **ProvenancePanel.tsx** - Answer source tracing
+- **EntityDetailModal.tsx** - Entity details and connections
+- **TextChunkModal.tsx** - Source text viewer
+
+## Related Repositories
+
+- **[reconciliation-api](https://github.com/ArthurSrz/reconciliation-api)** - Backend API for graph queries, chunk retrieval, and GraphRAG search
+
+## Development
+
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Setup
+
+```bash
+cd 3_borges-interface
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+### Environment Variables
+
+Create `3_borges-interface/.env.local`:
+
+```env
+NEXT_PUBLIC_RECONCILIATION_API_URL=https://reconciliation-api-production.up.railway.app
+```
+
+For local development with the reconciliation API:
+
+```env
+NEXT_PUBLIC_RECONCILIATION_API_URL=http://localhost:5002
+```
 
 ## Deployment
 
-1. Set environment variables:
-   ```bash
-   BOOK_DATA_DRIVE_ID="your-google-drive-file-id"
-   OPENAI_API_KEY="your-openai-key"
-   PORT="5001"
-   ```
+Deployed on **Vercel** with root directory set to `3_borges-interface/`.
 
-2. Deploy to Railway:
-   ```bash
-   railway up
-   ```
+The frontend connects to the reconciliation API deployed on Railway.
 
-The system automatically downloads book data from Google Drive during startup.
+## Design Principles
 
-## API Endpoints
+1. **No orphaned nodes** - All displayed entities must have relationships
+2. **Books at center** - Books are core entities, always central to queries
+3. **Inter-book exploration** - Connections between books are prioritized
+4. **Visual clarity** - Space between nodes to see relationships clearly
+5. **Full interpretability** - Navigate from text chunks to RAG answers through the graph
 
-- `GET /health` - Health check
-- `POST /search` - GraphRAG search
-- `GET /books` - List available books
+## License
+
+MIT
