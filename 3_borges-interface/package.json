@@ -33,7 +33,7 @@
     "xmldom": "0.6.0"
   },
   "devDependencies": {
-    "eslint": "8.51.0",
+    "eslint": "^9.0.0",
     "eslint-config-next": "16.0.7"
   }
 }
