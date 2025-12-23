@@ -108,12 +108,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { query, mode = 'local', commune_id } = body
 
-    // Initialize session if needed
-    if (!mcpSessionId) {
-      console.log('Initializing MCP session...')
-      mcpSessionId = await initializeMcpSession()
-      console.log('MCP session initialized:', mcpSessionId)
-    }
+    // Always initialize a fresh session to avoid stale session errors
+    console.log('Initializing fresh MCP session...')
+    mcpSessionId = await initializeMcpSession()
+    console.log('MCP session initialized:', mcpSessionId)
 
     // If commune_id is provided, query specific commune
     // Otherwise, query all communes
@@ -127,11 +125,11 @@ export async function POST(request: NextRequest) {
         include_sources: true
       })
     } else {
-      // Query all communes for broader coverage
+      // Query top communes for initial load (reduced from 10 to 3 for performance)
       result = await callMcpTool(mcpSessionId, 'grand_debat_query_all', {
         query,
         mode: 'global',
-        max_communes: 10,
+        max_communes: 3,  // Reduced for faster initial load
         include_sources: true
       })
     }
