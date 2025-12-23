@@ -1,7 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd 3_borges-interface && npm install && npm run build",
-  "outputDirectory": "3_borges-interface/.next",
-  "framework": "nextjs",
-  "installCommand": "cd 3_borges-interface && npm install"
+  "rootDirectory": "3_borges-interface"
 }
