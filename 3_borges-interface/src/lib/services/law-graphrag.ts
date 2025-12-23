@@ -108,6 +108,31 @@ class LawGraphRAGService {
   }
 
   /**
+   * Fetch the full graph from MCP for initial load
+   * Makes a broad query to get comprehensive data across all communes
+   * @returns Full graph data for visualization
+   */
+  async fetchFullGraph(): Promise<LawGraphRAGGraphData | null> {
+    try {
+      // Use a broad query to get comprehensive data across all communes
+      const response = await this.query({
+        query: 'Grand Débat National préoccupations citoyennes',
+        mode: 'global',
+      })
+
+      if (response.success === false) {
+        console.error('Failed to fetch full graph:', response.error)
+        return null
+      }
+
+      return this.transformToGraphData(response)
+    } catch (error) {
+      console.error('Error fetching full graph from MCP:', error)
+      return null
+    }
+  }
+
+  /**
    * Check the health status of the Law GraphRAG API
    * @returns Health status information
    */

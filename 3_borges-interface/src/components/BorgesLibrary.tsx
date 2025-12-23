@@ -352,6 +352,55 @@ function BorgesLibrary() {
     }
   }, [])
 
+  // Load full graph from MCP API on component mount
+  useEffect(() => {
+    const loadFullGraph = async () => {
+      try {
+        console.log('🏛️ Loading full Grand Débat graph from MCP API...')
+        setCurrentProcessingPhase('🏛️ Chargement du graphe complet...')
+
+        const graphData = await lawGraphRAGService.fetchFullGraph()
+
+        if (graphData && graphData.nodes.length > 0) {
+          console.log(`✅ Loaded ${graphData.nodes.length} nodes and ${graphData.relationships.length} relationships from MCP`)
+
+          // Transform to reconciliation data format
+          const reconciliationData: ReconciliationGraphData = {
+            nodes: graphData.nodes.map(node => ({
+              id: node.id,
+              labels: node.labels,
+              properties: node.properties as Record<string, any>,
+              degree: node.degree ?? 1,
+              centrality_score: node.centrality_score ?? 0.5
+            })),
+            relationships: graphData.relationships
+          }
+
+          // Store as base graph for subgraph queries
+          baseGraphDataRef.current = reconciliationData
+
+          setReconciliationData(reconciliationData)
+          setProcessingStats({
+            nodes: graphData.nodes.length,
+            communities: 0,
+            neo4jRelationships: graphData.relationships.length
+          })
+
+          console.log('📊 Full graph loaded and displayed')
+        } else {
+          console.warn('⚠️ No graph data returned from MCP, will fall back to GraphML')
+        }
+      } catch (error) {
+        console.error('❌ Error loading full graph from MCP:', error)
+        // Fall back to GraphML if MCP fails
+      } finally {
+        setCurrentProcessingPhase(null)
+      }
+    }
+
+    loadFullGraph()
+  }, [])
+
   // Handler for tutorial completion
   const handleTutorialComplete = () => {
     setShowTutorial(false)
