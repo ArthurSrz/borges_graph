@@ -39,3 +39,11 @@ La bibliothèque Borges doit permettre une interprétabilité de bout-en-bout du
 - `3_borges-interface/src/components/GraphVisualization3DForce.tsx` - 3D graph
 - `3_borges-interface/src/components/QueryInterface.tsx` - Search interface
 - `3_borges-interface/src/app/api/` - Next.js API routes (proxies to backend)
+
+## Active Technologies
+- Python 3.11+ + opik, aiohttp, python-dotenv (003-rag-observability-comparison)
+- OPIK cloud (experiment results), no local persistence (003-rag-observability-comparison)
+- OPIK Cloud (experiment results), No local persistence required (003-rag-observability-comparison)
+
+## Recent Changes
+- 003-rag-observability-comparison: Added Python 3.11+ + opik, aiohttp, python-dotenv

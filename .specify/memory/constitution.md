@@ -1,108 +1,119 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version Change: 1.4.1 → 1.5.0 (Minor - Added mobile responsiveness principle)
+Version Change: 1.5.0 → 2.0.0 (MAJOR - Domain pivot from literature to law)
 
 Modified Principles:
-- None
+- Principle I: End-to-end interpretability → End-to-end Interpretability (unchanged core, legal context added)
+- Principle II: Babel library mimetism → Removed (literature-specific, not applicable to legal domain)
+- Principle III: No orphan nodes → No Orphan Nodes (unchanged)
+- Principle IV: Book-centric architecture → Legal Document-Centric Architecture (redefined for legal corpus)
+- Principle V: Inter-book knowledge exploration → Cross-Document Legal Analysis (redefined for legal domain)
+- Principle VI: Extensible literature foundation → Extensible Legal Corpus Foundation (redefined)
+- Principle VII: Basile minimalism → Functional Legal Interface (adapted for legal workflows)
+- Principle VIII: Mobile-first responsiveness → Mobile-First Responsiveness (unchanged)
 
 Added Principles:
-- Principle VIII - Mobile-First Responsiveness: Interface MUST be fully usable on mobile devices
+- Principle II: Legal Provenance Chain (NEW - legal citation and authority tracking)
+- Principle IX: RAG Observability and Comparison (NEW - aligns with 003-rag-observability-comparison feature)
 
 Removed Principles:
-- None removed
+- Original Principle II: Babel library mimetism (literature-specific metaphor not applicable)
 
 Clarifications Added:
-- None
+- Legal-specific terminology throughout
+- API endpoint references updated for law-graphRAG-reconciliation-api
+- Legal entity types (laws, articles, jurisprudence, doctrine)
 
 Templates Requiring Updates:
-- spec.md template: Add responsive design section to UI specifications ✅ done
-- tasks.md: Include mobile testing tasks for UI changes ✅ done
+- .specify/templates/plan-template.md: Constitution Check section generic ✅ compatible
+- .specify/templates/spec-template.md: Responsive design section generic ✅ compatible
+- .specify/templates/tasks-template.md: Mobile testing phase generic ✅ compatible
 
 Follow-up TODOs:
-- Audit current interface for mobile compatibility
-- Add responsive breakpoints to design tokens
-- Test graph interaction on touch devices
+- Update CLAUDE.md to reflect new legal domain focus
+- Update README.md references to Borges Library → Law GraphRAG
 
 Change Rationale:
-- MINOR version (1.5.0) because new principle added
-- Many users will access the Borges Library on mobile devices
-- Graph exploration should work seamlessly on touch interfaces
-- Ensures accessibility across all device types
+- MAJOR version (2.0.0) because:
+  1. Core domain pivot from literature (Borges Library) to law (Law GraphRAG)
+  2. Principle II completely replaced (literature metaphor removed)
+  3. Entity types redefined (books → legal documents)
+  4. API endpoints target law-graphRAG-reconciliation-api
+  5. New principle added for RAG observability (aligns with current feature branch)
 -->
 
-# The Borges Library constitution
+# Law GraphRAG Constitution
 
-## Core principles
+## Core Principles
 
-### I. End-to-end interpretability
+### I. End-to-End Interpretability
 
-**The system MUST enable navigation from text chunks to RAG answers through graph.**
+**The system MUST enable navigation from text chunks to RAG answers through the legal knowledge graph.**
 
 Users MUST be able to trace the complete reasoning path of the GraphRAG system:
-- From original text chunks in source books
-- Through extracted entities and relationships
+- From original text chunks in source legal documents
+- Through extracted legal entities and relationships
 - Across graph traversal paths
-- To final RAG-generated answers
+- To final RAG-generated answers with legal citations
 
-Every step of the knowledge extraction, storage, retrieval, and generation pipeline
+Every step of the legal knowledge extraction, storage, retrieval, and generation pipeline
 MUST be inspectable and navigable.
 
-**Rationale**: Interpretability is essential for trust, debugging, and learning. Users
-need to understand how answers were derived, validate the reasoning, and explore
-alternative paths through the knowledge graph. This transparency distinguishes the
-Borges Library from black-box RAG systems.
+**Rationale**: Legal analysis demands interpretability. Legal professionals, researchers, and
+citizens need to understand how answers were derived, validate the legal reasoning, verify
+citations, and explore alternative interpretive paths through the knowledge graph. Transparency
+in legal RAG systems is essential for trust and professional accountability.
 
-**Implementation requirements**:
-- Text chunk storage MUST preserve source attribution (book, page, section)
+**Implementation Requirements**:
+- Text chunk storage MUST preserve source attribution (document, article, section, paragraph)
 - Entity extraction MUST maintain bidirectional links to source chunks
 - Graph queries MUST return traversal paths, not just final results
 - RAG responses MUST include provenance chains (answer → nodes → relationships → chunks)
 - UI MUST provide click-through navigation across the entire pipeline
 - All intermediate representations MUST be accessible via API and interface
+- Legal citations MUST link directly to source text passages
 
 ---
 
-### II. Babel library mimetism (infinite exploration architecture)
+### II. Legal Provenance Chain
 
-**The system MUST embody Borges' Library of Babel principles: infinite exploration, emergent meaning, and progressive discovery.**
+**The system MUST maintain authoritative citation chains for all legal knowledge.**
 
-Like Borges' infinite library of hexagonal galleries, this system architecture mirrors the philosophical concepts from "The Library of Babel":
+Every piece of legal information surfaced by the system MUST be traceable to its
+authoritative source with proper legal citation formatting:
 
-- **Infinite exploration**: Users can navigate endlessly through the knowledge graph without artificial limits or dead ends
-- **Emergent meaning from chaos**: Insights arise from connection patterns across seemingly disparate entities, not from isolated facts
-- **Progressive revelation**: Knowledge unfolds in layers, presenting the most central/relevant nodes first while allowing unlimited depth
-- **Relational truth**: Meaning emerges from the web of relationships between books, entities, and concepts
+- **Primary sources**: Laws, statutes, regulations, constitutional texts
+- **Secondary sources**: Jurisprudence, case law, court decisions
+- **Tertiary sources**: Doctrine, legal commentary, academic analysis
 
-**Rationale**: The Library of Babel represents a universe containing all possible books, where meaning is rare but discoverable through navigation. Our system mirrors this by creating an explorable knowledge space where every visible node opens pathways to further discovery. The graph is not a static document but a living space users inhabit and navigate, revealing "sense" hidden within apparent information chaos.
+**Rationale**: Legal validity depends on proper authority chains. A legal RAG system
+that cannot cite its sources is professionally useless. Legal professionals require
+citation accuracy to verify claims, build arguments, and ensure compliance.
 
 **Implementation Requirements**:
-- Graph navigation MUST support recursive expansion from any node (no terminal points)
-- Progressive loading MUST enable gradual exploration: 300→500→1000 most central nodes
-- Community detection MUST identify emergent thematic clusters across books
-- Recommendation algorithms MUST surface non-obvious but high-value cross-book connections
-- Search MUST support both precise queries and exploratory "wandering"
-- The reconciliation layer MUST merge Neo4j + GraphRAG to reveal patterns invisible in either alone
-- Visualizations MUST highlight structural patterns (hubs, bridges, communities)
-- The UI MUST provide "related paths" and "alternative routes" through the graph
-- Loading states MUST indicate "more to explore" vs "fully loaded"
-- Centrality metrics (degree, betweenness, PageRank) MUST guide progressive loading priorities
+- Every entity MUST store its source document type (law, jurisprudence, doctrine)
+- Relationships MUST capture the nature of legal references (cites, amends, repeals, interprets)
+- API responses MUST include citation metadata (document ID, article number, date, jurisdiction)
+- The UI MUST display authority hierarchy (constitutional → legislative → regulatory → judicial)
+- Conflicting interpretations MUST be surfaced with their respective authorities
+- Citation format MUST follow legal conventions for the target jurisdiction
 
 ---
 
-### III. No orphan nodes
+### III. No Orphan Nodes
 
 **All nodes displayed in the interface MUST have at least one relationship.**
 
 Orphan nodes (isolated entities without connections) are prohibited in the visualization
 layer. This principle ensures that:
-- every entity shown provides relational context
-- graph visualizations maintain semantic coherence
-- users always see how entities connect to the broader knowledge graph
-- query results filter out disconnected nodes before rendering
+- Every entity shown provides relational context
+- Graph visualizations maintain semantic coherence
+- Users always see how legal entities connect to the broader knowledge graph
+- Query results filter out disconnected nodes before rendering
 
-**Rationale**: The Borges Library is fundamentally about exploring relationships and
-connections between literary entities. Orphan nodes provide no navigational value and
+**Rationale**: The Law GraphRAG system is fundamentally about exploring relationships and
+connections between legal entities. Orphan nodes provide no navigational value and
 clutter the interface with isolated facts that cannot be explored.
 
 **Implementation Requirements**:
@@ -113,155 +124,154 @@ clutter the interface with isolated facts that cannot be explored.
 
 ---
 
-### IV. Book-centric architecture
+### IV. Legal Document-Centric Architecture
 
-**Books MUST be the core entities in all graph queries and visualizations.**
+**Legal documents MUST be the core entities in all graph queries and visualizations.**
 
-The knowledge graph is organized around books as primary entities. All queries,
-visualizations, and explorations MUST treat books as the central organizing principle:
-- search queries prioritize book-entity relationships
-- graph traversals anchor on book nodes
-- entity relationships are contextualized through their connections to books
-- visualization layouts position books as structural hubs
+The knowledge graph is organized around legal documents as primary entities. All queries,
+visualizations, and explorations MUST treat legal documents as the central organizing principle:
+- Search queries prioritize document-entity relationships
+- Graph traversals anchor on document nodes
+- Entity relationships are contextualized through their connections to source documents
+- Visualization layouts position legal documents as structural hubs
 
-**Rationale**: books are the fundamental units of knowledge in the Borges Library. By
-making them the architectural center, we ensure that all knowledge exploration remains
-grounded in the source literary works, enabling users to trace insights back to their
-origins.
+**Legal Document Hierarchy**:
+1. **Laws & Statutes**: Primary legislative texts
+2. **Articles & Sections**: Structural subdivisions within laws
+3. **Jurisprudence**: Court decisions interpreting laws
+4. **Doctrine**: Academic and professional commentary
 
-**Implementation requirements**:
-- GraphRAG queries MUST start from or include book nodes
-- Database indexes MUST optimize for book-centered queries
-- API responses MUST include book context for all entities
-- Visualization algorithms MUST calculate layouts with books as anchor points
+**Rationale**: Legal documents are the fundamental units of legal knowledge. By making them
+the architectural center, we ensure that all legal exploration remains grounded in authoritative
+sources, enabling users to trace insights back to their legal origins.
 
----
-
-### V. Inter-book knowledge exploration
-
-**Graph exploration MUST prioritize relationships that span multiple books.**
-
-The most valuable insights emerge from connections across different literary works.
-The system MUST favor discovering, surfacing, and visualizing inter-book relationships:
-- graphRAG search prioritizes multi-book relationship paths
-- query ranking weights cross-book connections higher
-- visualizations highlight bridges between different books
-- relationship types that connect books are given higher importance
-
-**Rationale**: while intra-book relationships are important, the unique value of a
-knowledge graph lies in revealing how concepts, themes, characters, and ideas connect
-across different works. These cross-pollinations generate novel insights impossible
-to discover through single-book analysis.
-
-**Implementation requirements**:
-- GraphRAG algorithms MUST include inter-book relationship scoring
-- Query expansion MUST traverse book boundaries
-- Relationship weights MUST account for cross-book connections
-- Analytics MUST track and report inter-book coverage metrics
+**Implementation Requirements**:
+- GraphRAG queries MUST start from or include legal document nodes
+- Database indexes MUST optimize for document-centered queries
+- API responses MUST include document context for all entities
+- Visualization algorithms MUST calculate layouts with documents as anchor points
+- Document metadata MUST include: jurisdiction, enactment date, status (in force, repealed, amended)
 
 ---
 
-### VI. Extensible literature foundation
+### V. Cross-Document Legal Analysis
 
-**The system MUST be built upon the nano-graphRAG library and designed for easy addition of new books or bodies of literature.**
+**Graph exploration MUST prioritize relationships that span multiple legal documents.**
 
-The Borges Library originates from and builds upon the nano-graphRAG library as its
+The most valuable legal insights emerge from connections across different legal texts.
+The system MUST favor discovering, surfacing, and visualizing cross-document relationships:
+- GraphRAG search prioritizes multi-document relationship paths
+- Query ranking weights cross-document connections higher
+- Visualizations highlight bridges between different legal sources
+- Relationship types that connect documents are given higher importance
+
+**Key Cross-Document Relationships**:
+- Law A **amends** Law B
+- Jurisprudence X **interprets** Article Y
+- Doctrine Z **analyzes** Decision W
+- Regulation R **implements** Statute S
+
+**Rationale**: While intra-document relationships are important, the unique value of a
+legal knowledge graph lies in revealing how laws, interpretations, and doctrines connect
+across different texts. These cross-references generate novel insights impossible to
+discover through single-document analysis.
+
+**Implementation Requirements**:
+- GraphRAG algorithms MUST include cross-document relationship scoring
+- Query expansion MUST traverse document boundaries
+- Relationship weights MUST account for cross-document connections
+- Analytics MUST track and report cross-document coverage metrics
+- Timeline analysis MUST show how interpretations evolve across documents
+
+---
+
+### VI. Extensible Legal Corpus Foundation
+
+**The system MUST be built upon the nano-graphRAG library and designed for easy addition of new legal documents.**
+
+The Law GraphRAG originates from and builds upon the nano-graphRAG library as its
 foundational knowledge extraction and retrieval layer. The architecture MUST prioritize
-the seamless integration of new literary content:
+the seamless integration of new legal content:
 
-- **nano-graphRAG foundation** : the system leverages nano-graphRAG for entity extraction, relationship building, and graph-based retrieval
-- **Modular book ingestion** : adding new books MUST be a straightforward, standardized process
-- **Scalable corpus expansion** : the system MUST handle growing collections without architectural changes
-- **Literature-agnostic processing**: The ingestion pipeline MUST work with diverse literary formats and genres
+- **nano-graphRAG foundation**: The system leverages nano-graphRAG for entity extraction, relationship building, and graph-based retrieval
+- **Modular document ingestion**: Adding new legal documents MUST be a straightforward, standardized process
+- **Scalable corpus expansion**: The system MUST handle growing legal collections without architectural changes
+- **Jurisdiction-agnostic processing**: The ingestion pipeline MUST work with diverse legal systems and formats
 
-**Rationale**: The value of the Borges Library grows with its literary corpus. By
-building on nano-graphRAG and prioritizing extensibility, we ensure that:
+**Rationale**: Legal knowledge is constantly evolving—new laws are enacted, jurisprudence
+accumulates, doctrine develops. By building on nano-graphRAG and prioritizing extensibility,
+we ensure that:
 1. The system inherits a proven, well-tested GraphRAG implementation
-2. Users and administrators can expand the library with minimal friction
-3. New bodies of literature integrate seamlessly with existing knowledge
-4. The architecture remains adaptable to diverse literary traditions and formats
+2. Legal corpus can expand with minimal friction
+3. New legal sources integrate seamlessly with existing knowledge
+4. The architecture adapts to different legal traditions and jurisdictions
 
-This principle ensures the Borges Library is not a static collection but a living,
-growing repository that can incorporate world literature progressively.
-
-**Implementation requirements**:
-- Book ingestion MUST follow a documented, repeatable pipeline based on nano-graphRAG
-- New book addition MUST NOT require code changes to core system components
-- Configuration-driven book registration MUST specify metadata, source files, and processing parameters
-- Ingestion pipelines MUST support batch processing for adding multiple books
-- Progress tracking MUST provide visibility into book processing status
-- Rollback mechanisms MUST allow removal of incorrectly processed books
-- The system MUST validate new book integration against existing graph consistency rules
-- Documentation MUST include step-by-step guides for adding new literary content
-- API endpoints MUST support programmatic book addition for automation workflows
+**Implementation Requirements**:
+- Document ingestion MUST follow a documented, repeatable pipeline based on nano-graphRAG
+- New document addition MUST NOT require code changes to core system components
+- Configuration-driven document registration MUST specify metadata, source files, and processing parameters
+- Ingestion pipelines MUST support batch processing for adding multiple documents
+- Progress tracking MUST provide visibility into document processing status
+- Rollback mechanisms MUST allow removal of incorrectly processed documents
+- The system MUST validate new document integration against existing graph consistency rules
+- Documentation MUST include step-by-step guides for adding new legal content
+- API endpoints MUST support programmatic document addition for automation workflows
 
 ---
 
-### VII. Basile minimalism (tribute to libraryofbabel.info)
+### VII. Functional Legal Interface
 
-**The interface MUST embody Jonathan Basile's minimalistic design philosophy from libraryofbabel.info: functional simplicity, content-centric layout, and restrained visual hierarchy.**
+**The interface MUST prioritize clarity, efficiency, and professional legal workflows.**
+
+The Law GraphRAG interface is designed for legal professionals, researchers, and citizens
+seeking legal knowledge. The design philosophy emphasizes:
+
+- **Functional clarity**: Every UI element MUST serve a clear legal research purpose
+- **Content-centric layout**: Legal text and citations are the primary visual content
+- **Professional typography**: Readable text optimized for legal document display
+- **Restrained color palette**: A limited, muted color scheme that does not compete with content
+- **Efficient navigation**: Quick access to search, browse, and contextual legal actions
 
 **SCOPE LIMITATION**: This principle applies to VISUAL STYLING ONLY (fonts, colors, buttons, panels).
 Functionality MUST remain 100% unchanged. Graph animations MUST be fully preserved.
 
-In tribute to Jonathan Basile's iconic digital implementation of Borges' vision, the Borges Library
-adopts his design principles as its visual constitution:
+**Rationale**: Legal professionals require efficient, distraction-free interfaces. Users come
+to explore legal knowledge, not to admire interface design. Minimalism serves the professional
+mission.
 
-- **Functional minimalism**: Every UI element MUST serve a clear purpose. Decorative elements
-  are prohibited unless they reinforce the Library of Babel's thematic identity
-- **Content-centric layout**: Text and knowledge exploration are the primary visual content.
-  The interface exists to serve the literary content, not to showcase itself
-- **Typography as visual anchor**: Text MUST be the dominant visual element. Font choices,
-  spacing, and hierarchy communicate meaning through restraint
-- **Restrained color palette**: A limited, muted color scheme that does not compete with content.
-  Dark backgrounds with light text evoke the infinite galleries of Babel
-- **Hexagonal/geometric symbolism**: Where visual accents are necessary, geometric forms
-  (especially hexagons) reinforce the architectural metaphor of Borges' infinite library
-- **No gratuitous animation** (UI chrome only): Motion in buttons, panels, and menus MUST be purposeful—indicating
-  loading, transitions, or user feedback. **EXCEPTION**: Graph visualization animations (physics simulations,
-  node expansion, zoom, pan, interactive motions) are ESSENTIAL for exploration and MUST be fully preserved
-
-**Rationale**: Jonathan Basile's libraryofbabel.info (https://libraryofbabel.info/) stands as the
-definitive digital interpretation of Borges' concept. By adopting his design philosophy, we honor
-both the literary source material and its most faithful digital incarnation. Minimalism serves the
-intellectual mission: users come to explore knowledge, not to admire interface design.
-
-**Implementation requirements**:
+**Implementation Requirements**:
 - UI components MUST pass a "purpose test": if an element cannot justify its existence, remove it
 - Color palette MUST be limited to 4-5 primary colors maximum
 - Typography MUST use a maximum of 2 font families (one for body, one for accent/headings)
 - White space MUST be used deliberately to separate content areas and reduce cognitive load
-- Navigation MUST be streamlined: Browse, Search, Random, and contextual actions only
+- Navigation MUST be streamlined: Browse, Search, and contextual legal actions only
 - Loading states MUST be minimal and non-distracting (subtle spinners, not elaborate animations)
 - Error states MUST be informative but visually understated
 - The graph visualization is the ONE exception where visual complexity is permitted—all physics
-  simulations, node expansion, zoom, pan, and interactive animations MUST be preserved unchanged.
-  Only node/edge styling (colors, sizes) follows minimalist rules; motion is essential for exploration
-- Accessibility options (e.g., "Browse without JavaScript") MUST be provided for inclusive design
-- All design decisions MUST be defensible by answering: "How does this serve knowledge exploration?"
+  simulations, node expansion, zoom, pan, and interactive animations MUST be preserved unchanged
+- Legal citation formatting MUST follow professional conventions
 
 ---
 
-### VIII. Mobile-first responsiveness
+### VIII. Mobile-First Responsiveness
 
 **The interface MUST be fully functional and usable on mobile devices.**
 
-Given that a significant portion of users will access the Borges Library from smartphones and
-tablets, the interface MUST provide a seamless experience across all device sizes:
+Given that legal professionals and citizens may access the Law GraphRAG from various devices,
+the interface MUST provide a seamless experience across all screen sizes:
 
 - **Touch-optimized interactions**: All graph interactions (tap to select, pinch to zoom, drag to pan)
   MUST work naturally with touch gestures
 - **Responsive layout**: UI components MUST adapt fluidly to screen sizes from 320px to desktop
 - **Mobile-first design**: Design decisions MUST prioritize mobile usability, then enhance for larger screens
 - **Performance on mobile**: The system MUST remain performant on mobile devices with limited resources
-- **Readable typography**: Text MUST be legible without zooming on mobile screens
+- **Readable typography**: Legal text MUST be legible without zooming on mobile screens
 
-**Rationale**: Literary exploration is not confined to desktop computers. Users may wish to explore
-the Borges Library during commutes, in cafes, or while reading physical books. A mobile-responsive
-interface ensures the library is accessible wherever curiosity strikes. The graph visualization,
-being the core exploration mechanism, MUST be fully functional with touch interactions.
+**Rationale**: Legal research is not confined to desktop computers. Users may need to access
+legal information during meetings, in courtrooms, or while consulting clients. A mobile-responsive
+interface ensures the system is accessible wherever legal questions arise.
 
-**Implementation requirements**:
+**Implementation Requirements**:
 - CSS MUST use responsive breakpoints: mobile (< 768px), tablet (768-1024px), desktop (> 1024px)
 - Touch targets MUST be at least 44x44 pixels for comfortable tapping
 - Graph visualization MUST support touch gestures: tap (select), pinch (zoom), drag (pan), double-tap (focus)
@@ -275,18 +285,48 @@ being the core exploration mechanism, MUST be fully functional with touch intera
 
 ---
 
+### IX. RAG Observability and Comparison
+
+**The system MUST provide comprehensive observability into RAG operations and enable comparison between implementations.**
+
+Legal RAG systems require transparency about their retrieval and generation processes.
+Users and developers MUST be able to observe, measure, and compare RAG performance:
+
+- **Query tracing**: Every query MUST be traceable through retrieval, ranking, and generation stages
+- **Metrics capture**: Latency, token usage, retrieval quality, and generation confidence MUST be measured
+- **A/B comparison**: Different RAG configurations MUST be comparable side-by-side
+- **Performance dashboards**: Aggregated metrics MUST be visualizable for system monitoring
+
+**Rationale**: Legal applications demand reliability and consistency. Observability enables:
+1. Debugging of unexpected or incorrect answers
+2. Optimization of retrieval and generation parameters
+3. Comparison between different RAG implementations or configurations
+4. Demonstration of system reliability for professional use
+
+**Implementation Requirements**:
+- Every query MUST generate an observability trace with timing data
+- Retrieval stage MUST log: documents retrieved, relevance scores, chunk selections
+- Generation stage MUST log: context window usage, model parameters, confidence scores
+- API MUST expose endpoints for retrieving query traces and aggregated metrics
+- Comparison mode MUST support running identical queries across different configurations
+- Dashboard MUST visualize: query latency distribution, retrieval accuracy, answer quality metrics
+- Alerts MUST trigger on anomalous performance degradation
+- Historical data MUST be retained for trend analysis
+
+---
+
 ## Data Integrity & Quality
 
 ### Graph Consistency
 
 - Relationship directionality MUST be semantically meaningful and consistent
-- Relationship types MUST follow a controlled vocabulary
+- Relationship types MUST follow a controlled vocabulary for legal concepts
 - Entity deduplication MUST occur before visualization
 - Dangling references MUST be prevented through referential integrity checks
 
 ### Source Fidelity
 
-- Text chunks MUST maintain exact provenance to source books
+- Text chunks MUST maintain exact provenance to source legal documents
 - Entity extractions MUST link back to originating chunks
 - Modifications to the graph MUST preserve audit trails
 - Source texts MUST remain immutable; annotations are separate layers
@@ -299,14 +339,14 @@ Python's `dict.get('key', default)` only returns the default when the key is **m
 NOT when the value is `None`. This subtle behavior causes silent failures:
 
 ```python
-# ❌ UNSAFE: Crashes when weight key exists with None value
+# UNSAFE: Crashes when weight key exists with None value
 float(data.get('weight', 1.0))  # TypeError: float() argument must be... not 'NoneType'
 
-# ✅ SAFE: Handles both missing keys AND None values
+# SAFE: Handles both missing keys AND None values
 float(data.get('weight') or 1.0)
 ```
 
-**Implementation requirements**:
+**Implementation Requirements**:
 - Type conversions (`float()`, `int()`, `str()`) MUST use `value or default` pattern
 - Code review MUST check for unsafe `.get('key', default)` before type conversion
 - Dictionary values from external sources (Neo4j, GraphML, APIs) MUST be treated as potentially `None`
@@ -373,4 +413,4 @@ This constitution is maintained in version control at `.specify/memory/constitut
 For development workflow guidance, consult the runtime documentation in `README.md`
 and project-specific instructions in `CLAUDE.md`.
 
-**Version**: 1.5.0 | **Ratified**: 2025-11-18 | **Last Amended**: 2025-11-26
+**Version**: 2.0.0 | **Ratified**: 2025-11-18 | **Last Amended**: 2025-12-23

@@ -100,8 +100,11 @@ import TextChunkModal from './TextChunkModal'
 import ProvenancePanel from './ProvenancePanel'
 import EntityDetailModal from './EntityDetailModal'
 import { reconciliationService } from '@/lib/services/reconciliation'
+import { lawGraphRAGService } from '@/lib/services/law-graphrag'
 import { colorService, type EntityColorInfo } from '@/lib/utils/colorService'
 import type { TraversedRelationship } from '@/types/provenance'
+import type { RAGSource } from '@/types/law-graphrag'
+import RAGSourceSelector from './RAGSourceSelector'
 
 
 interface ReconciliationGraphData {
@@ -197,6 +200,8 @@ function BorgesLibrary() {
   const [selectedBook, setSelectedBook] = useState<string>('a_rebours_huysmans')
   const [multiBook, setMultiBook] = useState<boolean>(false)
   const [mode, setMode] = useState<'local' | 'global'>('local')
+  // RAG Source selection for 003-rag-observability-comparison feature
+  const [ragSource, setRagSource] = useState<RAGSource>('borges')
   const [processingStartTime, setProcessingStartTime] = useState<number | null>(null)
   const [elapsedTime, setElapsedTime] = useState<number>(0)
   const [processingStats, setProcessingStats] = useState<{
@@ -586,6 +591,7 @@ function BorgesLibrary() {
 
   const handleSimpleQuery = useCallback(async (query: string) => {
     console.log('🔍 Processing query:', query)
+    console.log('⚖️ Current RAG source:', ragSource)
     console.log('📖 Current selectedBook:', selectedBook)
     console.log('🔧 Current mode:', mode)
     console.log('📚 Multi-book mode:', multiBook)
@@ -599,12 +605,126 @@ function BorgesLibrary() {
 
     setIsProcessing(true)
     setProcessingStartTime(Date.now())
-    setCurrentProcessingPhase('🔍 Running GraphRAG...')
+    setCurrentProcessingPhase(ragSource === 'law-graphrag' ? '⚖️ Querying Law GraphRAG...' : '🔍 Running GraphRAG...')
     setCurrentQuery(query)
     setProcessingStats({ nodes: 0, communities: 0 })
 
     try {
-      if (multiBook) {
+      // Law GraphRAG query - legal knowledge graph
+      if (ragSource === 'law-graphrag') {
+        console.log('⚖️ Querying Law GraphRAG API')
+        setCurrentProcessingPhase('⚖️ Analyzing legal documents...')
+
+        const result = await lawGraphRAGService.query({ query })
+
+        if (result.success !== false) {
+          setCurrentProcessingPhase('✓ Legal analysis complete')
+          setQueryAnswer(result.answer || 'No answer available from Law GraphRAG')
+
+          // Generate query ID for provenance tracking
+          const tempQueryId = `law-query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          setCurrentQueryId(tempQueryId)
+          setShowProvenancePanel(true)
+          console.log('📊 Provenance tracking enabled for Law GraphRAG query:', tempQueryId)
+
+          // Transform Law GraphRAG response to graph data format
+          const graphData = lawGraphRAGService.transformToGraphData(result)
+
+          if (graphData) {
+            console.log('⚖️ Law GraphRAG graph data:', graphData.nodes.length, 'nodes,', graphData.relationships.length, 'relationships')
+
+            setProcessingStats({
+              nodes: graphData.nodes.length,
+              communities: 0,
+              neo4jRelationships: graphData.relationships.length
+            })
+
+            // Ensure nodes have required properties for ReconciliationGraphData
+            const normalizedNodes = graphData.nodes.map(node => ({
+              ...node,
+              properties: node.properties as Record<string, any>,
+              degree: node.degree ?? 1,
+              centrality_score: node.centrality_score ?? 0.5
+            }))
+
+            // Store query result nodes for entity lookup
+            setQueryResultNodes(normalizedNodes)
+
+            setReconciliationData({
+              nodes: normalizedNodes,
+              relationships: graphData.relationships
+            })
+
+            // Extract entities for coloring (End-to-end interpretability)
+            const entitiesToColor = graphData.nodes.map((node: any, idx: number) => ({
+              id: node.properties?.name || node.id,
+              type: node.labels?.[0] || 'LEGAL_ENTITY',
+              description: node.properties?.description,
+              score: node.centrality_score || 0.5,
+              order: idx
+            }))
+
+            if (entitiesToColor.length > 0) {
+              const enrichedEntities = colorService.enrichEntitiesWithColors(entitiesToColor)
+              console.log(`🌈 Law GraphRAG enriched entities: ${enrichedEntities.length}`)
+              setColoredEntities(enrichedEntities)
+            } else {
+              setColoredEntities([])
+            }
+
+            // Create debug info for visualization
+            const lawDebugInfo = {
+              processing_phases: {
+                entity_selection: {
+                  entities: graphData.nodes.map((node: any, index: number) => ({
+                    id: node.properties?.name || node.id,
+                    name: node.properties?.name || node.id,
+                    type: node.labels?.[0] || 'LEGAL_ENTITY',
+                    description: node.properties?.description || '',
+                    rank: index + 1,
+                    score: node.centrality_score || 0.5,
+                    selected: true
+                  })),
+                  duration_ms: 500
+                },
+                community_analysis: { communities: [], duration_ms: 100 },
+                relationship_mapping: {
+                  relationships: graphData.relationships.map((rel: any) => ({
+                    source: rel.source,
+                    target: rel.target,
+                    description: rel.properties?.description || '',
+                    weight: rel.properties?.weight || 1.0
+                  })),
+                  duration_ms: 300
+                },
+                text_synthesis: { duration_ms: 200 }
+              },
+              context_stats: {
+                total_time_ms: result.processing_time ? result.processing_time * 1000 : 1000,
+                mode: 'law-graphrag',
+                prompt_length: query.length
+              },
+              animation_timeline: [
+                { phase: 'explosion', duration: 500, description: 'Analyzing legal entities' },
+                { phase: 'filtering', duration: 300, description: 'Mapping legal relationships' },
+                { phase: 'synthesis', duration: 300, description: 'Building legal context' },
+                { phase: 'crystallization', duration: 200, description: 'Generating legal answer' }
+              ]
+            }
+            setDebugInfo(lawDebugInfo)
+          } else {
+            console.log('⚠️ No graph data from Law GraphRAG response')
+            setColoredEntities([])
+          }
+
+          setShowAnswer(true)
+          setSearchPath(null)
+        } else {
+          throw new Error(result.error || 'Law GraphRAG query failed')
+        }
+      }
+      // Multi-book Borges query
+      else if (multiBook) {
         // Multi-book query - search across all books
         console.log(`📚 Querying ALL BOOKS with mode: ${mode}`)
         const result = await reconciliationService.multiBookQuery({
@@ -928,14 +1048,35 @@ function BorgesLibrary() {
       }
     } catch (error) {
       console.error('Error processing query:', error)
-      setQueryAnswer(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+
+      // Provide user-friendly error messages based on RAG source (T016)
+      let errorMessage = 'An error occurred while processing your query.'
+
+      if (ragSource === 'law-graphrag') {
+        const errorDetail = error instanceof Error ? error.message : 'Unknown error'
+        if (errorDetail.includes('fetch') || errorDetail.includes('network') || errorDetail.includes('ECONNREFUSED')) {
+          errorMessage = '⚖️ Unable to connect to the Law GraphRAG service. Please check your connection and try again.'
+        } else if (errorDetail.includes('timeout') || errorDetail.includes('ETIMEDOUT')) {
+          errorMessage = '⚖️ The Law GraphRAG query timed out. Please try a simpler question or try again later.'
+        } else if (errorDetail.includes('500') || errorDetail.includes('Internal Server')) {
+          errorMessage = '⚖️ The Law GraphRAG service encountered an error. Please try again later.'
+        } else {
+          errorMessage = `⚖️ Law GraphRAG Error: ${errorDetail}`
+        }
+        console.error('Law GraphRAG error details:', errorDetail)
+      } else {
+        errorMessage = `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      }
+
+      setQueryAnswer(errorMessage)
       setShowAnswer(true)
+      setColoredEntities([])
     } finally {
       setIsProcessing(false)
       setProcessingStartTime(null)
       setCurrentProcessingPhase(null)
     }
-  }, [selectedBook, mode, multiBook])
+  }, [ragSource, selectedBook, mode, multiBook])
 
   return (
     <div className="min-h-screen bg-borges-dark text-borges-light">
@@ -954,40 +1095,57 @@ function BorgesLibrary() {
           </button>
         </div>
 
-        {/* Mobile Book Selector */}
+        {/* Mobile RAG Source Selector */}
         <div className="mobile-nav-item">
-          <label className="text-borges-light-muted text-sm mb-2 block">Livre sélectionné</label>
-          <select
-            value={selectedBook}
-            onChange={(e) => {
-              setSelectedBook(e.target.value)
-              setIsMobileMenuOpen(false)
+          <label className="text-borges-light-muted text-sm mb-2 block">Source de données</label>
+          <RAGSourceSelector
+            value={ragSource}
+            onChange={(source) => {
+              setRagSource(source)
             }}
-            disabled={multiBook || isProcessing}
-            className="borges-input w-full"
-          >
-            {books.map((book) => (
-              <option key={book.id} value={book.id}>
-                {book.name}
-              </option>
-            ))}
-          </select>
+            disabled={isProcessing}
+            className="w-full justify-center"
+          />
         </div>
 
-        {/* Mobile Multi-book Toggle */}
-        <button
-          onClick={() => {
-            setMultiBook(!multiBook)
-            setIsMobileMenuOpen(false)
-          }}
-          disabled={isProcessing}
-          className={`mobile-nav-item w-full text-left flex items-center justify-between ${
-            multiBook ? 'text-borges-accent' : ''
-          }`}
-        >
-          <span>📚 Tout le catalogue</span>
-          {multiBook && <span className="text-borges-accent">✓</span>}
-        </button>
+        {/* Mobile Book Selector - Only visible when Borges source is selected */}
+        {ragSource === 'borges' && (
+          <div className="mobile-nav-item">
+            <label className="text-borges-light-muted text-sm mb-2 block">Livre sélectionné</label>
+            <select
+              value={selectedBook}
+              onChange={(e) => {
+                setSelectedBook(e.target.value)
+                setIsMobileMenuOpen(false)
+              }}
+              disabled={multiBook || isProcessing}
+              className="borges-input w-full"
+            >
+              {books.map((book) => (
+                <option key={book.id} value={book.id}>
+                  {book.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Mobile Multi-book Toggle - Only visible when Borges source is selected */}
+        {ragSource === 'borges' && (
+          <button
+            onClick={() => {
+              setMultiBook(!multiBook)
+              setIsMobileMenuOpen(false)
+            }}
+            disabled={isProcessing}
+            className={`mobile-nav-item w-full text-left flex items-center justify-between ${
+              multiBook ? 'text-borges-accent' : ''
+            }`}
+          >
+            <span>📚 Tout le catalogue</span>
+            {multiBook && <span className="text-borges-accent">✓</span>}
+          </button>
+        )}
 
         {/* Mobile Mode Toggle */}
         <div className="mobile-nav-item">
@@ -1053,34 +1211,48 @@ function BorgesLibrary() {
             <div className="max-w-6xl mx-auto space-y-2 md:space-y-3">
               {/* Main Search Row - Responsive */}
               <div className="responsive-search">
-                {/* Desktop-only: Book Selector & Multi-Book Toggle */}
-                <div className="hidden md:flex gap-2">
-                  {/* Book Selector */}
-                  <select
-                    value={selectedBook}
-                    onChange={(e) => setSelectedBook(e.target.value)}
-                    disabled={multiBook || isProcessing}
-                    className="borges-input max-w-[200px] disabled:opacity-50"
-                  >
-                    {books.map((book) => (
-                      <option key={book.id} value={book.id}>
-                        {book.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Multi-Book Toggle */}
-                  <button
-                    onClick={() => setMultiBook(!multiBook)}
+                {/* Desktop-only: RAG Source, Book Selector & Multi-Book Toggle */}
+                <div className="hidden md:flex gap-2 items-center">
+                  {/* RAG Source Selector - Toggle between Borges (literary) and Law GraphRAG (legal) */}
+                  <RAGSourceSelector
+                    value={ragSource}
+                    onChange={setRagSource}
                     disabled={isProcessing}
-                    className={`borges-btn-secondary text-sm disabled:opacity-50 flex items-center ${
-                      multiBook ? 'border-borges-light text-borges-light' : ''
-                    }`}
-                    title="Interroger tout le catalogue"
-                  >
-                    <span className="mr-1 grayscale">📚</span>
-                    Tout le catalogue
-                  </button>
+                  />
+
+                  {/* Divider */}
+                  <div className="h-6 w-px bg-borges-border mx-1" />
+
+                  {/* Book Selector - Only visible when Borges source is selected */}
+                  {ragSource === 'borges' && (
+                    <select
+                      value={selectedBook}
+                      onChange={(e) => setSelectedBook(e.target.value)}
+                      disabled={multiBook || isProcessing}
+                      className="borges-input max-w-[200px] disabled:opacity-50"
+                    >
+                      {books.map((book) => (
+                        <option key={book.id} value={book.id}>
+                          {book.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Multi-Book Toggle - Only visible when Borges source is selected */}
+                  {ragSource === 'borges' && (
+                    <button
+                      onClick={() => setMultiBook(!multiBook)}
+                      disabled={isProcessing}
+                      className={`borges-btn-secondary text-sm disabled:opacity-50 flex items-center ${
+                        multiBook ? 'border-borges-light text-borges-light' : ''
+                      }`}
+                      title="Interroger tout le catalogue"
+                    >
+                      <span className="mr-1 grayscale">📚</span>
+                      Tout le catalogue
+                    </button>
+                  )}
                 </div>
 
                 {/* Search Input - Full width on mobile */}
@@ -1165,9 +1337,11 @@ function BorgesLibrary() {
 
               {/* Mobile-only: Current settings indicator */}
               <div className="flex md:hidden items-center justify-between text-xs text-borges-light-muted">
-                <span>📖 {books.find(b => b.id === selectedBook)?.name || selectedBook}</span>
-                <span>{mode === 'local' ? '↑ Ascendant' : '↓ Descendant'}</span>
-                {multiBook && <span className="text-borges-accent">📚 Tout</span>}
+                <span>{ragSource === 'borges' ? '📚' : '⚖️'} {ragSource === 'borges'
+                  ? (books.find(b => b.id === selectedBook)?.name || selectedBook)
+                  : 'Law GraphRAG'}</span>
+                {ragSource === 'borges' && <span>{mode === 'local' ? '↑ Ascendant' : '↓ Descendant'}</span>}
+                {ragSource === 'borges' && multiBook && <span className="text-borges-accent">📚 Tout</span>}
               </div>
             </div>
           </div>
