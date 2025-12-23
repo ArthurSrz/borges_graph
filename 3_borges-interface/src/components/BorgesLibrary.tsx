@@ -210,6 +210,15 @@ function BorgesLibrary() {
   // Store query result nodes for entity lookup
   const [queryResultNodes, setQueryResultNodes] = useState<any[]>([])
 
+  // Store source chunks from query results for provenance display
+  const [sourceChunks, setSourceChunks] = useState<Array<{
+    chunk_id: string
+    content: string
+    document_id: string
+    commune?: string
+  }>>([])
+  const [showSourceChunksPanel, setShowSourceChunksPanel] = useState(false)
+
   // Grand Débat National civic data exploration - Constitution v3.0.0
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0)
   const civicQuotes = [
@@ -296,41 +305,13 @@ function BorgesLibrary() {
     }
   }
 
-  // GraphML data loading hook - Constitution Principle III (No Orphan Nodes)
-  // Provides initial graph visualization from static GraphML files
-  // MCP queries will overlay/update this data with query-specific results
-  const {
-    document: graphMLDocument,
-    isLoading: isGraphMLLoading,
-    error: graphMLError,
-    reload: reloadGraphML
-  } = useGraphMLData({
-    url: '/data/grand-debat.graphml',
-    filterOrphans: true, // Constitution Principle III - No orphan nodes
-    onLoad: (doc) => {
-      console.log('📊 GraphML loaded successfully:', doc.nodes.length, 'nodes,', doc.edges.length, 'edges')
-      // Transform GraphML to reconciliation format for visualization
-      const transformedData = transformToReconciliationData(doc)
-      setReconciliationData(transformedData)
-      setProcessingStats({
-        nodes: transformedData.nodes.length,
-        communities: 0,
-        neo4jRelationships: transformedData.relationships.length
-      })
-    },
-    onError: (error) => {
-      console.error('❌ GraphML loading failed:', error)
-      // Don't block the UI - MCP queries will still work
-    }
-  })
+  // DISABLED: GraphML static file loading - now using live MCP API data
+  // The full graph is loaded from MCP API on component mount (see useEffect below)
+  // This avoids race condition between GraphML and MCP data loads
 
-  // Sync GraphML loading state with component loading state
-  useEffect(() => {
-    setIsLoadingGraph(isGraphMLLoading)
-    if (!isGraphMLLoading && !graphMLError) {
-      setShowLoadingOverlay(false)
-    }
-  }, [isGraphMLLoading, graphMLError])
+  // Placeholder state for compatibility (no longer loads GraphML)
+  const isGraphMLLoading = false
+  const graphMLError = null
 
   // Check localStorage for tutorial skip on mount
   useEffect(() => {
@@ -341,6 +322,60 @@ function BorgesLibrary() {
       // For returning users, show loading overlay while data loads
       setShowLoadingOverlay(true)
     }
+  }, [])
+
+  // Load full graph from MCP API on component mount
+  useEffect(() => {
+    const loadFullGraph = async () => {
+      try {
+        console.log('🏛️ Loading full Grand Débat graph from MCP API...')
+        setIsLoadingGraph(true)
+        setCurrentProcessingPhase('🏛️ Chargement du graphe complet depuis l\'API...')
+
+        const graphData = await lawGraphRAGService.fetchFullGraph()
+
+        if (graphData && graphData.nodes.length > 0) {
+          console.log(`✅ Loaded ${graphData.nodes.length} nodes and ${graphData.relationships.length} relationships from MCP`)
+
+          // Transform to reconciliation data format
+          const reconciliationData: ReconciliationGraphData = {
+            nodes: graphData.nodes.map(node => ({
+              id: node.id,
+              labels: node.labels,
+              properties: node.properties as Record<string, any>,
+              degree: node.degree ?? 1,
+              centrality_score: node.centrality_score ?? 0.5
+            })),
+            relationships: graphData.relationships
+          }
+
+          // Store as base graph for subgraph queries
+          baseGraphDataRef.current = reconciliationData
+
+          setReconciliationData(reconciliationData)
+          setProcessingStats({
+            nodes: graphData.nodes.length,
+            communities: 0,
+            neo4jRelationships: graphData.relationships.length
+          })
+
+          console.log('📊 Full graph loaded and displayed')
+        } else {
+          console.warn('⚠️ No graph data returned from MCP')
+          throw new Error('MCP returned empty graph data')
+        }
+      } catch (error) {
+        console.error('❌ Error loading full graph from MCP:', error)
+        // Show error to user
+        setCurrentProcessingPhase('❌ Erreur de chargement - rechargez la page')
+      } finally {
+        setIsLoadingGraph(false)
+        setShowLoadingOverlay(false)
+        setCurrentProcessingPhase(null)
+      }
+    }
+
+    loadFullGraph()
   }, [])
 
   // Handler for tutorial completion
@@ -458,6 +493,14 @@ function BorgesLibrary() {
         setCurrentQueryId(tempQueryId)
         setShowProvenancePanel(true)
         console.log('📊 Provenance tracking enabled for civic query:', tempQueryId)
+
+        // Extract and store source chunks from the query result for provenance display
+        const chunks = result.graphrag_data?.source_chunks || []
+        console.log(`📚 Found ${chunks.length} source chunks from MCP query`)
+        setSourceChunks(chunks)
+        if (chunks.length > 0) {
+          setShowSourceChunksPanel(true)
+        }
 
         // Transform response to graph data format
         const graphData = lawGraphRAGService.transformToGraphData(result)
@@ -1087,41 +1130,7 @@ function BorgesLibrary() {
               </div>
             )}
 
-            {/* GraphML Loading Error Display - T013 */}
-            {/* Only show error if loading failed AND no data was loaded */}
-            {graphMLError && !isGraphMLLoading && !reconciliationData?.nodes?.length && (
-              <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
-                <div className="text-center max-w-md px-8">
-                  <div className="text-6xl mb-4">⚠️</div>
-                  <h3 className="text-xl font-semibold text-borges-light mb-2">
-                    Erreur de chargement des données
-                  </h3>
-                  <p className="text-borges-light-muted mb-4">
-                    Le fichier GraphML des contributions citoyennes n&apos;a pas pu être chargé.
-                  </p>
-                  <p className="text-sm text-borges-muted mb-6">
-                    {graphMLError.message}
-                  </p>
-                  <div className="flex gap-4 justify-center">
-                    <button
-                      onClick={() => reloadGraphML()}
-                      className="px-4 py-2 bg-borges-accent text-borges-dark rounded hover:bg-borges-accent/80 transition-colors"
-                    >
-                      Réessayer
-                    </button>
-                    <button
-                      onClick={() => setShowLoadingOverlay(false)}
-                      className="px-4 py-2 bg-borges-border text-borges-light rounded hover:bg-borges-border/80 transition-colors"
-                    >
-                      Continuer sans données
-                    </button>
-                  </div>
-                  <p className="text-xs text-borges-muted mt-4">
-                    Vous pouvez toujours utiliser les requêtes MCP pour explorer les données.
-                  </p>
-                </div>
-              </div>
-            )}
+            {/* GraphML error display removed - now using MCP API */}
             </GraphErrorBoundary>
             </div>
 
@@ -1186,20 +1195,6 @@ function BorgesLibrary() {
             </button>
           </div>
 
-          {/* Show matched entities from the subgraph query */}
-          {queryResultNodes.length > 0 && (
-            <div className="mb-3 p-3 bg-borges-dark rounded-borges-sm border border-borges-border">
-              <div className="text-xs font-medium text-borges-light mb-2">Entités du sous-graphe</div>
-              <div className="text-xs text-borges-light max-h-20 overflow-y-auto space-y-1">
-                {queryResultNodes.map((node: any, i: number) => (
-                  <div key={i} className="truncate text-borges-light-muted">
-                    • {node.properties?.name || node.id} <span className="text-borges-muted text-xs">({node.labels?.[0] || 'Entity'})</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="flex-1 overflow-hidden flex flex-col min-h-0">
             <div className="text-xs text-borges-light-muted mb-1 hidden md:block">Réponse:</div>
             <div className="flex-1 overflow-y-auto pr-2">
@@ -1210,6 +1205,59 @@ function BorgesLibrary() {
                 onEntityClick={handleEntityClick}
                 showTooltip={true}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Source Chunks Panel - Constitution Principle V: End-to-End Interpretability */}
+      {showSourceChunksPanel && sourceChunks.length > 0 && (
+        <div className="borges-panel fixed bottom-0 right-0 left-0 md:bottom-4 md:right-4 md:left-auto w-full md:w-[400px] md:max-h-[45vh] overflow-hidden text-borges-light shadow-borges-lg z-30 rounded-t-2xl md:rounded-borges-md safe-area-bottom flex flex-col mb-0 md:mb-0"
+          style={{
+            marginBottom: showAnswer ? (typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : '0') : '0'
+          }}>
+          <div className="flex justify-between items-start mb-2 md:mb-3 px-3 md:px-4 pt-3 md:pt-3 flex-shrink-0">
+            <h3 className="text-sm md:text-h3 text-borges-light font-medium">Extraits citoyens</h3>
+            <button
+              onClick={() => setShowSourceChunksPanel(false)}
+              className="borges-btn-ghost text-lg touch-target flex items-center justify-center"
+              aria-label="Fermer"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-3 md:px-4 pb-3">
+            <div className="space-y-3">
+              {sourceChunks.map((chunk, idx) => (
+                <div key={chunk.chunk_id} className="p-2 md:p-3 bg-borges-dark rounded-borges-sm border border-borges-border">
+                  {/* Commune badge */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs px-2 py-0.5 bg-yellow-900/50 rounded text-borges-light">
+                      🏛️ {chunk.commune || chunk.document_id}
+                    </span>
+                    <span className="text-xs text-borges-light-muted">Chunk #{idx + 1}</span>
+                  </div>
+                  {/* Chunk content preview */}
+                  <p className="text-xs md:text-sm text-borges-light-muted leading-relaxed line-clamp-4 mb-2">
+                    {chunk.content}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setEntityChunkData({
+                        entityName: chunk.document_id,
+                        aggregatedChunks: chunk.content,
+                        relatedRelationships: 1,
+                        communeId: chunk.document_id
+                      })
+                      setIsEntityChunkModalOpen(true)
+                    }}
+                    className="text-xs text-borges-accent hover:text-borges-light transition-colors"
+                  >
+                    Voir le texte complet →
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
