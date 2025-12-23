@@ -5,7 +5,11 @@
 <h1 align="center">Grand Débat National GraphRAG</h1>
 
 <p align="center">
-  <strong>Interactive 3D knowledge graph explorer for citizen contributions</strong>
+  <strong>Explore citizen voices through an interactive 3D knowledge graph</strong>
+</p>
+
+<p align="center">
+  <em>« La voix des citoyens, visualisée »</em>
 </p>
 
 <p align="center">
@@ -28,7 +32,9 @@
 
 ## What is this?
 
-This interface lets you explore citizen contributions from the **Grand Débat National 2019** through an interactive knowledge graph. Ask questions in natural language, and see how civic themes, concerns, and proposals connect across different communes.
+In early 2019, France launched the **Grand Débat National** — an unprecedented national consultation where citizens could voice their concerns, hopes, and proposals for the future of the Republic. This interface brings those voices back to life.
+
+Explore the *Cahiers de Doléances* through an interactive 3D knowledge graph. Ask questions in natural language, and watch as civic themes, concerns, and proposals emerge — connected across communes, revealing patterns in what citizens truly care about.
 
 **Single-purpose interface**: Connects exclusively to the Grand Débat National GraphRAG MCP server. No other data sources.
 
@@ -152,5 +158,7 @@ MIT
 ---
 
 <p align="center">
-  <sub>Built with GraphRAG | Grand Débat National 2019 | Charente-Maritime</sub>
+  <sub>Built with GraphRAG | Grand Débat National 2019 | 50 communes de Charente-Maritime</sub>
+  <br>
+  <sub>Header image generated with <a href="https://huggingface.co/spaces/mcp-tools/Z-Image-Turbo">Z-Image Turbo</a> on Hugging Face</sub>
 </p>
