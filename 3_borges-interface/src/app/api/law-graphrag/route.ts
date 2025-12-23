@@ -137,53 +137,88 @@ export async function POST(request: NextRequest) {
     }
 
     // Transform MCP response to match expected interface format
+    // Handle both single-commune and multi-commune response formats
     const mcpResult = result as {
-      success: boolean
+      success?: boolean
       answer?: string
       provenance?: {
-        entities?: Array<{ id: string; name: string; type: string; description?: string }>
-        relationships?: Array<{ source: string; target: string; type?: string }>
-        source_quotes?: Array<{ content: string; commune?: string }>
+        entities?: Array<{ id?: string; name?: string; type?: string; description?: string }>
+        relationships?: Array<{ source?: string; target?: string; type?: string; description?: string; weight?: number }>
+        source_quotes?: Array<{ content?: string; commune?: string; chunk_id?: number }>
+        communities?: Array<{ title?: string; summary?: string; commune?: string; rating?: number }>
       }
-      results?: Array<{ answer_summary: string; commune_id: string }>
+      results?: Array<{ answer_summary?: string; commune_id?: string; commune_name?: string }>
+      aggregated_provenance?: {
+        entities?: Array<{ id?: string; name?: string; type?: string; description?: string }>
+        relationships?: Array<{ source?: string; target?: string; type?: string; description?: string; weight?: number }>
+        communities?: Array<{ title?: string; summary?: string; commune?: string; rating?: number }>
+        source_quotes?: Array<{ content?: string; commune?: string; chunk_id?: number }>
+      }
       error?: string
     }
 
-    if (!mcpResult.success) {
+    // Check for explicit failure or error message from server
+    if (mcpResult.success === false || mcpResult.error) {
       throw new Error(mcpResult.error || 'MCP query failed')
+    }
+
+    // Handle null/undefined result gracefully
+    if (!mcpResult || (typeof mcpResult === 'object' && Object.keys(mcpResult).length === 0)) {
+      throw new Error('Empty response from MCP server')
     }
 
     // Build answer from results if multi-commune query
     let answer = mcpResult.answer || ''
-    if (mcpResult.results) {
+    if (mcpResult.results && Array.isArray(mcpResult.results)) {
       answer = mcpResult.results
-        .map(r => `**${r.commune_id}**: ${r.answer_summary}`)
+        .filter(r => r && (r.commune_id || r.commune_name))
+        .map(r => `**${r.commune_name || r.commune_id}**: ${r.answer_summary || 'Aucune réponse'}`)
         .join('\n\n')
     }
 
-    // Transform to expected format
+    // Get provenance from either format (single-commune or multi-commune)
+    const provenance = mcpResult.provenance || mcpResult.aggregated_provenance
+
+    // Transform to expected format with robust null checks
     const transformedResponse = {
       success: true,
       query,
-      answer,
-      graphrag_data: mcpResult.provenance ? {
-        entities: (mcpResult.provenance.entities || []).map((e, i) => ({
-          id: e.id || `entity-${i}`,
-          name: e.name || e.id,
-          type: e.type || 'concept',
-          description: e.description
-        })),
-        relationships: (mcpResult.provenance.relationships || []).map((r, i) => ({
-          id: `rel-${i}`,
-          source: r.source,
-          target: r.target,
-          type: r.type || 'RELATED_TO'
-        })),
-        source_chunks: (mcpResult.provenance.source_quotes || []).map((q, i) => ({
-          chunk_id: `chunk-${i}`,
-          content: q.content,
-          document_id: q.commune || 'unknown'
-        }))
+      answer: answer || 'Aucune réponse disponible.',
+      graphrag_data: provenance ? {
+        entities: (provenance.entities || [])
+          .filter((e): e is NonNullable<typeof e> => e != null)
+          .map((e, i) => ({
+            id: e.id || e.name || `entity-${i}`,
+            name: e.name || e.id || `Entity ${i}`,
+            type: e.type || 'CIVIC_ENTITY',
+            description: e.description || ''
+          })),
+        relationships: (provenance.relationships || [])
+          .filter((r): r is NonNullable<typeof r> => r != null && r.source != null && r.target != null)
+          .map((r, i) => ({
+            id: `rel-${i}`,
+            source: r.source!,
+            target: r.target!,
+            type: r.type || 'RELATED_TO',
+            description: r.description || '',
+            weight: r.weight || 1.0
+          })),
+        source_chunks: (provenance.source_quotes || [])
+          .filter((q): q is NonNullable<typeof q> => q != null && q.content != null)
+          .map((q, i) => ({
+            chunk_id: `chunk-${q.chunk_id ?? i}`,
+            content: q.content!,
+            document_id: q.commune || 'unknown'
+          })),
+        communities: (provenance.communities || [])
+          .filter((c): c is NonNullable<typeof c> => c != null)
+          .map((c, i) => ({
+            id: `community-${i}`,
+            title: c.title || `Community ${i}`,
+            summary: c.summary || '',
+            commune: c.commune || '',
+            rating: c.rating
+          }))
       } : undefined
     }
 
