@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/header.webp" alt="Grand Débat National - Civic Knowledge Graph Explorer" width="100%">
+  <img src="assets/header.webp?v=2" alt="Grand Débat National - Civic Knowledge Graph Explorer" width="100%">
 </p>
 
 <h1 align="center">Grand Débat National GraphRAG</h1>
