@@ -1195,20 +1195,6 @@ function BorgesLibrary() {
             </button>
           </div>
 
-          {/* Show matched entities from the subgraph query */}
-          {queryResultNodes.length > 0 && (
-            <div className="mb-3 p-3 bg-borges-dark rounded-borges-sm border border-borges-border">
-              <div className="text-xs font-medium text-borges-light mb-2">Entités du sous-graphe</div>
-              <div className="text-xs text-borges-light max-h-20 overflow-y-auto space-y-1">
-                {queryResultNodes.map((node: any, i: number) => (
-                  <div key={i} className="truncate text-borges-light-muted">
-                    • {node.properties?.name || node.id} <span className="text-borges-muted text-xs">({node.labels?.[0] || 'Entity'})</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="flex-1 overflow-hidden flex flex-col min-h-0">
             <div className="text-xs text-borges-light-muted mb-1 hidden md:block">Réponse:</div>
             <div className="flex-1 overflow-y-auto pr-2">
