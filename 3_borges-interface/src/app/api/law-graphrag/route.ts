@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const LAW_GRAPHRAG_MCP_URL = process.env.LAW_GRAPHRAG_API_URL || 'https://law-graphrag-reconciliation-api-production.up.railway.app'
+const LAW_GRAPHRAG_MCP_URL = process.env.LAW_GRAPHRAG_API_URL || 'https://graphragmcp-production.up.railway.app'
 
 // Session cache (in production, use Redis or similar)
 let mcpSessionId: string | null = null
