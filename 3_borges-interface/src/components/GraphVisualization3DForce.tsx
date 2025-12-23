@@ -12,6 +12,8 @@ interface Node {
   centrality_score?: number
   name?: string
   color?: string
+  val?: number
+  group?: string
 }
 
 interface Link {
@@ -126,6 +128,9 @@ export default function GraphVisualization3DForce({
 
   // Legend expand state for mobile
   const [isLegendExpanded, setIsLegendExpanded] = useState(false)
+
+  // Track unique relationship types from the data
+  const [relationshipTypes, setRelationshipTypes] = useState<Set<string>>(new Set())
 
   // TextChunkModal state
   const [isChunkModalOpen, setIsChunkModalOpen] = useState(false)
@@ -510,9 +515,9 @@ export default function GraphVisualization3DForce({
         }
       }
 
-      // Continue until all nodes are added, then process links
+      // Continue until all nodes are added, then process all links (no hardcoded limit)
       const shouldContinue = currentNodeIndex < nodes.length ||
-                           (currentNodeIndex >= nodes.length && processedLinkIndex < Math.min(validLinks.length, 200))
+                           (currentNodeIndex >= nodes.length && processedLinkIndex < validLinks.length)
 
       if (shouldContinue) {
         setTimeout(addBatch, 250) // Add next batch after 250ms
@@ -557,6 +562,14 @@ export default function GraphVisualization3DForce({
         type: rel.type || 'RELATED',
         value: 1
       }))
+
+    // Extract all unique relationship types for the legend
+    const uniqueRelTypes = new Set<string>()
+    allValidLinks.forEach(link => {
+      if (link.type) uniqueRelTypes.add(link.type)
+    })
+    setRelationshipTypes(uniqueRelTypes)
+    console.log('📋 Found relationship types:', Array.from(uniqueRelTypes))
 
     // Identify all nodes that participate in at least one relationship
     const connectedNodeIds = new Set<string>()
@@ -614,12 +627,20 @@ export default function GraphVisualization3DForce({
           name: getNodeName(node, nodeId),
           group: entityType, // Use entity type for group (used in force calculations)
           color: getNodeColor(node), // Pass full node to get color from entity_type property
-          val: baseSize * communeMultiplier // Communes are significantly larger (central civic entities)
+          val: baseSize * communeMultiplier, // Communes are significantly larger (central civic entities)
+          degree: node.degree // Preserve degree for sorting
         }
       })
+      // Sort by degree (importance by connections)
+      .sort((a, b) => (b.degree || 0) - (a.degree || 0))
+
+    // For GraphRAG query results (debugInfo present), show ALL nodes
+    // For initial GraphML loads (no debugInfo), limit to 1000 for performance
+    const displayNodes = debugInfo ? nodes : nodes.slice(0, 1000)
+    console.log(`📊 Node limit applied: ${displayNodes.length}/${nodes.length} nodes displayed (debugInfo: ${!!debugInfo})`)
 
     // Create a Set of final valid node IDs for link filtering
-    const finalValidNodeIds = new Set(nodes.map(n => n.id))
+    const finalValidNodeIds = new Set(displayNodes.map(n => n.id))
 
     console.log(`🔍 Final connected nodes (zero orphans):`, Array.from(finalValidNodeIds).slice(0, 5), `(showing first 5 of ${finalValidNodeIds.size})`)
 
@@ -632,16 +653,17 @@ export default function GraphVisualization3DForce({
       return isValid
     })
 
-    console.log(`🔗 Connected Subgraph guaranteed: ${links.length}/${allValidLinks.length} links connect ${nodes.length} nodes (all nodes have ≥1 relation)`)
+    console.log(`🔗 Connected Subgraph guaranteed: ${links.length}/${allValidLinks.length} links connect ${displayNodes.length} nodes (all nodes have ≥1 relation)`)
 
     console.log(`🔍 Final processing results:`)
-    console.log(`  • Final nodes to render: ${nodes.length}`)
+    console.log(`  • Nodes available: ${nodes.length}`)
+    console.log(`  • Final nodes to render: ${displayNodes.length}`)
     console.log(`  • Final links to render: ${links.length}`)
-    console.log(`  • Sample nodes:`, nodes.slice(0, 3).map(n => ({ id: n.id, name: n.name, color: n.color })))
+    console.log(`  • Sample nodes:`, displayNodes.slice(0, 3).map(n => ({ id: n.id, name: n.name, color: n.color })))
     console.log(`  • Sample links:`, links.slice(0, 3).map(l => ({ source: l.source, target: l.target, type: l.type })))
 
     // Only proceed if we have valid data to display
-    if (nodes.length === 0 && links.length === 0) {
+    if (displayNodes.length === 0 && links.length === 0) {
       console.warn('⚠️ No valid nodes or links found, keeping existing graph')
       return
     }
@@ -650,7 +672,7 @@ export default function GraphVisualization3DForce({
     if (debugInfo) {
       console.log('🎬 Starting progressive GraphRAG loading...')
       // Only clear the graph if we have data to replace it with
-      if (nodes.length > 0) {
+      if (displayNodes.length > 0) {
         try {
           console.log('🧹 Clearing graph data for progressive loading...')
           graphRef.current.graphData({ nodes: [], links: [] })
@@ -660,10 +682,10 @@ export default function GraphVisualization3DForce({
 
         // Add nodes progressively
         console.log('📈 Starting progressive node/link addition...')
-        addNodesProgressively(nodes, links, () => {
+        addNodesProgressively(displayNodes, links, () => {
           console.log('✅ Progressive loading completed')
           if (onNodeVisibilityChange) {
-            onNodeVisibilityChange(nodes.map(n => n.id))
+            onNodeVisibilityChange(displayNodes.map(n => n.id))
           }
         })
       }
@@ -673,7 +695,7 @@ export default function GraphVisualization3DForce({
       // Show complete graph immediately
       try {
         console.log('🎯 Setting graph data immediately...')
-        graphRef.current.graphData({ nodes, links })
+        graphRef.current.graphData({ nodes: displayNodes, links })
         console.log('✅ Graph data set successfully!')
       } catch (error) {
         console.error('❌ Error loading complete graph:', error)
@@ -681,7 +703,7 @@ export default function GraphVisualization3DForce({
       }
 
       if (onNodeVisibilityChange) {
-        onNodeVisibilityChange(nodes.map(n => n.id))
+        onNodeVisibilityChange(displayNodes.map(n => n.id))
       }
     }
 
@@ -852,11 +874,11 @@ export default function GraphVisualization3DForce({
           <div className="hidden md:flex flex-col max-h-[70vh]">
             <div className="font-medium text-borges-light mb-2 px-3 pt-3 flex-shrink-0">Légende (62+ types)</div>
 
-            {/* Scrollable entity types section */}
+            {/* Scrollable entity types and relationship types section */}
             <div className="overflow-y-auto flex-1 px-3 pb-3">
-              <div className="mb-3">
-                <div className="text-borges-light-muted text-xs font-medium mb-2 sticky top-0 bg-borges-secondary">Entités</div>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="mb-4">
+                <div className="text-borges-light-muted text-xs font-medium mb-2 sticky top-0 bg-borges-secondary py-1">Types d'entités</div>
+                <div className="space-y-1">
                   {ENTITY_TYPES.map((type) => (
                     <div key={type} className="flex items-center gap-2 text-xs">
                       <div
@@ -871,17 +893,21 @@ export default function GraphVisualization3DForce({
                 </div>
               </div>
 
-              {/* Relationship Types */}
-              <div className="border-t border-borges-border pt-2 mt-3">
-                <div className="text-borges-light-muted text-xs font-medium mb-2">Relations courantes</div>
+              {/* Relationship Types - Dynamic from API data */}
+              <div className="border-t border-borges-border pt-3">
+                <div className="text-borges-light-muted text-xs font-medium mb-2 sticky top-0 bg-borges-secondary py-1">Types de relations</div>
                 <div className="space-y-1 text-borges-light-muted text-xs">
-                  <div className="flex items-center"><span className="mr-2">→</span>CONCERNS</div>
-                  <div className="flex items-center"><span className="mr-2">→</span>RELATED_TO</div>
-                  <div className="flex items-center"><span className="mr-2">→</span>MENTIONS</div>
-                  <div className="flex items-center"><span className="mr-2">→</span>SIMILAR_TO</div>
-                  <div className="flex items-center"><span className="mr-2">→</span>CONTAINS</div>
+                  {relationshipTypes.size > 0 ? (
+                    Array.from(relationshipTypes).sort().map((relType) => (
+                      <div key={relType} className="flex items-center">
+                        <span className="mr-2">→</span>
+                        <span className="font-medium">{relType}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-borges-muted text-xs italic">Aucune relation</div>
+                  )}
                 </div>
-                <div className="text-borges-light-muted text-xs mt-2 italic">Note: Les relations d'ordre 2-3 sont plus claires</div>
               </div>
             </div>
           </div>
@@ -913,13 +939,17 @@ export default function GraphVisualization3DForce({
                   </div>
                   <div className="text-borges-muted text-xs mt-2">... +{ENTITY_TYPES.length - 12} types</div>
                 </div>
-                {/* Relations */}
+                {/* Relations - Dynamic from API data */}
                 <div className="border-t border-borges-border pt-2">
                   <div className="text-borges-light-muted text-xs font-medium mb-1">Relations</div>
                   <div className="space-y-0.5 text-borges-light-muted text-xs">
-                    <div>→ CONCERNS / MENTIONS</div>
-                    <div>→ RELATED_TO / CONTAINS</div>
-                    <div>→ SIMILAR_TO</div>
+                    {relationshipTypes.size > 0 ? (
+                      Array.from(relationshipTypes).sort().map((relType) => (
+                        <div key={relType}>→ {relType}</div>
+                      ))
+                    ) : (
+                      <div className="text-borges-muted text-xs italic">Aucune relation</div>
+                    )}
                   </div>
                 </div>
               </div>
