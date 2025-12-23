@@ -1,21 +1,35 @@
-# Borges Library Interface - Development Guidelines
+# Grand Débat National Interface - Development Guidelines
+
+## Single-Purpose Interface (Constitution v3.0.0)
+
+This interface connects **EXCLUSIVELY** to the Grand Débat National MCP server.
+- **MCP Server**: `https://graphragmcp-production.up.railway.app/mcp`
+- **Dataset**: Cahiers de Doléances 2019
+- **Coverage**: 50 communes in Charente-Maritime
+- **NO** source selection or toggle functionality
 
 ## Design Principles
 
 ### Principe #1 - No Orphaned Nodes
 Les noeuds qui s'affichent doivent toujours avoir des relations. Les noeuds orphelins ne sont pas admis dans l'interface.
 
-### Principe #2 - Books at Center
-Les livres sont les entités "coeur" du graphe. Ils doivent toujours être le coeur de toutes les requêtes et visualisations de graphe.
+### Principe #2 - Commune-Centric Architecture
+Les communes sont les entités organisationnelles du graphe. Toutes les requêtes et visualisations sont centrées sur les communes.
 
-### Principe #3 - Inter-book Priority
-Les zones inter-livres doivent être investiguées en priorité par le graphRAG.
+### Principe #3 - Cross-Commune Analysis
+Les connexions inter-communes et les patterns régionaux doivent être explorés en priorité.
 
 ### Principe #4 - Visual Spacing
 Toujours laisser de l'espace entre les noeuds pour voir les relations.
 
 ### Principe #5 - End-to-End Interpretability
-La bibliothèque Borges doit permettre une interprétabilité de bout-en-bout du graphRAG. On doit pouvoir naviguer du chunk de texte jusqu'à la réponse du RAG en passant par les noeuds et relations qui ont permis de les modéliser.
+L'interface doit permettre une interprétabilité de bout-en-bout du graphRAG. On doit pouvoir naviguer du chunk de texte citoyen jusqu'à la réponse du RAG.
+
+### Principe #6 - Single-Source
+L'interface se connecte UNIQUEMENT au serveur MCP Grand Débat National. Pas de sélection de source.
+
+### Principe #7 - Civic Provenance Chain
+Chaque entité doit être traçable jusqu'à sa commune source et au texte citoyen original.
 
 ## Tech Stack
 
@@ -24,26 +38,35 @@ La bibliothèque Borges doit permettre une interprétabilité de bout-en-bout du
 - Tailwind CSS 3.3.5
 - 3d-force-graph 1.79.0, Three.js 0.181.0, D3 7.8.5
 
-**Backend (separate repo):**
-- [reconciliation-api](https://github.com/ArthurSrz/reconciliation-api) on Railway
-
-## Testing Considerations
-
-1. The reconciliation API must be running (Railway or localhost:5002) before testing the interface
-2. Browser console errors must be resolved before further testing
-3. Webpack issues should not be addressed by clearing cache - investigate root cause
+**Backend:**
+- MCP Server: `graphragmcp-production.up.railway.app`
+- Protocol: MCP (Model Context Protocol) over HTTP with JSON-RPC
 
 ## Key Files
 
 - `3_borges-interface/src/components/BorgesLibrary.tsx` - Main app component
 - `3_borges-interface/src/components/GraphVisualization3DForce.tsx` - 3D graph
-- `3_borges-interface/src/components/QueryInterface.tsx` - Search interface
-- `3_borges-interface/src/app/api/` - Next.js API routes (proxies to backend)
+- `3_borges-interface/src/app/api/law-graphrag/route.ts` - MCP proxy route
+- `3_borges-interface/src/lib/services/law-graphrag.ts` - MCP client service
 
-## Active Technologies
-- Python 3.11+ + opik, aiohttp, python-dotenv (003-rag-observability-comparison)
-- OPIK cloud (experiment results), no local persistence (003-rag-observability-comparison)
-- OPIK Cloud (experiment results), No local persistence required (003-rag-observability-comparison)
+## MCP Tools Available
 
-## Recent Changes
-- 003-rag-observability-comparison: Added Python 3.11+ + opik, aiohttp, python-dotenv
+| Tool | Description |
+|------|-------------|
+| `grand_debat_list_communes` | List all 50 communes |
+| `grand_debat_query` | Query single commune |
+| `grand_debat_query_all` | Query across all communes |
+| `grand_debat_search_entities` | Search entities by pattern |
+| `grand_debat_get_communities` | Get thematic community reports |
+
+## Environment Variables
+
+```env
+LAW_GRAPHRAG_API_URL=https://graphragmcp-production.up.railway.app
+```
+
+## Testing
+
+1. MCP server must be accessible before testing
+2. Test with civic queries: "Quelles sont les préoccupations sur les impôts ?"
+3. Verify commune attribution appears in results
