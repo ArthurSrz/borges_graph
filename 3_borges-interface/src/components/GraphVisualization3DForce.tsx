@@ -634,10 +634,10 @@ export default function GraphVisualization3DForce({
       // Sort by degree (importance by connections)
       .sort((a, b) => (b.degree || 0) - (a.degree || 0))
 
-    // For GraphRAG query results (debugInfo present), show ALL nodes
-    // For initial GraphML loads (no debugInfo), limit to 1000 for performance
-    const displayNodes = debugInfo ? nodes : nodes.slice(0, 1000)
-    console.log(`📊 Node limit applied: ${displayNodes.length}/${nodes.length} nodes displayed (debugInfo: ${!!debugInfo})`)
+    // Show ALL nodes (both queries and initial loads)
+    // No limit - display complete graph data
+    const displayNodes = nodes
+    console.log(`📊 Displaying all ${displayNodes.length} nodes (no limit applied)`)
 
     // Create a Set of final valid node IDs for link filtering
     const finalValidNodeIds = new Set(displayNodes.map(n => n.id))
