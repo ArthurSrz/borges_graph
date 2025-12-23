@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="assets/header-v2.webp" alt="Grand Débat National - Civic Knowledge Graph Explorer" width="100%">
+  <img src="assets/header-v2.webp" alt="Grand Débat National - Explorateur de Graphe de Connaissances Civique" width="100%">
 </p>
 
 <h1 align="center">Grand Débat National GraphRAG</h1>
 
 <p align="center">
-  <strong>Explore citizen voices through an interactive 3D knowledge graph</strong>
+  <strong>Explorez les voix citoyennes à travers un graphe de connaissances 3D interactif</strong>
 </p>
 
 <p align="center">
@@ -25,78 +25,78 @@
 </p>
 
 <p align="center">
-  Explore the <em>Cahiers de Doléances</em> from the 2019 Grand Débat National — citizen contributions from 50 communes in Charente-Maritime.
+  Explorez les <em>Cahiers de Doléances</em> du Grand Débat National 2019 — contributions citoyennes de 50 communes de Charente-Maritime.
 </p>
 
 ---
 
-## What is this?
+## Qu'est-ce que c'est ?
 
-In early 2019, France launched the **Grand Débat National** — an unprecedented national consultation where citizens could voice their concerns, hopes, and proposals for the future of the Republic. This interface brings those voices back to life.
+Début 2019, la France a lancé le **Grand Débat National** — une consultation nationale sans précédent où les citoyens pouvaient exprimer leurs préoccupations, leurs espoirs et leurs propositions pour l'avenir de la République. Cette interface redonne vie à ces voix.
 
-Explore the *Cahiers de Doléances* through an interactive 3D knowledge graph. Ask questions in natural language, and watch as civic themes, concerns, and proposals emerge — connected across communes, revealing patterns in what citizens truly care about.
+Explorez les *Cahiers de Doléances* à travers un graphe de connaissances 3D interactif. Posez des questions en langage naturel et observez comment les thèmes civiques, les préoccupations et les propositions émergent — connectés entre les communes, révélant les motifs de ce qui compte vraiment pour les citoyens.
 
-**Single-purpose interface**: Connects exclusively to the Grand Débat National GraphRAG MCP server. No other data sources.
+**Interface mono-source** : Se connecte exclusivement au serveur MCP du Grand Débat National. Aucune autre source de données.
 
-**Data source**:
-- **MCP Server**: `https://graphragmcp-production.up.railway.app/mcp`
-- **Dataset**: Cahiers de Doléances 2019
-- **Coverage**: 50 communes in Charente-Maritime
-- **Entities**: ~8,000+ extracted from citizen contributions
+**Source des données** :
+- **Serveur MCP** : `https://graphragmcp-production.up.railway.app/mcp`
+- **Jeu de données** : Cahiers de Doléances 2019
+- **Couverture** : 50 communes de Charente-Maritime
+- **Entités** : ~8 000+ extraites des contributions citoyennes
 
-## Features
+## Fonctionnalités
 
-| Feature | Description |
-|---------|-------------|
-| Civic query | Ask questions about citizen concerns, proposals, and themes |
-| 3D force-directed graph | Interactive visualization of civic entities and relationships |
-| Commune attribution | Every answer traceable to source commune and citizen text |
-| Cross-commune analysis | Compare themes and concerns across all 50 communes |
-| Mobile responsive | Works on desktop, tablet, and mobile devices |
+| Fonctionnalité | Description |
+|----------------|-------------|
+| Requête civique | Posez des questions sur les préoccupations, propositions et thèmes citoyens |
+| Graphe 3D force-directed | Visualisation interactive des entités civiques et leurs relations |
+| Attribution par commune | Chaque réponse traçable jusqu'à la commune source et au texte citoyen |
+| Analyse inter-communes | Comparez les thèmes et préoccupations à travers les 50 communes |
+| Responsive mobile | Fonctionne sur ordinateur, tablette et mobile |
 
-## Example Queries
+## Exemples de requêtes
 
-- "Quelles sont les préoccupations des citoyens sur les impôts ?"
-- "What do citizens say about public services?"
-- "Quels thèmes reviennent le plus souvent ?"
+- « Quelles sont les préoccupations des citoyens sur les impôts ? »
+- « Que disent les citoyens sur les services publics ? »
+- « Quels thèmes reviennent le plus souvent ? »
 
-## Tech Stack
+## Stack technique
 
-| Category | Technologies |
-|----------|-------------|
+| Catégorie | Technologies |
+|-----------|-------------|
 | Framework | Next.js 16, React 19, TypeScript 5.2 |
-| Visualization | 3d-force-graph, Three.js, D3.js |
-| Styling | Tailwind CSS |
-| Backend | MCP (Model Context Protocol) over HTTP |
+| Visualisation | 3d-force-graph, Three.js, D3.js |
+| Style | Tailwind CSS |
+| Backend | MCP (Model Context Protocol) sur HTTP |
 
 ## Architecture
 
 ```
 3_borges-interface/
 ├── src/
-│   ├── app/api/law-graphrag/   # MCP proxy route
-│   ├── components/             # React components (graph, modals, query)
-│   ├── lib/services/           # MCP client service
-│   └── types/                  # TypeScript definitions
+│   ├── app/api/law-graphrag/   # Route proxy MCP
+│   ├── components/             # Composants React (graphe, modales, requête)
+│   ├── lib/services/           # Service client MCP
+│   └── types/                  # Définitions TypeScript
 ```
 
-### Key Components
+### Composants principaux
 
-| Component | Description |
+| Composant | Description |
 |-----------|-------------|
-| `BorgesLibrary.tsx` | Main application shell |
-| `GraphVisualization3DForce.tsx` | 3D graph rendering |
-| `QueryInterface.tsx` | Natural language search |
-| `EntityDetailModal.tsx` | Entity details and connections |
+| `BorgesLibrary.tsx` | Shell principal de l'application |
+| `GraphVisualization3DForce.tsx` | Rendu du graphe 3D |
+| `QueryInterface.tsx` | Recherche en langage naturel |
+| `EntityDetailModal.tsx` | Détails des entités et connexions |
 
-## Development
+## Développement
 
-### Prerequisites
+### Prérequis
 
 - Node.js 18+
-- npm or yarn
+- npm ou yarn
 
-### Setup
+### Installation
 
 ```bash
 cd 3_borges-interface
@@ -104,61 +104,61 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Ouvrir [http://localhost:3000](http://localhost:3000)
 
-### Environment Variables
+### Variables d'environnement
 
-Create `3_borges-interface/.env.local`:
+Créer `3_borges-interface/.env.local` :
 
 ```env
-# Grand Débat National MCP Server (required)
+# Serveur MCP Grand Débat National (requis)
 LAW_GRAPHRAG_API_URL=https://graphragmcp-production.up.railway.app
 ```
 
-## Deployment
+## Déploiement
 
-Deployed on **Vercel** with:
-- Root directory: `3_borges-interface/`
-- Framework preset: Next.js
+Déployé sur **Vercel** avec :
+- Répertoire racine : `3_borges-interface/`
+- Preset framework : Next.js
 
-The interface connects to the MCP server deployed on Railway.
+L'interface se connecte au serveur MCP déployé sur Railway.
 
-## Constitution (Design Principles)
+## Constitution (Principes de conception)
 
-This project follows **Constitution v3.0.0** - a single-purpose civic knowledge graph interface:
+Ce projet suit la **Constitution v3.0.0** - une interface de graphe de connaissances civique mono-source :
 
-| Principle | Description |
-|-----------|-------------|
-| I. End-to-End Interpretability | Navigate from text chunks to RAG answers through entities |
-| II. Civic Provenance Chain | All data traceable to source commune and citizen text |
-| III. No Orphan Nodes | All displayed entities must have relationships |
-| IV. Commune-Centric | Communes are the primary organizational units |
-| V. Cross-Commune Analysis | Enable discovering patterns across multiple communes |
-| VI. Single-Source | NO source selection - connects ONLY to Grand Débat MCP |
-| VII. Functional Interface | Minimalist design focused on civic content |
-| VIII. Mobile-First | Fully functional on mobile devices |
+| Principe | Description |
+|----------|-------------|
+| I. Interprétabilité de bout en bout | Naviguer des chunks de texte aux réponses RAG via les entités |
+| II. Chaîne de provenance civique | Toutes les données traçables jusqu'à la commune source et au texte citoyen |
+| III. Pas de nœuds orphelins | Toutes les entités affichées doivent avoir des relations |
+| IV. Centré sur les communes | Les communes sont les unités organisationnelles principales |
+| V. Analyse inter-communes | Permettre la découverte de motifs à travers plusieurs communes |
+| VI. Source unique | PAS de sélection de source - se connecte UNIQUEMENT au MCP Grand Débat |
+| VII. Interface fonctionnelle | Design minimaliste centré sur le contenu civique |
+| VIII. Mobile-first | Entièrement fonctionnel sur appareils mobiles |
 
-## MCP Tools Available
+## Outils MCP disponibles
 
-The MCP server provides these tools:
+Le serveur MCP fournit ces outils :
 
-| Tool | Description |
-|------|-------------|
-| `grand_debat_list_communes` | List all 50 communes with statistics |
-| `grand_debat_query` | Query a single commune |
-| `grand_debat_query_all` | Query across all communes |
-| `grand_debat_search_entities` | Search entities by pattern |
-| `grand_debat_get_communities` | Get thematic community reports |
-| `grand_debat_get_contributions` | Get original citizen texts |
+| Outil | Description |
+|-------|-------------|
+| `grand_debat_list_communes` | Lister les 50 communes avec statistiques |
+| `grand_debat_query` | Interroger une seule commune |
+| `grand_debat_query_all` | Interroger toutes les communes |
+| `grand_debat_search_entities` | Rechercher des entités par motif |
+| `grand_debat_get_communities` | Obtenir les rapports de communautés thématiques |
+| `grand_debat_get_contributions` | Obtenir les textes citoyens originaux |
 
-## License
+## Licence
 
 MIT
 
 ---
 
 <p align="center">
-  <sub>Built with GraphRAG | Grand Débat National 2019 | 50 communes de Charente-Maritime</sub>
+  <sub>Construit avec GraphRAG | Grand Débat National 2019 | 50 communes de Charente-Maritime</sub>
   <br>
-  <sub>Header image generated with <a href="https://huggingface.co/spaces/mcp-tools/Z-Image-Turbo">Z-Image Turbo</a> on Hugging Face</sub>
+  <sub>Image d'en-tête générée avec <a href="https://huggingface.co/spaces/mcp-tools/Z-Image-Turbo">Z-Image Turbo</a> sur Hugging Face</sub>
 </p>
