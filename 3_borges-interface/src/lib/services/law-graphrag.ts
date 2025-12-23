@@ -109,7 +109,9 @@ class LawGraphRAGService {
 
   /**
    * Fetch the full graph from MCP for initial load
-   * Makes a broad query to get comprehensive data across all communes
+   * Uses grand_debat_query_all which now queries ALL 50 communes in both modes:
+   * - local mode: entities, relationships, source quotes
+   * - global mode: community summaries
    * @returns Full graph data for visualization
    */
   async fetchFullGraph(): Promise<LawGraphRAGGraphData | null> {
@@ -117,7 +119,7 @@ class LawGraphRAGService {
       // Use a broad query to get comprehensive data across all communes
       const response = await this.query({
         query: 'Grand Débat National préoccupations citoyennes',
-        mode: 'global',
+        mode: 'global',  // Mode is ignored - MCP queries both modes now
       })
 
       if (response.success === false) {
