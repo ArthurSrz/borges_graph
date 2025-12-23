@@ -413,17 +413,28 @@ function BorgesLibrary() {
     setCurrentProcessingPhase(null)
   }
 
+  // Store base GraphML data for restoring after queries
+  const baseGraphDataRef = useRef<ReconciliationGraphData | null>(null)
+
+  // Update base graph data when GraphML loads
+  useEffect(() => {
+    if (reconciliationData && reconciliationData.nodes.length > 0 && !baseGraphDataRef.current) {
+      baseGraphDataRef.current = reconciliationData
+      console.log('📊 Base graph data stored:', reconciliationData.nodes.length, 'nodes')
+    }
+  }, [reconciliationData])
+
   const handleSimpleQuery = useCallback(async (query: string) => {
     console.log('🔍 Processing civic query:', query)
     console.log('🏛️ Single-purpose: Grand Débat National GraphRAG')
     console.log('🔧 Current mode:', mode)
 
-    // Clear previous query results to ensure fresh responses for each query
+    // Clear previous query results but KEEP the base graph visible
     setQueryAnswer('')
     setShowAnswer(false)
     setSearchPath(null)
     setDebugInfo(null)
-    setReconciliationData({ nodes: [], relationships: [] })
+    // DON'T clear reconciliationData - keep base graph visible for subgraph highlighting
 
     setIsProcessing(true)
     setProcessingStartTime(Date.now())
@@ -451,8 +462,13 @@ function BorgesLibrary() {
         // Transform response to graph data format
         const graphData = lawGraphRAGService.transformToGraphData(result)
 
-        if (graphData) {
-          console.log('🏛️ Civic graph data:', graphData.nodes.length, 'nodes,', graphData.relationships.length, 'relationships')
+        // Build subgraph from base graph based on query keywords
+        // MCP often returns no entities, so we search the base graph for relevant nodes
+        const baseGraph = baseGraphDataRef.current
+
+        if (graphData && graphData.nodes.length > 0) {
+          // MCP returned graph data - use it directly
+          console.log('🏛️ Civic graph data from MCP:', graphData.nodes.length, 'nodes,', graphData.relationships.length, 'relationships')
 
           setProcessingStats({
             nodes: graphData.nodes.length,
@@ -460,7 +476,6 @@ function BorgesLibrary() {
             neo4jRelationships: graphData.relationships.length
           })
 
-          // Ensure nodes have required properties for ReconciliationGraphData
           const normalizedNodes = graphData.nodes.map(node => ({
             ...node,
             properties: node.properties as Record<string, any>,
@@ -468,15 +483,12 @@ function BorgesLibrary() {
             centrality_score: node.centrality_score ?? 0.5
           }))
 
-          // Store query result nodes for entity lookup
           setQueryResultNodes(normalizedNodes)
-
           setReconciliationData({
             nodes: normalizedNodes,
             relationships: graphData.relationships
           })
 
-          // Extract entities for coloring (End-to-end interpretability - Constitution Principle I)
           const entitiesToColor = graphData.nodes.map((node: any, idx: number) => ({
             id: node.properties?.name || node.id,
             type: node.labels?.[0] || 'CIVIC_ENTITY',
@@ -489,57 +501,151 @@ function BorgesLibrary() {
             const enrichedEntities = colorService.enrichEntitiesWithColors(entitiesToColor)
             console.log(`🌈 Civic entities enriched: ${enrichedEntities.length}`)
             setColoredEntities(enrichedEntities)
+          }
+        } else if (baseGraph && baseGraph.nodes.length > 0) {
+          // MCP returned no graph data - build subgraph from base GraphML based on query
+          console.log('📊 Building subgraph from base GraphML for query:', query)
+
+          // Extract keywords from query for matching
+          const queryLower = query.toLowerCase()
+          const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3)
+
+          // Find nodes that match query keywords in their labels or properties
+          const matchingNodes = baseGraph.nodes.filter(node => {
+            const labels = node.labels.map(l => l.toLowerCase())
+            const name = (node.properties?.name || '').toLowerCase()
+            const description = (node.properties?.description || '').toLowerCase()
+
+            return queryWords.some(word =>
+              labels.some(label => label.includes(word)) ||
+              name.includes(word) ||
+              description.includes(word)
+            )
+          })
+
+          // If no direct matches, show nodes connected to commune nodes
+          let subgraphNodes = matchingNodes
+          if (matchingNodes.length === 0) {
+            // Fallback: show COMMUNE nodes and their direct neighbors
+            const communeNodes = baseGraph.nodes.filter(n =>
+              n.labels.some(l => l.toUpperCase() === 'COMMUNE')
+            )
+            const communeIds = new Set(communeNodes.map(n => n.id))
+
+            // Find edges connected to communes
+            const communeEdges = baseGraph.relationships.filter(r =>
+              communeIds.has(r.source) || communeIds.has(r.target)
+            )
+
+            // Get neighbor node IDs
+            const neighborIds = new Set<string>()
+            communeEdges.forEach(e => {
+              neighborIds.add(e.source)
+              neighborIds.add(e.target)
+            })
+
+            subgraphNodes = baseGraph.nodes.filter(n => neighborIds.has(n.id))
+            console.log(`📊 Using commune-centered subgraph: ${subgraphNodes.length} nodes`)
           } else {
-            setColoredEntities([])
+            console.log(`📊 Found ${matchingNodes.length} nodes matching query`)
           }
 
-          // Create debug info for visualization
-          const civicDebugInfo = {
-            processing_phases: {
-              entity_selection: {
-                entities: graphData.nodes.map((node: any, index: number) => ({
-                  id: node.properties?.name || node.id,
-                  name: node.properties?.name || node.id,
-                  type: node.labels?.[0] || 'CIVIC_ENTITY',
-                  description: node.properties?.description || '',
-                  rank: index + 1,
-                  score: node.centrality_score || 0.5,
-                  selected: true
-                })),
-                duration_ms: 500
-              },
-              community_analysis: { communities: [], duration_ms: 100 },
-              relationship_mapping: {
-                relationships: graphData.relationships.map((rel: any) => ({
-                  source: rel.source,
-                  target: rel.target,
-                  description: rel.properties?.description || '',
-                  weight: rel.properties?.weight || 1.0
-                })),
-                duration_ms: 300
-              },
-              text_synthesis: { duration_ms: 200 }
-            },
-            context_stats: {
-              total_time_ms: result.processing_time ? result.processing_time * 1000 : 1000,
-              mode: 'grand-debat-national',
-              prompt_length: query.length
-            },
-            animation_timeline: [
-              { phase: 'explosion', duration: 500, description: 'Analyzing civic entities' },
-              { phase: 'filtering', duration: 300, description: 'Mapping commune relationships' },
-              { phase: 'synthesis', duration: 300, description: 'Building civic context' },
-              { phase: 'crystallization', duration: 200, description: 'Generating civic answer' }
-            ]
+          // Get IDs of subgraph nodes
+          const subgraphNodeIds = new Set(subgraphNodes.map(n => n.id))
+
+          // Filter relationships to only those within subgraph
+          const subgraphRelationships = baseGraph.relationships.filter(r =>
+            subgraphNodeIds.has(r.source) && subgraphNodeIds.has(r.target)
+          )
+
+          setProcessingStats({
+            nodes: subgraphNodes.length,
+            communities: 0,
+            neo4jRelationships: subgraphRelationships.length
+          })
+
+          setQueryResultNodes(subgraphNodes)
+          setReconciliationData({
+            nodes: subgraphNodes,
+            relationships: subgraphRelationships
+          })
+
+          // Color entities for interpretability
+          const entitiesToColor = subgraphNodes.map((node, idx) => ({
+            id: node.properties?.name || node.id,
+            type: node.labels?.[0] || 'CIVIC_ENTITY',
+            description: node.properties?.description,
+            score: node.centrality_score || 0.5,
+            order: idx
+          }))
+
+          if (entitiesToColor.length > 0) {
+            const enrichedEntities = colorService.enrichEntitiesWithColors(entitiesToColor)
+            console.log(`🌈 Subgraph entities enriched: ${enrichedEntities.length}`)
+            setColoredEntities(enrichedEntities)
           }
-          setDebugInfo(civicDebugInfo)
+
+          // Create a search path for highlighting
+          setSearchPath({
+            entities: subgraphNodes.map(n => ({
+              id: n.id,
+              name: n.properties?.name || n.id
+            })),
+            relations: subgraphRelationships.map(r => ({
+              source: r.source,
+              target: r.target,
+              type: r.type
+            }))
+          })
         } else {
-          console.log('⚠️ No graph data from civic response')
+          console.log('⚠️ No graph data available')
           setColoredEntities([])
         }
 
+        // Create debug info for visualization
+        const currentNodes = reconciliationData?.nodes || []
+        const currentRels = reconciliationData?.relationships || []
+        const civicDebugInfo = {
+          processing_phases: {
+            entity_selection: {
+              entities: currentNodes.map((node: any, index: number) => ({
+                id: node.properties?.name || node.id,
+                name: node.properties?.name || node.id,
+                type: node.labels?.[0] || 'CIVIC_ENTITY',
+                description: node.properties?.description || '',
+                rank: index + 1,
+                score: node.centrality_score || 0.5,
+                selected: true
+              })),
+              duration_ms: 500
+            },
+            community_analysis: { communities: [], duration_ms: 100 },
+            relationship_mapping: {
+              relationships: currentRels.map((rel: any) => ({
+                source: rel.source,
+                target: rel.target,
+                description: rel.properties?.description || '',
+                weight: rel.properties?.weight || 1.0
+              })),
+              duration_ms: 300
+            },
+            text_synthesis: { duration_ms: 200 }
+          },
+          context_stats: {
+            total_time_ms: result.processing_time ? result.processing_time * 1000 : 1000,
+            mode: 'grand-debat-national',
+            prompt_length: query.length
+          },
+          animation_timeline: [
+            { phase: 'explosion', duration: 500, description: 'Analyzing civic entities' },
+            { phase: 'filtering', duration: 300, description: 'Mapping commune relationships' },
+            { phase: 'synthesis', duration: 300, description: 'Building civic context' },
+            { phase: 'crystallization', duration: 200, description: 'Generating civic answer' }
+          ]
+        }
+        setDebugInfo(civicDebugInfo)
+
         setShowAnswer(true)
-        setSearchPath(null)
       } else {
         throw new Error(result.error || 'Civic GraphRAG query failed')
       }
