@@ -462,10 +462,10 @@ export default function HighlightedText({
         {highlightEntities(text)}
       </div>
 
-      {/* Entity Tooltip - Basile Minimalism */}
+      {/* Entity Tooltip - Datack Branding */}
       {showTooltip && (hoveredEntity || pinnedEntity) && (
         <div
-          className="fixed z-50 bg-borges-secondary border border-borges-border rounded-borges-md text-xs shadow-borges-lg"
+          className="fixed z-50 bg-datack-secondary border border-datack-border rounded-datack-md text-xs shadow-datack-lg"
           style={{
             left: Math.max(10, Math.min(tooltipPosition.x - 125, window.innerWidth - 260)),
             top: tooltipPosition.y - 15,
@@ -483,44 +483,44 @@ export default function HighlightedText({
           }}
         >
           <div className="p-3 overflow-y-auto max-h-36">
-            <div className="text-borges-light font-medium mb-1 break-words">{(pinnedEntity || hoveredEntity)?.id}</div>
-            <div className="text-borges-light-muted mb-1">Type: {(pinnedEntity || hoveredEntity)?.type}</div>
-            <div className="text-borges-light-muted mb-2">Score: {(pinnedEntity || hoveredEntity)?.score?.toFixed(2)}</div>
+            <div className="text-datack-light font-medium mb-1 break-words">{(pinnedEntity || hoveredEntity)?.id}</div>
+            <div className="text-datack-muted mb-1">Type: {(pinnedEntity || hoveredEntity)?.type}</div>
+            <div className="text-datack-muted mb-2">Score: {(pinnedEntity || hoveredEntity)?.score?.toFixed(2)}</div>
             {(pinnedEntity || hoveredEntity)?.description && (
-              <div className="text-borges-muted mb-2 text-xs leading-relaxed">
+              <div className="text-datack-muted mb-2 text-xs leading-relaxed">
                 {(pinnedEntity || hoveredEntity)?.description}
               </div>
             )}
             <div className="flex items-center">
               <div
-                className="w-3 h-3 rounded-full mr-2 border border-borges-border flex-shrink-0"
+                className="w-3 h-3 rounded-full mr-2 border border-datack-border flex-shrink-0"
                 style={{ backgroundColor: (pinnedEntity || hoveredEntity)?.color }}
               />
-              <span className="text-borges-muted text-xs">Graph node color</span>
+              <span className="text-datack-muted text-xs">Graph node color</span>
               {pinnedEntity && (
-                <span className="ml-2 text-xs text-borges-accent">Pinned</span>
+                <span className="ml-2 text-xs text-datack-yellow">Pinned</span>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Entity Legend - Basile Minimalism */}
+      {/* Entity Legend - Datack Branding */}
       {entities.length > 0 && (
-        <div className="mt-3 pt-2 border-t border-borges-border">
-          <div className="text-xs text-borges-muted mb-2">Referenced entities:</div>
+        <div className="mt-3 pt-2 border-t border-datack-border">
+          <div className="text-xs text-datack-muted mb-2">Referenced entities:</div>
           <div className="flex flex-wrap gap-2">
             {entities.slice(0, 8).map((entity, index) => {
               const entityColor = entity.color || getIntelligenceColor(entity.type, entity.score)
               return (
                 <div
                   key={index}
-                  className="flex items-center text-xs cursor-pointer hover:bg-borges-dark-hover rounded-borges-sm px-2 py-1"
+                  className="flex items-center text-xs cursor-pointer hover:bg-datack-dark rounded-datack-sm px-2 py-1"
                   onClick={() => onEntityClick?.(entity)}
                   title={`${entity.type}: ${entity.id}`}
                 >
                   <div
-                    className="w-2 h-2 rounded-full mr-1.5 border border-borges-border"
+                    className="w-2 h-2 rounded-full mr-1.5 border border-datack-border"
                     style={{ backgroundColor: entityColor }}
                   />
                   <span style={{ color: entityColor }} className="font-medium">
@@ -530,7 +530,7 @@ export default function HighlightedText({
               )
             })}
             {entities.length > 8 && (
-              <div className="text-xs text-borges-muted px-2 py-1">
+              <div className="text-xs text-datack-muted px-2 py-1">
                 +{entities.length - 8} more
               </div>
             )}

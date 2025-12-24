@@ -6,11 +6,11 @@ import dynamic from 'next/dynamic'
 const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DForce'), {
   ssr: false,
   loading: () => (
-    <div className="flex flex-col items-center justify-center h-96 bg-black">
+    <div className="flex flex-col items-center justify-center h-96 bg-datack-black">
       <div className="text-center">
-        {/* Hexagon Library Assembly Animation - Books assembling into infinite library */}
+        {/* Datack Civic Graph Assembly Animation */}
         <svg className="w-48 h-48 mx-auto mb-4" viewBox="0 0 200 200" fill="none">
-          {/* Animated hexagons assembling into library structure */}
+          {/* Animated nodes connecting into civic graph structure */}
           <style>{`
             @keyframes hexAssemble1 { 0% { opacity: 0; transform: translate(-30px, -20px); } 50% { opacity: 0.6; } 100% { opacity: 0.8; transform: translate(0, 0); } }
             @keyframes hexAssemble2 { 0% { opacity: 0; transform: translate(30px, -20px); } 50% { opacity: 0.5; } 100% { opacity: 0.7; transform: translate(0, 0); } }
@@ -26,11 +26,11 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
             .book-line { animation: bookShimmer 3s ease-in-out infinite; }
           `}</style>
 
-          {/* Central hexagon - main library cell */}
+          {/* Central hexagon - main civic node - Datack Yellow */}
           <polygon
             className="hex1"
             points="100,40 130,57.5 130,92.5 100,110 70,92.5 70,57.5"
-            stroke="#a0a0a0"
+            stroke="#F5C518"
             strokeWidth="1.5"
             fill="none"
           />
@@ -39,7 +39,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex2"
             points="100,10 125,25 125,55 100,70 75,55 75,25"
-            stroke="#a0a0a0"
+            stroke="#F5C518"
             strokeWidth="1"
             fill="none"
           />
@@ -48,7 +48,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex3"
             points="70,95 95,110 95,140 70,155 45,140 45,110"
-            stroke="#a0a0a0"
+            stroke="#F5C518"
             strokeWidth="1"
             fill="none"
           />
@@ -57,7 +57,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex4"
             points="130,95 155,110 155,140 130,155 105,140 105,110"
-            stroke="#a0a0a0"
+            stroke="#F5C518"
             strokeWidth="1"
             fill="none"
           />
@@ -66,7 +66,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex5"
             points="50,60 75,75 75,105 50,120 25,105 25,75"
-            stroke="#a0a0a0"
+            stroke="#F5C518"
             strokeWidth="0.8"
             fill="none"
           />
@@ -75,18 +75,18 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex5"
             points="150,60 175,75 175,105 150,120 125,105 125,75"
-            stroke="#a0a0a0"
+            stroke="#F5C518"
             strokeWidth="0.8"
             fill="none"
             style={{ animationDelay: '1s' }}
           />
 
-          {/* Book lines inside central hexagon - simulating shelves */}
-          <line className="book-line" x1="80" y1="65" x2="120" y2="65" stroke="#a0a0a0" strokeWidth="0.5" />
-          <line className="book-line" x1="82" y1="75" x2="118" y2="75" stroke="#a0a0a0" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
-          <line className="book-line" x1="84" y1="85" x2="116" y2="85" stroke="#a0a0a0" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
+          {/* Connection lines inside central hexagon - Datack Yellow */}
+          <line className="book-line" x1="80" y1="65" x2="120" y2="65" stroke="#F5C518" strokeWidth="0.5" />
+          <line className="book-line" x1="82" y1="75" x2="118" y2="75" stroke="#F5C518" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
+          <line className="book-line" x1="84" y1="85" x2="116" y2="85" stroke="#F5C518" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
         </svg>
-        <div className="text-borges-light-muted text-xs italic max-w-lg text-center">« L&apos;univers (que d&apos;autres appellent la Bibliothèque) se compose d&apos;un nombre indéfini, et peut-être infini, de galeries hexagonales... »</div>
+        <div className="text-datack-muted text-xs max-w-lg text-center">Chargement du graphe citoyen...</div>
       </div>
     </div>
   )
@@ -232,6 +232,10 @@ function BorgesLibrary() {
   }>>([])
   const [showSourceChunksPanel, setShowSourceChunksPanel] = useState(false)
 
+  // Bi-directional highlighting state - Constitution Principle V: End-to-End Interpretability
+  // When an entity is clicked in RAG answer, highlight matching text in source chunks
+  const [highlightedEntityId, setHighlightedEntityId] = useState<string | null>(null)
+
   // Store provenance entities for CitizenExtractsPanel (Constitution Principle #7)
   const [provenanceEntities, setProvenanceEntities] = useState<GrandDebatEntity[]>([])
   const [selectedCivicEntity, setSelectedCivicEntity] = useState<GrandDebatEntity | null>(null)
@@ -295,9 +299,17 @@ function BorgesLibrary() {
     }
   }
 
-  // Handle entity click to show related chunks
+  // Handle entity click to show related chunks + bi-directional highlighting
   const handleEntityClick = (entity: EntityColorInfo) => {
     console.log('🎯 Entity clicked:', entity.id)
+
+    // Toggle bi-directional highlighting - Constitution Principle V
+    // If same entity clicked, clear highlight; otherwise set new highlight
+    if (highlightedEntityId === entity.id) {
+      setHighlightedEntityId(null)
+    } else {
+      setHighlightedEntityId(entity.id)
+    }
 
     // Find the actual Neo4j node ID by matching the labels or id
     // Search in both queryResultNodes (from GraphRAG query) and reconciliationData (full graph)
@@ -321,6 +333,40 @@ function BorgesLibrary() {
       setSelectedEntityId(entity.id)
       setSelectedEntityName(entity.id)
     }
+  }
+
+  // Helper function to highlight entity text within chunk content
+  const highlightEntityInText = (text: string, entityId: string | null, entityColor: string): JSX.Element => {
+    if (!entityId || !text) {
+      return <>{text}</>
+    }
+
+    // Create case-insensitive regex for entity name
+    const escapedEntity = entityId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`(${escapedEntity})`, 'gi')
+    const parts = text.split(regex)
+
+    return (
+      <>
+        {parts.map((part, idx) =>
+          regex.test(part) ? (
+            <span
+              key={idx}
+              className="px-1 py-0.5 rounded transition-all duration-300"
+              style={{
+                backgroundColor: `${entityColor}40`,
+                borderBottom: `2px solid ${entityColor}`,
+                color: entityColor
+              }}
+            >
+              {part}
+            </span>
+          ) : (
+            <span key={idx}>{part}</span>
+          )
+        )}
+      </>
+    )
   }
 
   // DISABLED: GraphML static file loading - now using live MCP API data
@@ -751,14 +797,21 @@ function BorgesLibrary() {
   }, [mode])
 
   return (
-    <div className="min-h-screen bg-borges-dark text-borges-light">
-      {/* Mobile Navigation Menu - Grand Débat National */}
+    <div className="min-h-screen bg-datack-black text-datack-light">
+      {/* Mobile Navigation Menu - Datack Branding */}
       <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-xl text-borges-light font-semibold">Navigation</h2>
+          <div className="flex items-center gap-2">
+            <svg className="w-8 h-8" viewBox="0 0 40 40" fill="none">
+              <rect x="4" y="4" width="32" height="32" rx="4" fill="#F5C518" />
+              <path d="M12 10h8c5.5 0 10 4.5 10 10s-4.5 10-10 10h-8V10z" fill="#1A1A1A" />
+              <path d="M16 14h4c3.3 0 6 2.7 6 6s-2.7 6-6 6h-4V14z" fill="#F5C518" />
+            </svg>
+            <span className="text-datack-yellow font-bold text-lg">DATACK</span>
+          </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="touch-target flex items-center justify-center text-borges-light"
+            className="touch-target flex items-center justify-center text-datack-light"
             aria-label="Fermer le menu"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -769,29 +822,29 @@ function BorgesLibrary() {
 
         {/* Single-purpose: Grand Débat National only - no source selection */}
         <div className="mobile-nav-item">
-          <label className="text-borges-light-muted text-sm mb-2 block">Source de données</label>
-          <div className="text-borges-light text-sm bg-borges-secondary p-3 rounded-borges-sm">
+          <label className="text-datack-gray text-sm mb-2 block">Source de données</label>
+          <div className="text-datack-light text-sm bg-datack-dark p-3 rounded-datack-sm border border-datack-yellow/30">
             🏛️ Grand Débat National 2019
-            <div className="text-xs text-borges-light-muted mt-1">50 communes · Charente-Maritime</div>
+            <div className="text-xs text-datack-gray mt-1">50 communes · Charente-Maritime</div>
           </div>
         </div>
 
         {/* Mobile Mode Toggle */}
         <div className="mobile-nav-item">
-          <label className="text-borges-light-muted text-sm mb-2 block">Mode de recherche</label>
+          <label className="text-datack-gray text-sm mb-2 block">Mode de recherche</label>
           <div className="flex gap-2">
             <button
               onClick={() => setMode('local')}
-              className={`flex-1 py-3 rounded-borges-sm text-center ${
-                mode === 'local' ? 'bg-borges-light text-borges-dark' : 'bg-borges-secondary text-borges-light'
+              className={`flex-1 py-3 rounded-datack-sm text-center transition-colors ${
+                mode === 'local' ? 'bg-datack-yellow text-datack-black font-medium' : 'bg-datack-dark text-datack-light'
               }`}
             >
               Local
             </button>
             <button
               onClick={() => setMode('global')}
-              className={`flex-1 py-3 rounded-borges-sm text-center ${
-                mode === 'global' ? 'bg-borges-light text-borges-dark' : 'bg-borges-secondary text-borges-light'
+              className={`flex-1 py-3 rounded-datack-sm text-center transition-colors ${
+                mode === 'global' ? 'bg-datack-yellow text-datack-black font-medium' : 'bg-datack-dark text-datack-light'
               }`}
             >
               Global
@@ -800,8 +853,8 @@ function BorgesLibrary() {
         </div>
       </div>
 
-      {/* Header - Responsive: Basile Minimalism with mobile support */}
-      <header className={`p-4 md:p-6 border-b border-borges-border relative transition-all duration-300 ${selectedEntityId ? 'md:mr-[450px]' : ''}`}>
+      {/* Header - Datack Branding (Feature 005-agent-orchestration) */}
+      <header className={`p-4 md:p-6 border-b border-datack-border relative transition-all duration-300 ${selectedEntityId ? 'md:mr-[450px]' : ''}`}>
         <div className="max-w-7xl mx-auto flex items-center gap-3 md:gap-4">
           {/* Mobile Menu Toggle */}
           <button
@@ -814,19 +867,25 @@ function BorgesLibrary() {
             </svg>
           </button>
 
-          {/* Nested hexagons logo - matches favicon */}
-          <svg className="w-6 h-6 md:w-8 md:h-8 flex-shrink-0" viewBox="0 0 32 32" fill="none">
-            <polygon points="16,1 29,8.5 29,23.5 16,31 3,23.5 3,8.5" fill="none" stroke="#E8D5B7" strokeWidth="1.5"/>
-            <polygon points="16,5 25,10.5 25,21.5 16,27 7,21.5 7,10.5" fill="none" stroke="#E8D5B7" strokeWidth="1.2"/>
-            <polygon points="16,9 21,12.5 21,19.5 16,23 11,19.5 11,12.5" fill="none" stroke="#E8D5B7" strokeWidth="1"/>
-            <polygon points="16,12.5 18.5,14 18.5,18 16,19.5 13.5,18 13.5,14" fill="#E8D5B7"/>
-          </svg>
+          {/* Datack Logo - Yellow accent on dark */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <svg className="w-8 h-8 md:w-10 md:h-10" viewBox="0 0 40 40" fill="none">
+              {/* Datack D logo - modernist geometric */}
+              <rect x="4" y="4" width="32" height="32" rx="4" fill="#F5C518" />
+              <path d="M12 10h8c5.5 0 10 4.5 10 10s-4.5 10-10 10h-8V10z" fill="#1A1A1A" />
+              <path d="M16 14h4c3.3 0 6 2.7 6 6s-2.7 6-6 6h-4V14z" fill="#F5C518" />
+            </svg>
+            <span className="text-datack-yellow font-bold text-lg md:text-xl tracking-tight hidden sm:block">DATACK</span>
+          </div>
+
+          <div className="h-8 w-px bg-datack-border hidden sm:block" />
+
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm sm:text-lg md:text-display-mobile lg:text-display text-borges-light tracking-wide font-semibold">
+            <h1 className="text-sm sm:text-lg md:text-display-mobile lg:text-display text-datack-light tracking-wide font-semibold">
               Grand Débat National
             </h1>
-            <p className="text-borges-light-muted mt-1 text-xs md:text-sm italic max-w-2xl hidden md:block">
-              Explorer les contributions citoyennes des Cahiers de Doléances 2019 · 50 communes de Charente-Maritime
+            <p className="text-datack-gray mt-1 text-xs md:text-sm max-w-2xl hidden md:block">
+              Explorer les contributions citoyennes · 50 communes de Charente-Maritime · <span className="text-datack-yellow">Cahiers de Doléances 2019</span>
             </p>
           </div>
         </div>
@@ -835,14 +894,14 @@ function BorgesLibrary() {
       {/* Main Content - Adapts when side panel is open */}
       <main className={`h-[calc(100vh-80px)] md:h-[calc(100vh-120px)] transition-all duration-300 ${selectedEntityId ? 'md:mr-[450px]' : ''}`}>
         <div className="h-full flex flex-col">
-          {/* Enhanced Query Bar with Controls - Responsive Basile Minimalism */}
-          <div className="p-3 md:p-4 bg-borges-secondary border-b border-borges-border">
+          {/* Enhanced Query Bar with Controls - Datack Branding */}
+          <div className="p-3 md:p-4 bg-datack-secondary border-b border-datack-border">
             <div className="max-w-6xl mx-auto space-y-2 md:space-y-3">
               {/* Main Search Row - Responsive */}
               <div className="responsive-search">
                 {/* Desktop-only: Data source indicator (single-purpose) */}
                 <div className="hidden md:flex gap-2 items-center">
-                  <div className="text-borges-light text-sm bg-borges-dark px-3 py-2 rounded-borges-sm border border-borges-border">
+                  <div className="text-datack-light text-sm bg-datack-dark px-3 py-2 rounded-datack-sm border border-datack-border">
                     🏛️ Grand Débat National
                   </div>
                 </div>
@@ -854,7 +913,7 @@ function BorgesLibrary() {
                     placeholder="Quelles sont les préoccupations des citoyens sur les impôts ?"
                     disabled={isProcessing}
                     id="search-input"
-                    className="borges-input flex-1 disabled:opacity-50 text-base"
+                    className="datack-input flex-1 disabled:opacity-50 text-base"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && !isProcessing) {
                         const query = (e.target as HTMLInputElement).value.trim()
@@ -865,7 +924,7 @@ function BorgesLibrary() {
                     }}
                   />
 
-                  {/* Search Button */}
+                  {/* Search Button - Datack Yellow */}
                   <button
                     disabled={isProcessing}
                     onClick={() => {
@@ -875,7 +934,7 @@ function BorgesLibrary() {
                         handleSimpleQuery(query)
                       }
                     }}
-                    className={`borges-btn-primary disabled:opacity-50 min-w-touch ${isProcessing ? 'animate-pulse-brightness' : ''}`}
+                    className={`datack-btn-primary disabled:opacity-50 min-w-touch ${isProcessing ? 'animate-pulse-brightness' : ''}`}
                     style={isProcessing ? {
                       animation: 'pulseBrightness 1.2s ease-in-out infinite'
                     } : undefined}
@@ -887,15 +946,15 @@ function BorgesLibrary() {
                   </button>
                 </div>
 
-                {/* Desktop-only: Mode Toggle */}
-                <div className="hidden md:flex gap-1 bg-borges-dark rounded-borges-sm p-1 border border-borges-border">
+                {/* Desktop-only: Mode Toggle - Datack Yellow Active */}
+                <div className="hidden md:flex gap-1 bg-datack-dark rounded-datack-sm p-1 border border-datack-border">
                   <button
                     onClick={() => setMode('local')}
                     disabled={isProcessing}
-                    className={`flex items-center px-2 py-1 text-xs rounded-borges-sm font-medium transition-colors disabled:opacity-50 ${
+                    className={`flex items-center px-2 py-1 text-xs rounded-datack-sm font-medium transition-colors disabled:opacity-50 ${
                       mode === 'local'
-                        ? 'bg-borges-light text-borges-dark'
-                        : 'text-borges-light-muted hover:text-borges-light'
+                        ? 'bg-datack-yellow text-datack-black'
+                        : 'text-datack-muted hover:text-datack-light'
                     }`}
                     title="Recherche locale par commune"
                   >
@@ -904,10 +963,10 @@ function BorgesLibrary() {
                   <button
                     onClick={() => setMode('global')}
                     disabled={isProcessing}
-                    className={`flex items-center px-2 py-1 text-xs rounded-borges-sm font-medium transition-colors disabled:opacity-50 ${
+                    className={`flex items-center px-2 py-1 text-xs rounded-datack-sm font-medium transition-colors disabled:opacity-50 ${
                       mode === 'global'
-                        ? 'bg-borges-light text-borges-dark'
-                        : 'text-borges-light-muted hover:text-borges-light'
+                        ? 'bg-datack-yellow text-datack-black'
+                        : 'text-datack-muted hover:text-datack-light'
                     }`}
                     title="Recherche globale toutes communes"
                   >
@@ -917,7 +976,7 @@ function BorgesLibrary() {
               </div>
 
               {/* Mobile-only: Current settings indicator */}
-              <div className="flex md:hidden items-center justify-between text-xs text-borges-light-muted">
+              <div className="flex md:hidden items-center justify-between text-xs text-datack-muted">
                 <span>🏛️ Grand Débat National</span>
                 <span>{mode === 'local' ? 'Local' : 'Global'}</span>
               </div>
@@ -1194,10 +1253,10 @@ function BorgesLibrary() {
         />
       )}
 
-      {/* Answer Panel - Responsive: Resizable bottom sheet on mobile, side panel on desktop */}
+      {/* Answer Panel - Datack Branding - Resizable bottom sheet on mobile, side panel on desktop */}
       {showAnswer && (
         <div
-          className="borges-panel fixed bottom-0 left-0 right-0 md:bottom-4 md:left-4 md:right-auto w-full md:w-[400px] md:max-h-[45vh] overflow-hidden text-borges-light shadow-borges-lg z-30 rounded-t-2xl md:rounded-borges-md safe-area-bottom flex flex-col"
+          className="datack-panel fixed bottom-0 left-0 right-0 md:bottom-4 md:left-4 md:right-auto w-full md:w-[400px] md:max-h-[45vh] overflow-hidden text-datack-light shadow-datack-lg z-30 rounded-t-2xl md:rounded-datack-md safe-area-bottom flex flex-col"
           style={{
             height: typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : undefined,
             maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : undefined
@@ -1228,13 +1287,13 @@ function BorgesLibrary() {
               document.addEventListener('touchend', handleTouchEnd)
             }}
           >
-            <div className="w-12 h-1.5 bg-borges-border rounded-full"></div>
+            <div className="w-12 h-1.5 bg-datack-border rounded-full"></div>
           </div>
           <div className="flex justify-between items-start mb-2 md:mb-3 px-1">
-            <h3 className="text-sm md:text-h3 text-borges-light font-medium">Réponse citoyenne</h3>
+            <h3 className="text-sm md:text-h3 text-datack-light font-medium">Réponse citoyenne</h3>
             <button
               onClick={() => setShowAnswer(false)}
-              className="borges-btn-ghost text-lg touch-target flex items-center justify-center"
+              className="datack-btn-ghost text-lg touch-target flex items-center justify-center"
               aria-label="Fermer"
             >
               ×
@@ -1242,12 +1301,12 @@ function BorgesLibrary() {
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-            <div className="text-xs text-borges-light-muted mb-1 hidden md:block">Réponse:</div>
+            <div className="text-xs text-datack-muted mb-1 hidden md:block">Réponse:</div>
             <div className="flex-1 overflow-y-auto pr-2">
               <HighlightedText
                 text={queryAnswer}
                 entities={coloredEntities}
-                className="text-sm text-borges-light leading-relaxed break-words whitespace-pre-wrap"
+                className="text-sm text-datack-light leading-relaxed break-words whitespace-pre-wrap"
                 onEntityClick={handleEntityClick}
                 showTooltip={true}
               />
@@ -1256,17 +1315,17 @@ function BorgesLibrary() {
         </div>
       )}
 
-      {/* Source Chunks Panel - Constitution Principle V: End-to-End Interpretability */}
+      {/* Source Chunks Panel - Datack Branding - Constitution Principle V: End-to-End Interpretability */}
       {showSourceChunksPanel && sourceChunks.length > 0 && (
-        <div className="borges-panel fixed bottom-0 right-0 left-0 md:bottom-4 md:right-4 md:left-auto w-full md:w-[400px] md:max-h-[45vh] overflow-hidden text-borges-light shadow-borges-lg z-30 rounded-t-2xl md:rounded-borges-md safe-area-bottom flex flex-col mb-0 md:mb-0"
+        <div className="datack-panel fixed bottom-0 right-0 left-0 md:bottom-4 md:right-4 md:left-auto w-full md:w-[400px] md:max-h-[45vh] overflow-hidden text-datack-light shadow-datack-lg z-30 rounded-t-2xl md:rounded-datack-md safe-area-bottom flex flex-col mb-0 md:mb-0"
           style={{
             marginBottom: showAnswer ? (typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : '0') : '0'
           }}>
           <div className="flex justify-between items-start mb-2 md:mb-3 px-3 md:px-4 pt-3 md:pt-3 flex-shrink-0">
-            <h3 className="text-sm md:text-h3 text-borges-light font-medium">Extraits citoyens</h3>
+            <h3 className="text-sm md:text-h3 text-datack-light font-medium">Extraits citoyens</h3>
             <button
               onClick={() => setShowSourceChunksPanel(false)}
-              className="borges-btn-ghost text-lg touch-target flex items-center justify-center"
+              className="datack-btn-ghost text-lg touch-target flex items-center justify-center"
               aria-label="Fermer"
             >
               ×
@@ -1274,36 +1333,58 @@ function BorgesLibrary() {
           </div>
 
           <div className="flex-1 overflow-y-auto px-3 md:px-4 pb-3">
-            <div className="space-y-3">
-              {sourceChunks.map((chunk, idx) => (
-                <div key={chunk.chunk_id} className="p-2 md:p-3 bg-borges-dark rounded-borges-sm border border-borges-border">
-                  {/* Commune badge */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs px-2 py-0.5 bg-yellow-900/50 rounded text-borges-light">
-                      🏛️ {chunk.commune || chunk.document_id}
-                    </span>
-                    <span className="text-xs text-borges-light-muted">Chunk #{idx + 1}</span>
-                  </div>
-                  {/* Chunk content preview */}
-                  <p className="text-xs md:text-sm text-borges-light-muted leading-relaxed line-clamp-4 mb-2">
-                    {chunk.content}
-                  </p>
+            {/* Bi-directional highlighting indicator */}
+            {highlightedEntityId && (
+              <div className="mb-3 p-2 bg-datack-yellow/10 border border-datack-yellow/30 rounded-datack-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-datack-yellow">
+                    🔗 Surlignage: <strong>{highlightedEntityId}</strong>
+                  </span>
                   <button
-                    onClick={() => {
-                      setEntityChunkData({
-                        entityName: chunk.document_id,
-                        aggregatedChunks: chunk.content,
-                        relatedRelationships: 1,
-                        communeId: chunk.document_id
-                      })
-                      setIsEntityChunkModalOpen(true)
-                    }}
-                    className="text-xs text-borges-accent hover:text-borges-light transition-colors"
+                    onClick={() => setHighlightedEntityId(null)}
+                    className="text-xs text-datack-muted hover:text-datack-light"
                   >
-                    Voir le texte complet →
+                    ✕ Effacer
                   </button>
                 </div>
-              ))}
+              </div>
+            )}
+            <div className="space-y-3">
+              {sourceChunks.map((chunk, idx) => {
+                // Get highlighted entity color for bi-directional highlighting
+                const highlightedEntity = coloredEntities.find(e => e.id === highlightedEntityId)
+                const highlightColor = highlightedEntity?.color || '#F5C518'
+
+                return (
+                  <div key={chunk.chunk_id} className="p-2 md:p-3 bg-datack-dark rounded-datack-sm border border-datack-border">
+                    {/* Commune badge - Datack Yellow accent */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs px-2 py-0.5 bg-datack-yellow/20 border border-datack-yellow/30 rounded text-datack-light">
+                        🏛️ {chunk.commune || chunk.document_id}
+                      </span>
+                      <span className="text-xs text-datack-muted">Chunk #{idx + 1}</span>
+                    </div>
+                    {/* Chunk content with bi-directional entity highlighting */}
+                    <p className="text-xs md:text-sm text-datack-muted leading-relaxed line-clamp-4 mb-2">
+                      {highlightEntityInText(chunk.content, highlightedEntityId, highlightColor)}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setEntityChunkData({
+                          entityName: chunk.document_id,
+                          aggregatedChunks: chunk.content,
+                          relatedRelationships: 1,
+                          communeId: chunk.document_id
+                        })
+                        setIsEntityChunkModalOpen(true)
+                      }}
+                      className="text-xs text-datack-yellow hover:text-datack-hover transition-colors"
+                    >
+                      Voir le texte complet →
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
