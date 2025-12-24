@@ -116,6 +116,46 @@ export interface LawGraphRAGError {
 }
 
 /**
+ * Citizen extract (source_quote) from the provenance chain
+ * Constitutional Principle #7: Civic Provenance Chain
+ */
+export interface CitizenExtract {
+  commune: string;
+  content: string;
+  chunk_id: string | number;
+}
+
+/**
+ * Grand Débat entity from provenance
+ */
+export interface GrandDebatEntity {
+  source_commune: string;
+  name: string;
+  type: string;
+  description?: string;
+  rank?: number;
+}
+
+/**
+ * Aggregated provenance from MCP response
+ */
+export interface GrandDebatProvenance {
+  data_source?: string;
+  total_source_quotes?: number;
+  total_entities?: number;
+  total_relationships?: number;
+  source_quotes: CitizenExtract[];
+  entities: GrandDebatEntity[];
+  relationships: LegalRelationship[];
+  communities?: Array<{
+    commune: string;
+    title: string;
+    summary: string;
+    rating: number;
+  }>;
+}
+
+/**
  * Constitutional Principle I: End-to-end interpretability
  * LawGraphRAGResponse enables navigation from answer → entities → chunks → citizen contributions
  *
