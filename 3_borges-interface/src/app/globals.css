@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  /* Datack Brand Colors (Feature 005-agent-orchestration) */
+  /* Datack Brand Colors - LIGHT THEME (Feature 005-agent-orchestration) */
   --datack-yellow: #F5C518;
   --datack-yellow-bright: #FFD93D;
-  --datack-black: #1A1A1A;
-  --datack-dark: #2D2D2D;
-  --datack-light: #F0F0F0;
+  --datack-black: #FAFAFA;        /* Light background */
+  --datack-dark: #FFFFFF;         /* White panels */
+  --datack-light: #1A1A1A;        /* Dark text */
   --datack-gray: #6B7280;
-  --datack-border: #404040;
+  --datack-border: #E5E7EB;       /* Light gray border */
   --datack-focus: rgba(245, 197, 24, 0.4);
 }
 

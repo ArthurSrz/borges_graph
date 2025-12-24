@@ -99,7 +99,7 @@ import TutorialOverlay from './TutorialOverlay'
 import TextChunkModal from './TextChunkModal'
 import ProvenancePanel from './ProvenancePanel'
 import EntityDetailModal from './EntityDetailModal'
-import CitizenExtractsPanel from './CitizenExtractsPanel'
+// CitizenExtractsPanel merged into EntityDetailModal (Feature 005-agent-orchestration)
 import { lawGraphRAGService } from '@/lib/services/law-graphrag'
 import type { CitizenExtract, GrandDebatEntity } from '@/types/law-graphrag'
 import { colorService, type EntityColorInfo } from '@/lib/utils/colorService'
@@ -139,16 +139,7 @@ function BorgesLibrary() {
     setSelectedEntityId(nodeId)
     setSelectedEntityName(nodeLabel)
 
-    // Find matching provenance entity for CitizenExtractsPanel
-    const matchingEntity = provenanceEntities.find(
-      e => e.name.toLowerCase() === nodeLabel.toLowerCase() ||
-           e.name.toLowerCase() === nodeId.toLowerCase()
-    )
-    if (matchingEntity) {
-      console.log(`📜 Found provenance entity:`, matchingEntity)
-      setSelectedCivicEntity(matchingEntity)
-      setShowCitizenExtractsPanel(true)
-    }
+    // Entity details now shown in EntityDetailModal (merged with citizen extracts)
   }
 
   // Handler for entity clicks from ProvenancePanel
@@ -236,10 +227,8 @@ function BorgesLibrary() {
   // When an entity is clicked in RAG answer, highlight matching text in source chunks
   const [highlightedEntityId, setHighlightedEntityId] = useState<string | null>(null)
 
-  // Store provenance entities for CitizenExtractsPanel (Constitution Principle #7)
+  // Store provenance entities for EntityDetailModal (Constitution Principle #7: Civic Provenance Chain)
   const [provenanceEntities, setProvenanceEntities] = useState<GrandDebatEntity[]>([])
-  const [selectedCivicEntity, setSelectedCivicEntity] = useState<GrandDebatEntity | null>(null)
-  const [showCitizenExtractsPanel, setShowCitizenExtractsPanel] = useState(false)
 
   // Grand Débat National civic data exploration - Constitution v3.0.0
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0)
@@ -939,7 +928,7 @@ function BorgesLibrary() {
                       animation: 'pulseBrightness 1.2s ease-in-out infinite'
                     } : undefined}
                   >
-                    {isProcessing ? <span className="animate-blue-white-glow">...</span> : <span className="hidden sm:inline">Recherche</span>}
+                    {isProcessing ? <span className="animate-yellow-white-glow">...</span> : <span className="hidden sm:inline">Recherche</span>}
                     <svg className="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
@@ -1237,21 +1226,7 @@ function BorgesLibrary() {
         />
       )}
 
-      {/* Citizen Extracts Panel - Constitution Principle #7: Civic Provenance Chain */}
-      {showCitizenExtractsPanel && selectedCivicEntity && (
-        <CitizenExtractsPanel
-          entity={selectedCivicEntity}
-          sourceQuotes={sourceChunks.map(chunk => ({
-            commune: chunk.commune || chunk.document_id,
-            content: chunk.content,
-            chunk_id: chunk.chunk_id
-          }))}
-          onClose={() => {
-            setShowCitizenExtractsPanel(false)
-            setSelectedCivicEntity(null)
-          }}
-        />
-      )}
+      {/* Citizen Extracts now merged into EntityDetailModal - Constitution Principle #7 */}
 
       {/* Answer Panel - Datack Branding - Resizable bottom sheet on mobile, side panel on desktop */}
       {showAnswer && (

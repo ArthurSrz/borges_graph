@@ -125,11 +125,11 @@ export async function POST(request: NextRequest) {
         include_sources: true
       })
     } else {
-      // Query top communes for initial load (reduced from 10 to 3 for performance)
+      // Query top communes for initial load - increased for denser graph visualization
       result = await callMcpTool(mcpSessionId, 'grand_debat_query_all', {
         query,
         mode: 'global',
-        max_communes: 3,  // Reduced for faster initial load
+        max_communes: 15,  // Increased from 3 to 15 for richer initial graph (target: 150-200 nodes)
         include_sources: true
       })
     }

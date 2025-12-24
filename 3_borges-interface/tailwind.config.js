@@ -18,18 +18,18 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Datack Brand Colors (Feature 005-agent-orchestration)
+        // Datack Brand Colors - LIGHT THEME (Feature 005-agent-orchestration)
         'datack-yellow': '#F5C518',
         'datack-yellow-bright': '#FFD93D',
-        'datack-black': '#1A1A1A',
-        'datack-dark': '#2D2D2D',
-        'datack-light': '#F0F0F0',
+        'datack-black': '#FAFAFA',        // Light background (inverted for light theme)
+        'datack-dark': '#FFFFFF',         // White panels
+        'datack-light': '#1A1A1A',        // Dark text (inverted for light theme)
         'datack-gray': '#6B7280',
         // Semantic aliases for easier migration
         'datack-accent': '#F5C518',
-        'datack-secondary': '#2D2D2D',
+        'datack-secondary': '#FFFFFF',    // White panels
         'datack-muted': '#6B7280',
-        'datack-border': '#404040',
+        'datack-border': '#E5E7EB',       // Light gray border
         'datack-hover': '#FFD93D',
       },
       fontFamily: {
@@ -54,9 +54,10 @@ module.exports = {
         'datack-lg': '12px',
       },
       boxShadow: {
-        'datack-sm': '0 1px 2px rgba(0,0,0,0.3)',
-        'datack-md': '0 4px 6px rgba(0,0,0,0.4)',
-        'datack-lg': '0 10px 15px rgba(0,0,0,0.5)',
+        // Light theme shadows - softer, less aggressive
+        'datack-sm': '0 1px 2px rgba(0,0,0,0.08)',
+        'datack-md': '0 4px 6px rgba(0,0,0,0.1)',
+        'datack-lg': '0 10px 15px rgba(0,0,0,0.15)',
         'datack-glow': '0 0 20px rgba(245, 197, 24, 0.3)',
       },
       // Touch-friendly spacing (Constitution Principle VIII: 44x44px touch targets)
