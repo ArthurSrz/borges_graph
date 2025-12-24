@@ -973,9 +973,9 @@ function BorgesLibrary() {
           </div>
 
           {/* 3D Force Graph Visualization with Provenance Panel */}
-          <div className="flex-1 flex bg-black relative">
+          <div className="flex-1 flex bg-datack-black relative">
             {/* Main Graph Container */}
-            <div className="flex-1 bg-black relative">
+            <div className="flex-1 bg-datack-black relative">
               {/* Hexagonal Processing Indicator - Similar to startup animation */}
               {/* Positioned inside graph container to avoid viewport-relative shifts */}
               {/* Only shows during query processing, NOT during initial graph loading */}
@@ -1086,9 +1086,9 @@ function BorgesLibrary() {
 
             {/* Loading Overlay for returning users (tutorial already seen) */}
             {showLoadingOverlay && !showTutorial && (
-              <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center">
+              <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
                 <div className="text-center max-w-2xl px-8">
-                  {/* Hexagon Library Assembly Animation */}
+                  {/* Hexagon Library Assembly Animation - Datack Yellow */}
                   <svg className="w-32 h-32 mx-auto mb-6" viewBox="0 0 200 200" fill="none">
                     <style>{`
                       @keyframes hexAssemble1 { 0% { opacity: 0; transform: translate(-30px, -20px); } 50% { opacity: 0.6; } 100% { opacity: 0.8; transform: translate(0, 0); } }
@@ -1109,7 +1109,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex1-overlay"
                       points="100,40 130,57.5 130,92.5 100,110 70,92.5 70,57.5"
-                      stroke="#a0a0a0"
+                      stroke="#F5C518"
                       strokeWidth="1.5"
                       fill="none"
                     />
@@ -1118,7 +1118,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex2-overlay"
                       points="100,10 125,25 125,55 100,70 75,55 75,25"
-                      stroke="#a0a0a0"
+                      stroke="#F5C518"
                       strokeWidth="1"
                       fill="none"
                     />
@@ -1127,7 +1127,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex3-overlay"
                       points="70,95 95,110 95,140 70,155 45,140 45,110"
-                      stroke="#a0a0a0"
+                      stroke="#F5C518"
                       strokeWidth="1"
                       fill="none"
                     />
@@ -1136,7 +1136,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex4-overlay"
                       points="130,95 155,110 155,140 130,155 105,140 105,110"
-                      stroke="#a0a0a0"
+                      stroke="#F5C518"
                       strokeWidth="1"
                       fill="none"
                     />
@@ -1145,7 +1145,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex5-overlay"
                       points="50,60 75,75 75,105 50,120 25,105 25,75"
-                      stroke="#a0a0a0"
+                      stroke="#F5C518"
                       strokeWidth="0.8"
                       fill="none"
                     />
@@ -1154,34 +1154,34 @@ function BorgesLibrary() {
                     <polygon
                       className="hex5-overlay"
                       points="150,60 175,75 175,105 150,120 125,105 125,75"
-                      stroke="#a0a0a0"
+                      stroke="#F5C518"
                       strokeWidth="0.8"
                       fill="none"
                       style={{ animationDelay: '1s' }}
                     />
 
                     {/* Book lines inside central hexagon - simulating shelves */}
-                    <line className="book-line-overlay" x1="80" y1="65" x2="120" y2="65" stroke="#a0a0a0" strokeWidth="0.5" />
-                    <line className="book-line-overlay" x1="82" y1="75" x2="118" y2="75" stroke="#a0a0a0" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
-                    <line className="book-line-overlay" x1="84" y1="85" x2="116" y2="85" stroke="#a0a0a0" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
+                    <line className="book-line-overlay" x1="80" y1="65" x2="120" y2="65" stroke="#F5C518" strokeWidth="0.5" />
+                    <line className="book-line-overlay" x1="82" y1="75" x2="118" y2="75" stroke="#F5C518" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
+                    <line className="book-line-overlay" x1="84" y1="85" x2="116" y2="85" stroke="#F5C518" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
                   </svg>
 
                   {/* Project concept introduction */}
-                  <h2 className="text-xl font-semibold text-borges-light mb-3 tracking-wide">Grand Débat National</h2>
-                  <p className="text-borges-light-muted text-sm mb-6 leading-relaxed">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-3 tracking-wide">Grand Débat National</h2>
+                  <p className="text-gray-600 text-sm mb-6 leading-relaxed">
                     Explorer les contributions citoyennes des Cahiers de Doléances 2019.
                     Ce graphe de connaissances révèle les thèmes, préoccupations et propositions
-                    exprimés par les citoyens de <span className="text-borges-light">50 communes de Charente-Maritime</span>.
+                    exprimés par les citoyens de <span className="text-gray-800 font-medium">50 communes de Charente-Maritime</span>.
                   </p>
 
                   {/* Loading progress indicator */}
                   {isGraphMLLoading && (
-                    <div className="mb-4 text-borges-light text-sm font-medium animate-pulse">
+                    <div className="mb-4 text-datack-yellow text-sm font-medium animate-pulse">
                       <span>Chargement du graphe civique...</span>
                     </div>
                   )}
                   {loadingProgress && !isGraphMLLoading && (
-                    <div className="mb-4 text-borges-light text-sm font-medium">
+                    <div className="mb-4 text-gray-800 text-sm font-medium">
                       {loadingProgress.step === 'nodes' && (
                         <span>Exploration des contributions... {loadingProgress.current}/{loadingProgress.total}</span>
                       )}
@@ -1195,14 +1195,14 @@ function BorgesLibrary() {
                   )}
 
                   {/* Rotating civic quote with fade animation */}
-                  <div className="mt-6 border-t border-borges-border pt-6">
+                  <div className="mt-6 border-t border-gray-200 pt-6">
                     <div
                       key={currentQuoteIndex}
-                      className="text-borges-light-muted text-xs italic max-w-lg mx-auto transition-opacity duration-1000 animate-fade-in"
+                      className="text-gray-500 text-xs italic max-w-lg mx-auto transition-opacity duration-1000 animate-fade-in"
                     >
                       {civicQuotes[currentQuoteIndex]}
                     </div>
-                    <div className="text-borges-muted text-xs mt-2">— Grand Débat National 2019</div>
+                    <div className="text-gray-400 text-xs mt-2">— Grand Débat National 2019</div>
                   </div>
                 </div>
               </div>

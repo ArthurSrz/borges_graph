@@ -291,7 +291,7 @@ export default function GraphVisualization3DForce({
 
         // Configure graph data and background
         graph.graphData({ nodes: [], links: [] })
-        graph.backgroundColor('#000000')
+        graph.backgroundColor('#FAFAFA')  // Light theme background
         graph.showNavInfo(true)
 
         // Configure node appearance
@@ -305,7 +305,7 @@ export default function GraphVisualization3DForce({
         // Configure link appearance
         graph.linkDirectionalParticles(2)
         graph.linkDirectionalParticleSpeed(0.006)
-        graph.linkColor(() => '#ffffff')
+        graph.linkColor(() => '#404040')  // Dark links for light background
         graph.linkWidth(2)
 
         // Configure interactions
@@ -836,7 +836,7 @@ export default function GraphVisualization3DForce({
 
   return (
     <div
-      className="relative w-full h-full bg-black"
+      className="relative w-full h-full bg-datack-black"
       onMouseMove={(e) => {
         const pos = { x: e.clientX, y: e.clientY }
         mousePosRef.current = pos  // Update ref for click handler (avoids stale closure)
