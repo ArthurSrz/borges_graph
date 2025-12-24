@@ -99,7 +99,9 @@ import TutorialOverlay from './TutorialOverlay'
 import TextChunkModal from './TextChunkModal'
 import ProvenancePanel from './ProvenancePanel'
 import EntityDetailModal from './EntityDetailModal'
+import CitizenExtractsPanel from './CitizenExtractsPanel'
 import { lawGraphRAGService } from '@/lib/services/law-graphrag'
+import type { CitizenExtract, GrandDebatEntity } from '@/types/law-graphrag'
 import { colorService, type EntityColorInfo } from '@/lib/utils/colorService'
 import type { TraversedRelationship } from '@/types/provenance'
 import { useGraphMLData, transformToReconciliationData } from '@/hooks/useGraphMLData'
@@ -136,6 +138,17 @@ function BorgesLibrary() {
     console.log(`🎯 Node clicked: ${nodeId} (${nodeLabel})`)
     setSelectedEntityId(nodeId)
     setSelectedEntityName(nodeLabel)
+
+    // Find matching provenance entity for CitizenExtractsPanel
+    const matchingEntity = provenanceEntities.find(
+      e => e.name.toLowerCase() === nodeLabel.toLowerCase() ||
+           e.name.toLowerCase() === nodeId.toLowerCase()
+    )
+    if (matchingEntity) {
+      console.log(`📜 Found provenance entity:`, matchingEntity)
+      setSelectedCivicEntity(matchingEntity)
+      setShowCitizenExtractsPanel(true)
+    }
   }
 
   // Handler for entity clicks from ProvenancePanel
@@ -218,6 +231,11 @@ function BorgesLibrary() {
     commune?: string
   }>>([])
   const [showSourceChunksPanel, setShowSourceChunksPanel] = useState(false)
+
+  // Store provenance entities for CitizenExtractsPanel (Constitution Principle #7)
+  const [provenanceEntities, setProvenanceEntities] = useState<GrandDebatEntity[]>([])
+  const [selectedCivicEntity, setSelectedCivicEntity] = useState<GrandDebatEntity | null>(null)
+  const [showCitizenExtractsPanel, setShowCitizenExtractsPanel] = useState(false)
 
   // Grand Débat National civic data exploration - Constitution v3.0.0
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0)
@@ -501,6 +519,18 @@ function BorgesLibrary() {
         if (chunks.length > 0) {
           setShowSourceChunksPanel(true)
         }
+
+        // Extract provenance entities for CitizenExtractsPanel (Constitution Principle #7)
+        const entities = result.graphrag_data?.entities || []
+        const grandDebatEntities: GrandDebatEntity[] = entities.map((e: any, idx: number) => ({
+          name: e.entity_name || e.name || e.id || '',
+          type: e.entity_type || e.type || 'CIVIC_ENTITY',
+          description: e.description || '',
+          source_commune: e.source_commune || 'Charente-Maritime',
+          rank: e.rank || idx + 1
+        }))
+        console.log(`🏛️ Found ${grandDebatEntities.length} provenance entities`)
+        setProvenanceEntities(grandDebatEntities)
 
         // Transform response to graph data format
         const graphData = lawGraphRAGService.transformToGraphData(result)
@@ -1145,6 +1175,22 @@ function BorgesLibrary() {
           entityName={selectedEntityName || undefined}
           reconciliationData={reconciliationData}
           onClose={handleCloseEntityModal}
+        />
+      )}
+
+      {/* Citizen Extracts Panel - Constitution Principle #7: Civic Provenance Chain */}
+      {showCitizenExtractsPanel && selectedCivicEntity && (
+        <CitizenExtractsPanel
+          entity={selectedCivicEntity}
+          sourceQuotes={sourceChunks.map(chunk => ({
+            commune: chunk.commune || chunk.document_id,
+            content: chunk.content,
+            chunk_id: chunk.chunk_id
+          }))}
+          onClose={() => {
+            setShowCitizenExtractsPanel(false)
+            setSelectedCivicEntity(null)
+          }}
         />
       )}
 
