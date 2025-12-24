@@ -132,45 +132,45 @@ export default function HighlightedText({
 
       if (h4Match) {
         result.push(
-          <h4 key={`h4-${lineIndex}`} className="text-sm font-medium text-borges-light mt-2 mb-1">
+          <h4 key={`h4-${lineIndex}`} className="text-sm font-medium text-datack-light mt-2 mb-1">
             {highlightEntitiesInLine(h4Match[1])}
           </h4>
         )
       } else if (h3Match) {
         result.push(
-          <h3 key={`h3-${lineIndex}`} className="text-base font-medium text-borges-light mt-2 mb-1">
+          <h3 key={`h3-${lineIndex}`} className="text-base font-medium text-datack-light mt-2 mb-1">
             {highlightEntitiesInLine(h3Match[1])}
           </h3>
         )
       } else if (h2Match) {
         result.push(
-          <h2 key={`h2-${lineIndex}`} className="text-lg font-semibold text-borges-light mt-3 mb-2">
+          <h2 key={`h2-${lineIndex}`} className="text-lg font-semibold text-datack-light mt-3 mb-2 border-b border-datack-border pb-1">
             {highlightEntitiesInLine(h2Match[1])}
           </h2>
         )
       } else if (h1Match) {
         result.push(
-          <h1 key={`h1-${lineIndex}`} className="text-xl font-semibold text-borges-light mt-4 mb-2">
+          <h1 key={`h1-${lineIndex}`} className="text-xl font-bold text-datack-light mt-4 mb-2 border-b border-datack-border pb-1">
             {highlightEntitiesInLine(h1Match[1])}
           </h1>
         )
       } else if (listMatch) {
         result.push(
-          <li key={`li-${lineIndex}`} className="ml-4 text-borges-light-muted">
+          <li key={`li-${lineIndex}`} className="ml-4 text-datack-gray list-disc">
             {highlightEntitiesInLine(listMatch[1])}
           </li>
         )
       } else if (numberedListMatch) {
         result.push(
-          <li key={`nli-${lineIndex}`} className="ml-4 text-borges-light-muted list-decimal">
+          <li key={`nli-${lineIndex}`} className="ml-4 text-datack-gray list-decimal">
             {highlightEntitiesInLine(numberedListMatch[2])}
           </li>
         )
       } else if (trimmedLine === '') {
-        result.push(<br key={`br-${lineIndex}`} />)
+        result.push(<div key={`br-${lineIndex}`} className="h-2" />)
       } else {
         result.push(
-          <p key={`p-${lineIndex}`} className="text-borges-light-muted mb-2">
+          <p key={`p-${lineIndex}`} className="text-datack-gray mb-2 leading-relaxed">
             {highlightEntitiesInLine(trimmedLine)}
           </p>
         )
@@ -312,7 +312,7 @@ export default function HighlightedText({
       if (match.index > lastIdx) {
         parts.push(<span key={keyIdx++}>{text.slice(lastIdx, match.index)}</span>)
       }
-      parts.push(<strong key={keyIdx++} className="font-semibold text-borges-light">{match[1]}</strong>)
+      parts.push(<strong key={keyIdx++} className="font-semibold text-datack-light">{match[1]}</strong>)
       lastIdx = match.index + match[0].length
     }
 

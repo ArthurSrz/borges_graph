@@ -40,11 +40,22 @@ interface ReconciliationGraphData {
   relationships: ReconciliationRelationship[];
 }
 
+// Source chunk from RAG query response
+interface RAGSourceChunk {
+  chunk_id: string;
+  content: string;
+  document_id: string;
+  commune?: string;
+}
+
 interface EntityDetailModalProps {
   entityId: string | null;
   entityName?: string;
   reconciliationData: ReconciliationGraphData | null;
   onClose: () => void;
+  // RAG query source chunks - merged into entity modal (Feature 005-agent-orchestration)
+  ragSourceChunks?: RAGSourceChunk[];
+  currentQuery?: string;
 }
 
 interface ExtractedChunk {
@@ -292,11 +303,15 @@ export default function EntityDetailModal({
   entityName,
   reconciliationData,
   onClose,
+  ragSourceChunks = [],
+  currentQuery,
 }: EntityDetailModalProps) {
   const [entity, setEntity] = useState<ReconciliationNode | null>(null);
   const [relationships, setRelationships] = useState<ReconciliationRelationship[]>([]);
   const [bookRelationships, setBookRelationships] = useState<{bookId: string; bookTitle: string}[]>([]);
   const [chunks, setChunks] = useState<ExtractedChunk[]>([]);
+  // Mobile panel height control (Constitution Principle VIII: Mobile Responsiveness)
+  const [mobilePanelHeight, setMobilePanelHeight] = useState(50); // Default 50vh on mobile
   const [loading, setLoading] = useState(true);
   const [fetchingChunks, setFetchingChunks] = useState(false);
   const [expandedChunks, setExpandedChunks] = useState<Set<string>>(new Set());
@@ -713,6 +728,9 @@ export default function EntityDetailModal({
 
   if (!entityId) return null;
 
+  // Special mode: Show only RAG sources without specific entity details
+  const isSourcesOnlyMode = entityId === '__rag_sources__';
+
   const getNodeLabel = (nodeId: string): string => {
     if (!nodeId || !reconciliationData) return 'Unknown';
 
@@ -731,81 +749,194 @@ export default function EntityDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 z-40 w-full md:max-w-md bg-borges-secondary md:border-l border-borges-border shadow-borges-lg overflow-hidden flex flex-col safe-area-top safe-area-bottom">
-      {/* Mobile drag handle */}
-      <div className="md:hidden flex justify-center py-2 bg-borges-secondary">
-        <div className="w-12 h-1 bg-borges-border rounded-full"></div>
+    <div
+      className="fixed bottom-0 left-0 right-0 md:inset-y-0 md:left-auto md:right-0 z-40 w-full md:max-w-md bg-datack-dark md:border-l border-datack-border shadow-datack-lg overflow-hidden flex flex-col safe-area-bottom rounded-t-2xl md:rounded-none"
+      style={{
+        height: typeof window !== 'undefined' && window.innerWidth < 768 ? `${mobilePanelHeight}vh` : undefined,
+        maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? `${mobilePanelHeight}vh` : undefined
+      }}
+    >
+      {/* Mobile drag handle - draggable to resize */}
+      <div
+        className="md:hidden flex justify-center py-2 cursor-ns-resize touch-none select-none bg-datack-dark"
+        onTouchStart={(e) => {
+          const startY = e.touches[0].clientY;
+          const startHeight = mobilePanelHeight;
+          const viewportHeight = window.innerHeight;
+
+          const handleTouchMove = (moveEvent: TouchEvent) => {
+            const currentY = moveEvent.touches[0].clientY;
+            const deltaY = startY - currentY;
+            const deltaVh = (deltaY / viewportHeight) * 100;
+            // Allow between 20vh (collapsed) and 85vh (expanded)
+            const newHeight = Math.min(85, Math.max(20, startHeight + deltaVh));
+            setMobilePanelHeight(newHeight);
+          };
+
+          const handleTouchEnd = () => {
+            document.removeEventListener('touchmove', handleTouchMove);
+            document.removeEventListener('touchend', handleTouchEnd);
+          };
+
+          document.addEventListener('touchmove', handleTouchMove);
+          document.addEventListener('touchend', handleTouchEnd);
+        }}
+      >
+        <div className="w-12 h-1.5 bg-datack-border rounded-full"></div>
       </div>
 
       {/* Header - Responsive Side Panel style */}
-      <div className="p-3 md:p-4 border-b border-borges-border">
+      <div className="p-3 md:p-4 border-b border-datack-border">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-h2-mobile md:text-h2 text-borges-light mb-2 truncate">
-              {entity?.properties?.name || entity?.labels?.[0] || entityName || 'Entity Details'}
-            </h2>
-            {entity && (
-              <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-                <span className="text-xs px-2 py-1 bg-borges-light text-borges-dark rounded-borges-sm font-medium">
-                  {entity.properties?.entity_type || entity.labels?.[0] || 'Entity'}
-                </span>
-                {entity.properties?.book_name && (
-                  <span className="text-xs px-2 py-1 bg-borges-dark border border-borges-border text-borges-light rounded-borges-sm hidden sm:inline-block">
-                    {entity.properties.book_name}
+            {isSourcesOnlyMode ? (
+              // Sources-only mode header
+              <>
+                <h2 className="text-h2-mobile md:text-h2 text-datack-light mb-2 flex items-center gap-2">
+                  <span className="text-datack-yellow">📜</span>
+                  Sources citoyennes
+                </h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs px-2 py-1 bg-datack-yellow/20 border border-datack-yellow/30 text-datack-light rounded-datack-sm">
+                    {ragSourceChunks.length} extraits
                   </span>
+                  {currentQuery && (
+                    <span className="text-xs text-datack-muted truncate max-w-[200px]">
+                      "{currentQuery}"
+                    </span>
+                  )}
+                </div>
+              </>
+            ) : (
+              // Regular entity mode header
+              <>
+                <h2 className="text-h2-mobile md:text-h2 text-datack-light mb-2 truncate">
+                  {entity?.properties?.name || entity?.labels?.[0] || entityName || 'Entity Details'}
+                </h2>
+                {entity && (
+                  <div className="flex items-center gap-1 md:gap-2 flex-wrap">
+                    <span className="text-xs px-2 py-1 bg-datack-light text-datack-dark rounded-datack-sm font-medium">
+                      {entity.properties?.entity_type || entity.labels?.[0] || 'Entity'}
+                    </span>
+                    {entity.properties?.book_name && (
+                      <span className="text-xs px-2 py-1 bg-datack-dark border border-datack-border text-datack-light rounded-datack-sm hidden sm:inline-block">
+                        {entity.properties.book_name}
+                      </span>
+                    )}
+                    <span className="text-xs px-2 py-1 bg-datack-dark border border-datack-border text-datack-muted rounded-datack-sm">
+                      {relationships.length} rel
+                    </span>
+                    <span className="text-xs px-2 py-1 bg-datack-dark border border-datack-border text-datack-muted rounded-datack-sm">
+                      {chunks.length} chunks
+                    </span>
+                  </div>
                 )}
-                <span className="text-xs px-2 py-1 bg-borges-dark border border-borges-border text-borges-light-muted rounded-borges-sm">
-                  {relationships.length} rel
-                </span>
-                <span className="text-xs px-2 py-1 bg-borges-dark border border-borges-border text-borges-light-muted rounded-borges-sm">
-                  {chunks.length} chunks
-                </span>
-              </div>
+              </>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="borges-btn-ghost ml-2 p-2 touch-target flex items-center justify-center"
-            aria-label="Close panel"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Mobile expand/collapse button */}
+            <button
+              onClick={() => setMobilePanelHeight(mobilePanelHeight < 50 ? 75 : 25)}
+              className="md:hidden datack-btn-ghost p-2 touch-target flex items-center justify-center"
+              aria-label={mobilePanelHeight < 50 ? "Expand panel" : "Collapse panel"}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {mobilePanelHeight < 50 ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                )}
+              </svg>
+            </button>
+            <button
+              onClick={onClose}
+              className="datack-btn-ghost ml-1 p-2 touch-target flex items-center justify-center"
+              aria-label="Close panel"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Content - Side Panel for graph exploration */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {loading && (
+        {/* Sources-only mode - show RAG chunks directly */}
+        {isSourcesOnlyMode && ragSourceChunks && ragSourceChunks.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-sm text-datack-muted">
+              Textes citoyens utilisés pour générer la réponse. Cliquez pour développer.
+            </p>
+            {ragSourceChunks.map((chunk, idx) => {
+              const chunkKey = `rag-only-${chunk.chunk_id}-${idx}`;
+              const isExpanded = expandedChunks.has(chunkKey);
+              const hasLongText = chunk.content && chunk.content.length > CHUNK_PREVIEW_LENGTH;
+
+              return (
+                <div key={chunk.chunk_id} className="bg-datack-secondary rounded-datack-md border border-datack-border overflow-hidden">
+                  {/* Commune badge */}
+                  <button
+                    onClick={() => hasLongText && toggleChunkExpanded(chunkKey)}
+                    className={`w-full flex items-center justify-between p-3 text-left ${hasLongText ? 'hover:bg-datack-dark cursor-pointer' : ''}`}
+                  >
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs px-2 py-1 bg-datack-yellow/20 border border-datack-yellow/30 rounded-datack-sm text-datack-light font-medium">
+                        🏛️ {chunk.commune || chunk.document_id}
+                      </span>
+                      <span className="text-xs text-datack-muted">Extrait #{idx + 1}</span>
+                    </div>
+                    {hasLongText && (
+                      <span className="text-xs text-datack-muted">
+                        {isExpanded ? '▼ Réduire' : '▶ Développer'}
+                      </span>
+                    )}
+                  </button>
+                  {/* Chunk content */}
+                  <div className={`px-3 pb-3 text-sm text-datack-gray leading-relaxed ${!isExpanded && hasLongText ? 'max-h-24 overflow-hidden relative' : ''}`}>
+                    {isExpanded || !hasLongText ? chunk.content : chunk.content.substring(0, CHUNK_PREVIEW_LENGTH) + '...'}
+                    {!isExpanded && hasLongText && (
+                      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-datack-secondary to-transparent" />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Regular entity mode loading state */}
+        {!isSourcesOnlyMode && loading && (
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
-              <div className="text-2xl mb-2 animate-pulse text-borges-light">...</div>
-              <p className="text-borges-muted text-sm">Loading entity details...</p>
+              <div className="text-2xl mb-2 animate-pulse text-datack-light">...</div>
+              <p className="text-datack-muted text-sm">Loading entity details...</p>
             </div>
           </div>
         )}
 
-        {!loading && !entity && (
-          <div className="p-3 bg-borges-dark border border-borges-border rounded-borges-sm text-borges-light-muted">
+        {!isSourcesOnlyMode && !loading && !entity && (
+          <div className="p-3 bg-datack-dark border border-datack-border rounded-datack-sm text-datack-muted">
             <p className="font-medium">Entity not found</p>
             <p className="text-xs mt-1">The entity with ID {entityId} was not found in the graph data.</p>
           </div>
         )}
 
-        {entity && !loading && (
+        {!isSourcesOnlyMode && entity && !loading && (
           <>
-            {/* Appears in Books - Basile Minimalism */}
+            {/* Appears in Books - Datack styling */}
             {bookRelationships.length > 0 && (
               <div>
-                <h3 className="text-xs font-medium text-borges-muted uppercase mb-2">
+                <h3 className="text-xs font-medium text-datack-muted uppercase mb-2">
                   Appears in {bookRelationships.length} {bookRelationships.length === 1 ? 'Book' : 'Books'}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {bookRelationships.map((book) => (
                     <span
                       key={book.bookId}
-                      className="px-2 py-1 bg-borges-dark border border-borges-border rounded-borges-sm text-xs text-borges-light"
+                      className="px-2 py-1 bg-datack-dark border border-datack-border rounded-datack-sm text-xs text-datack-light"
                     >
                       {book.bookTitle}
                     </span>
@@ -814,17 +945,17 @@ export default function EntityDetailModal({
               </div>
             )}
 
-            {/* Entity Properties - Basile Minimalism */}
+            {/* Entity Properties - Datack styling */}
             {entity.properties && Object.keys(entity.properties).length > 0 && (
               <div>
-                <h3 className="text-xs font-medium text-borges-muted uppercase mb-2">
+                <h3 className="text-xs font-medium text-datack-muted uppercase mb-2">
                   Properties
                 </h3>
                 <div className="space-y-2">
                   {filterPropertiesForDisplay(entity.properties).map(([key, value]) => (
-                    <div key={key} className="p-3 bg-borges-dark rounded-borges-sm border border-borges-border">
-                      <div className="text-xs text-borges-muted mb-1">{key}</div>
-                      <div className="text-sm text-borges-light break-words whitespace-pre-wrap">
+                    <div key={key} className="p-3 bg-datack-secondary rounded-datack-sm border border-datack-border">
+                      <div className="text-xs text-datack-muted mb-1">{key}</div>
+                      <div className="text-sm text-datack-light break-words whitespace-pre-wrap">
                         {typeof value === 'object'
                           ? JSON.stringify(value, null, 2)
                           : key === 'description'
@@ -840,7 +971,7 @@ export default function EntityDetailModal({
             {/* Relationships - Basile Minimalism */}
             {relationships.length > 0 && (
               <div>
-                <h3 className="text-xs font-medium text-borges-muted uppercase mb-2">
+                <h3 className="text-xs font-medium text-datack-muted uppercase mb-2">
                   Relationships ({relationships.length})
                 </h3>
                 <div className="space-y-2">
@@ -850,33 +981,33 @@ export default function EntityDetailModal({
                     const otherLabel = getNodeLabel(otherNodeId);
 
                     return (
-                      <div key={index} className="p-2 bg-borges-dark rounded-borges-sm border border-borges-border">
+                      <div key={index} className="p-2 bg-datack-dark rounded-datack-sm border border-datack-border">
                         <div className="flex items-center gap-2 text-xs mb-1 flex-wrap">
                           {isSource ? (
                             <>
-                              <span className="text-borges-light font-medium">{entity.properties?.name || entity.labels?.[0]}</span>
-                              <span className="text-borges-light-muted">→ [{rel.type}] →</span>
-                              <span className="text-borges-light-muted">{otherLabel}</span>
+                              <span className="text-datack-light font-medium">{entity.properties?.name || entity.labels?.[0]}</span>
+                              <span className="text-datack-light-muted">→ [{rel.type}] →</span>
+                              <span className="text-datack-light-muted">{otherLabel}</span>
                             </>
                           ) : (
                             <>
-                              <span className="text-borges-light-muted">{otherLabel}</span>
-                              <span className="text-borges-light-muted">→ [{rel.type}] →</span>
-                              <span className="text-borges-light font-medium">{entity.properties?.name || entity.labels?.[0]}</span>
+                              <span className="text-datack-light-muted">{otherLabel}</span>
+                              <span className="text-datack-light-muted">→ [{rel.type}] →</span>
+                              <span className="text-datack-light font-medium">{entity.properties?.name || entity.labels?.[0]}</span>
                             </>
                           )}
                         </div>
                         {rel.properties && Object.keys(rel.properties).length > 0 && (() => {
                           const filteredProps = filterRelPropertiesForDisplay(rel.properties);
                           return filteredProps.length > 0 && (
-                            <div className="mt-1 text-xs text-borges-muted">
+                            <div className="mt-1 text-xs text-datack-muted">
                               <details className="cursor-pointer">
-                                <summary className="hover:text-borges-light-muted">Properties...</summary>
+                                <summary className="hover:text-datack-light-muted">Properties...</summary>
                                 <div className="mt-1 pl-2 space-y-1">
                                   {filteredProps.map(([key, value]) => (
                                     <div key={key}>
-                                      <span className="text-borges-muted">{key}:</span>{' '}
-                                      <span className="text-borges-light-muted">
+                                      <span className="text-datack-muted">{key}:</span>{' '}
+                                      <span className="text-datack-light-muted">
                                         {key === 'description'
                                           ? formatDescription(String(value)).substring(0, 150)
                                           : String(value).substring(0, 80)}
@@ -888,6 +1019,61 @@ export default function EntityDetailModal({
                             </div>
                           );
                         })()}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* RAG Query Source Chunks - Constitution Principle #5: End-to-End Interpretability */}
+            {/* Shows citizen contributions that informed the RAG answer */}
+            {ragSourceChunks && ragSourceChunks.length > 0 && (
+              <div className="border border-datack-yellow/30 rounded-datack-md overflow-hidden">
+                <div className="bg-datack-yellow/10 px-4 py-2 border-b border-datack-yellow/30">
+                  <h3 className="text-sm font-medium text-datack-light flex items-center gap-2">
+                    <span className="text-datack-yellow">📜</span>
+                    Extraits citoyens
+                    <span className="text-xs text-datack-muted">({ragSourceChunks.length} sources)</span>
+                  </h3>
+                  {currentQuery && (
+                    <p className="text-xs text-datack-muted mt-1">
+                      Requête: "{currentQuery}"
+                    </p>
+                  )}
+                </div>
+                <div className="p-3 space-y-3 max-h-[40vh] overflow-y-auto">
+                  {ragSourceChunks.map((chunk, idx) => {
+                    const chunkKey = `rag-${chunk.chunk_id}-${idx}`;
+                    const isExpanded = expandedChunks.has(chunkKey);
+                    const hasLongText = chunk.content && chunk.content.length > CHUNK_PREVIEW_LENGTH;
+
+                    return (
+                      <div key={chunk.chunk_id} className="bg-datack-dark rounded-datack-sm border border-datack-border overflow-hidden">
+                        {/* Commune badge */}
+                        <button
+                          onClick={() => hasLongText && toggleChunkExpanded(chunkKey)}
+                          className={`w-full flex items-center justify-between p-2 text-left ${hasLongText ? 'hover:bg-datack-secondary cursor-pointer' : ''}`}
+                        >
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs px-2 py-0.5 bg-datack-yellow/20 border border-datack-yellow/30 rounded text-datack-light">
+                              🏛️ {chunk.commune || chunk.document_id}
+                            </span>
+                            <span className="text-xs text-datack-muted">Extrait #{idx + 1}</span>
+                          </div>
+                          {hasLongText && (
+                            <span className="text-xs text-datack-muted">
+                              {isExpanded ? '▼' : '▶'}
+                            </span>
+                          )}
+                        </button>
+                        {/* Chunk content */}
+                        <div className={`px-3 pb-3 text-sm text-datack-gray leading-relaxed ${!isExpanded && hasLongText ? 'max-h-24 overflow-hidden relative' : ''}`}>
+                          {isExpanded || !hasLongText ? chunk.content : chunk.content.substring(0, CHUNK_PREVIEW_LENGTH) + '...'}
+                          {!isExpanded && hasLongText && (
+                            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-datack-dark to-transparent" />
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -912,20 +1098,20 @@ export default function EntityDetailModal({
 
                 return (
                   <div>
-                    <h3 className="text-sm font-semibold text-borges-muted uppercase mb-2">
+                    <h3 className="text-sm font-semibold text-datack-muted uppercase mb-2">
                       Source Text Chunks ({chunks.length})
                       {isMultiBook && (
-                        <span className="ml-2 text-xs text-borges-light-muted">
+                        <span className="ml-2 text-xs text-datack-light-muted">
                           from {bookKeys.length} books
                         </span>
                       )}
                       {fetchingChunks && (
-                        <span className="ml-2 text-xs text-borges-light-muted animate-pulse">
+                        <span className="ml-2 text-xs text-datack-light-muted animate-pulse">
                           Loading full text...
                         </span>
                       )}
                     </h3>
-                    <div className="text-xs text-borges-muted mb-3">
+                    <div className="text-xs text-datack-muted mb-3">
                       Original text from the books where this entity appears
                     </div>
 
@@ -938,13 +1124,13 @@ export default function EntityDetailModal({
                           const pendingChunks = bookChunks.filter(c => c.isChunkId);
 
                           return (
-                            <div key={bookKey} className="border border-borges-border rounded-lg overflow-hidden">
+                            <div key={bookKey} className="border border-datack-border rounded-lg overflow-hidden">
                               {/* Book Header */}
-                              <div className="bg-borges-secondary px-4 py-2 border-b border-borges-border">
-                                <span className="text-sm font-medium text-borges-light">
+                              <div className="bg-datack-secondary px-4 py-2 border-b border-datack-border">
+                                <span className="text-sm font-medium text-datack-light">
                                   {bookKey}
                                 </span>
-                                <span className="ml-2 text-xs text-borges-muted">
+                                <span className="ml-2 text-xs text-datack-muted">
                                   ({loadedChunks.length} loaded, {pendingChunks.length} pending)
                                 </span>
                               </div>
@@ -957,17 +1143,17 @@ export default function EntityDetailModal({
                                   const hasLongText = !chunk.isChunkId && chunk.text && chunk.text.length > CHUNK_PREVIEW_LENGTH;
 
                                   return (
-                                    <div key={index} className="bg-borges-dark rounded border border-borges-border overflow-hidden">
+                                    <div key={index} className="bg-datack-dark rounded border border-datack-border overflow-hidden">
                                       {/* Chunk header - clickable to expand */}
                                       <button
                                         onClick={() => hasLongText && toggleChunkExpanded(chunkKey)}
-                                        className={`w-full flex items-center justify-between p-2 text-left ${hasLongText ? 'hover:bg-borges-secondary cursor-pointer' : ''}`}
+                                        className={`w-full flex items-center justify-between p-2 text-left ${hasLongText ? 'hover:bg-datack-secondary cursor-pointer' : ''}`}
                                       >
                                         <div className="flex items-center gap-2 flex-wrap">
-                                          <span className="text-xs px-2 py-0.5 bg-borges-accent/20 text-borges-accent rounded">
+                                          <span className="text-xs px-2 py-0.5 bg-datack-yellow/20 text-datack-yellow rounded">
                                             {index + 1}
                                           </span>
-                                          <span className="text-xs text-borges-muted">
+                                          <span className="text-xs text-datack-muted">
                                             {chunk.relationshipType}
                                           </span>
                                           {chunk.isChunkId && chunk.bookId && (
@@ -982,20 +1168,20 @@ export default function EntityDetailModal({
                                           )}
                                         </div>
                                         {hasLongText && (
-                                          <span className="text-xs text-borges-muted">
+                                          <span className="text-xs text-datack-muted">
                                             {isExpanded ? '▼' : '▶'}
                                           </span>
                                         )}
                                       </button>
 
                                       {/* Chunk content */}
-                                      <div className={`px-3 pb-3 text-sm text-borges-light leading-relaxed ${!isExpanded && hasLongText ? 'max-h-20 overflow-hidden relative' : ''}`}>
+                                      <div className={`px-3 pb-3 text-sm text-datack-light leading-relaxed ${!isExpanded && hasLongText ? 'max-h-20 overflow-hidden relative' : ''}`}>
                                         {chunk.isChunkId && !chunk.bookId ? (
-                                          <div className="italic text-borges-muted text-xs">
+                                          <div className="italic text-datack-muted text-xs">
                                             Book not available locally
                                           </div>
                                         ) : chunk.isChunkId ? (
-                                          <div className="italic text-borges-muted text-xs">
+                                          <div className="italic text-datack-muted text-xs">
                                             Loading...
                                           </div>
                                         ) : (
@@ -1010,7 +1196,7 @@ export default function EntityDetailModal({
                                           />
                                         )}
                                         {!isExpanded && hasLongText && (
-                                          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-borges-dark to-transparent" />
+                                          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-datack-dark to-transparent" />
                                         )}
                                       </div>
                                     </div>
@@ -1035,21 +1221,21 @@ export default function EntityDetailModal({
                           const hasLongText = !chunk.isChunkId && chunk.text && chunk.text.length > CHUNK_PREVIEW_LENGTH;
 
                           return (
-                            <div key={index} className="bg-borges-dark rounded border border-borges-border overflow-hidden">
+                            <div key={index} className="bg-datack-dark rounded border border-datack-border overflow-hidden">
                               {/* Chunk header - clickable to expand */}
                               <button
                                 onClick={() => hasLongText && toggleChunkExpanded(chunkKey)}
-                                className={`w-full flex items-center justify-between p-2 text-left ${hasLongText ? 'hover:bg-borges-secondary cursor-pointer' : ''}`}
+                                className={`w-full flex items-center justify-between p-2 text-left ${hasLongText ? 'hover:bg-datack-secondary cursor-pointer' : ''}`}
                               >
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-xs px-2 py-0.5 bg-borges-accent/20 text-borges-accent rounded">
+                                  <span className="text-xs px-2 py-0.5 bg-datack-yellow/20 text-datack-yellow rounded">
                                     {index + 1}
                                   </span>
-                                  <span className="text-xs text-borges-muted">
+                                  <span className="text-xs text-datack-muted">
                                     {chunk.relationshipType}
                                   </span>
                                   {chunk.bookName && (
-                                    <span className="text-xs text-borges-muted">
+                                    <span className="text-xs text-datack-muted">
                                       {chunk.bookName}
                                     </span>
                                   )}
@@ -1065,20 +1251,20 @@ export default function EntityDetailModal({
                                   )}
                                 </div>
                                 {hasLongText && (
-                                  <span className="text-xs text-borges-muted">
+                                  <span className="text-xs text-datack-muted">
                                     {isExpanded ? '▼' : '▶'}
                                   </span>
                                 )}
                               </button>
 
                               {/* Chunk content */}
-                              <div className={`px-3 pb-3 text-sm text-borges-light leading-relaxed ${!isExpanded && hasLongText ? 'max-h-20 overflow-hidden relative' : ''}`}>
+                              <div className={`px-3 pb-3 text-sm text-datack-light leading-relaxed ${!isExpanded && hasLongText ? 'max-h-20 overflow-hidden relative' : ''}`}>
                                 {chunk.isChunkId && !chunk.bookId ? (
-                                  <div className="italic text-borges-muted text-xs">
+                                  <div className="italic text-datack-muted text-xs">
                                     Book not available locally
                                   </div>
                                 ) : chunk.isChunkId ? (
-                                  <div className="italic text-borges-muted text-xs">
+                                  <div className="italic text-datack-muted text-xs">
                                     Loading...
                                   </div>
                                 ) : (
@@ -1093,7 +1279,7 @@ export default function EntityDetailModal({
                                   />
                                 )}
                                 {!isExpanded && hasLongText && (
-                                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-borges-dark to-transparent" />
+                                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-datack-dark to-transparent" />
                                 )}
                               </div>
                             </div>
@@ -1116,8 +1302,8 @@ export default function EntityDetailModal({
               )}
 
             {/* Constitutional Principle Footer - Basile Minimalism */}
-            <div className="pt-3 border-t border-borges-border">
-              <p className="text-xs text-borges-muted">
+            <div className="pt-3 border-t border-datack-border">
+              <p className="text-xs text-datack-muted">
                 Principle #5: End-to-end interpretability
               </p>
             </div>
@@ -1126,10 +1312,10 @@ export default function EntityDetailModal({
       </div>
 
       {/* Footer - Responsive Side Panel style */}
-      <div className="p-3 md:p-4 border-t border-borges-border bg-borges-secondary flex justify-end safe-area-bottom">
+      <div className="p-3 md:p-4 border-t border-datack-border bg-datack-secondary flex justify-end safe-area-bottom">
         <button
           onClick={onClose}
-          className="borges-btn-secondary text-sm min-h-touch px-4"
+          className="datack-btn-secondary text-sm min-h-touch px-4"
         >
           Close
         </button>
