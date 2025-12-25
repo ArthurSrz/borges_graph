@@ -44,12 +44,12 @@ class LawGraphRAGService {
 
       const result = await response.json()
 
-      // Parse the communes from the health check response
-      // The data comes in format { communes: [{ commune_id, commune_name, entity_count }] }
+      // Parse the communes from the API response
+      // The data comes in format { communes: [{ id, name, entity_count }] }
       if (result.data?.communes && Array.isArray(result.data.communes)) {
-        return result.data.communes.map((c: { commune_id?: string; commune_name?: string; entity_count?: number }) => ({
-          id: c.commune_id || '',
-          name: c.commune_name || c.commune_id || '',
+        return result.data.communes.map((c: { id?: string; name?: string; entity_count?: number }) => ({
+          id: c.id || '',
+          name: c.name || c.id || '',
           entity_count: c.entity_count,
         }))
       }
