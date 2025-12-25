@@ -300,7 +300,7 @@ export default function GraphVisualization3DForce({
 
         // Configure graph data and background
         graph.graphData({ nodes: [], links: [] })
-        graph.backgroundColor('#0a0a0a')  // Dark theme background
+        graph.backgroundColor('rgba(255, 255, 255, 1)')  // Light theme background
         graph.showNavInfo(true)
 
         // Configure node appearance
