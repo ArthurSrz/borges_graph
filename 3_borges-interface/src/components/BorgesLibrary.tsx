@@ -527,6 +527,58 @@ function BorgesLibrary() {
     }
   }, [graphMLError])
 
+  // Background fetch: Load full graph from MCP API after GraphML displays
+  // This provides rich data (150-200+ nodes) while GraphML gives instant feedback
+  useEffect(() => {
+    // Only fetch if GraphML has loaded (user has something to see)
+    if (!graphMLDocument || isGraphMLLoading) return
+
+    const fetchFullMCPGraph = async () => {
+      try {
+        console.log('🌐 Background: Fetching full graph from MCP API...')
+        setCurrentProcessingPhase('🌐 Enrichissement du graphe...')
+
+        const graphData = await lawGraphRAGService.fetchFullGraph()
+
+        if (graphData && graphData.nodes.length > 0) {
+          console.log(`✅ MCP loaded: ${graphData.nodes.length} nodes, ${graphData.relationships.length} relationships`)
+
+          // Transform to reconciliation data format
+          const enrichedData: ReconciliationGraphData = {
+            nodes: graphData.nodes.map(node => ({
+              id: node.id,
+              labels: node.labels,
+              properties: node.properties as Record<string, any>,
+              degree: node.degree ?? 1,
+              centrality_score: node.centrality_score ?? 0.5
+            })),
+            relationships: graphData.relationships
+          }
+
+          // Update graph with richer MCP data
+          baseGraphDataRef.current = enrichedData
+          setReconciliationData(enrichedData)
+          setProcessingStats({
+            nodes: enrichedData.nodes.length,
+            communities: 0,
+            neo4jRelationships: enrichedData.relationships.length
+          })
+
+          console.log('📊 Graph enriched with MCP data')
+        }
+      } catch (error) {
+        console.warn('⚠️ Background MCP fetch failed (GraphML still displayed):', error)
+        // Don't show error - GraphML is still displayed
+      } finally {
+        setCurrentProcessingPhase(null)
+      }
+    }
+
+    // Delay slightly to ensure GraphML renders first
+    const timer = setTimeout(fetchFullMCPGraph, 500)
+    return () => clearTimeout(timer)
+  }, [graphMLDocument, isGraphMLLoading])
+
   // Handler for tutorial completion
   const handleTutorialComplete = () => {
     setShowTutorial(false)
