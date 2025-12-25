@@ -159,12 +159,32 @@ export function getLODSettings(
 /**
  * Check if a distance is beyond the LOD culling threshold
  *
+ * @internal NOT CURRENTLY USED
+ *
+ * **Culling is intentionally DISABLED** to preserve Constitution Principle IV (Visual Spacing).
+ * All nodes and relationships must remain visible at all distances to maintain end-to-end
+ * interpretability of the graph. Hiding nodes/relationships would break the civic provenance
+ * chain and make it impossible to trace connections between communes and citizen contributions.
+ *
+ * Constitution Principle IV states: "Toujours laisser de l'espace entre les noeuds pour
+ * voir les relations." This means relationships must ALWAYS be visible, even at far distances.
+ *
+ * Constitution Principle V (End-to-End Interpretability) requires: "L'interface doit permettre
+ * une interprétabilité de bout-en-bout du graphRAG. On doit pouvoir naviguer du chunk de texte
+ * citoyen jusqu'à la réponse du RAG."
+ *
+ * **When could this be used in future?**
+ * - Extremely large graphs (>10,000 nodes) where performance becomes critical
+ * - Optional "performance mode" toggle for users with low-end hardware
+ * - Temporary culling during camera movement (restore on zoom stabilization)
+ *
  * @param distance - Camera distance from target
  * @param config - Optional custom LOD configuration
  * @returns True if distance exceeds lowDetailDistance (candidate for culling)
  *
  * @example
  * ```typescript
+ * // NOT USED - kept for potential future optimization scenarios
  * if (shouldCullAtDistance(1200)) {
  *   // Hide nodes/links to save GPU resources
  * }

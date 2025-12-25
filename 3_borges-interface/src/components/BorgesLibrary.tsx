@@ -184,6 +184,9 @@ function BorgesLibrary() {
   const [answerPanelHeight, setAnswerPanelHeight] = useState(30) // Default 30vh on mobile
   // Entity coloring state for interpretability
   const [coloredEntities, setColoredEntities] = useState<EntityColorInfo[]>([])
+  // Query error handling state
+  const [queryError, setQueryError] = useState<string | null>(null)
+  const [showErrorAlert, setShowErrorAlert] = useState(false)
 
   // TextChunkModal state for entity click navigation
   const [isEntityChunkModalOpen, setIsEntityChunkModalOpen] = useState(false)
@@ -249,6 +252,16 @@ function BorgesLibrary() {
       return () => clearInterval(interval)
     }
   }, [showLoadingOverlay, isLoadingGraph, civicQuotes.length])
+
+  // Auto-dismiss error alert after 10 seconds (user can manually dismiss earlier)
+  useEffect(() => {
+    if (showErrorAlert) {
+      const timeout = setTimeout(() => {
+        setShowErrorAlert(false)
+      }, 10000)
+      return () => clearTimeout(timeout)
+    }
+  }, [showErrorAlert])
 
   // Function to extract chunks related to a specific entity
   const extractEntityChunks = (entityId: string) => {
@@ -570,6 +583,8 @@ function BorgesLibrary() {
     setShowAnswer(false)
     setSearchPath(null)
     setDebugInfo(null)
+    setQueryError(null)
+    setShowErrorAlert(false)
     // DON'T clear reconciliationData - keep base graph visible for subgraph highlighting
 
     setIsProcessing(true)
@@ -583,7 +598,16 @@ function BorgesLibrary() {
       console.log('🏛️ Querying Grand Débat National MCP API')
       setCurrentProcessingPhase('🏛️ Analyzing citizen contributions...')
 
-      const result = await lawGraphRAGService.query({ query, mode })
+      // Create timeout promise (30 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('TIMEOUT')), 30000)
+      })
+
+      // Race between query and timeout
+      const result = await Promise.race([
+        lawGraphRAGService.query({ query, mode }),
+        timeoutPromise
+      ])
 
       if (result.success !== false) {
         setCurrentProcessingPhase('✓ Civic analysis complete')
@@ -783,19 +807,22 @@ function BorgesLibrary() {
       let errorMessage = 'Une erreur est survenue lors du traitement de votre requête.'
 
       const errorDetail = error instanceof Error ? error.message : 'Unknown error'
-      if (errorDetail.includes('fetch') || errorDetail.includes('network') || errorDetail.includes('ECONNREFUSED')) {
-        errorMessage = '🏛️ Impossible de se connecter au service Grand Débat National. Vérifiez votre connexion.'
+      if (errorDetail === 'TIMEOUT') {
+        errorMessage = 'La requête a dépassé le délai maximum de 30 secondes. Le serveur MCP ne répond pas.'
+      } else if (errorDetail.includes('fetch') || errorDetail.includes('network') || errorDetail.includes('ECONNREFUSED')) {
+        errorMessage = 'Impossible de se connecter au service Grand Débat National. Vérifiez que le serveur MCP est accessible.'
       } else if (errorDetail.includes('timeout') || errorDetail.includes('ETIMEDOUT')) {
-        errorMessage = '🏛️ La requête a expiré. Essayez une question plus simple ou réessayez plus tard.'
+        errorMessage = 'La requête a expiré. Le serveur MCP met trop de temps à répondre.'
       } else if (errorDetail.includes('500') || errorDetail.includes('Internal Server')) {
-        errorMessage = '🏛️ Le service a rencontré une erreur. Veuillez réessayer plus tard.'
+        errorMessage = 'Le service a rencontré une erreur interne. Veuillez réessayer plus tard.'
       } else {
-        errorMessage = `🏛️ Erreur: ${errorDetail}`
+        errorMessage = `Erreur: ${errorDetail}`
       }
       console.error('Civic GraphRAG error details:', errorDetail)
 
-      setQueryAnswer(errorMessage)
-      setShowAnswer(true)
+      // Set error state and show alert
+      setQueryError(errorMessage)
+      setShowErrorAlert(true)
       setColoredEntities([])
     } finally {
       setIsProcessing(false)
@@ -1248,6 +1275,59 @@ function BorgesLibrary() {
       )}
 
       {/* Citizen Extracts now merged into EntityDetailModal - Constitution Principle #7 */}
+
+      {/* Error Alert - Dismissible with Retry Button */}
+      {showErrorAlert && queryError && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-lg">
+          <div className="bg-red-900/95 border border-red-500 rounded-datack-md p-4 shadow-datack-lg backdrop-blur-sm">
+            <div className="flex items-start gap-3">
+              {/* Error Icon */}
+              <div className="flex-shrink-0 text-red-400 mt-0.5">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+
+              {/* Error Content */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-red-100 font-medium text-sm mb-1">Erreur de requête</h3>
+                <p className="text-red-200 text-sm leading-relaxed">{queryError}</p>
+
+                {/* Retry Button */}
+                <button
+                  onClick={() => {
+                    setShowErrorAlert(false)
+                    setQueryError(null)
+                    if (currentQuery) {
+                      handleSimpleQuery(currentQuery)
+                    }
+                  }}
+                  className="mt-3 px-4 py-2 bg-red-700 hover:bg-red-600 text-red-100 rounded-datack-sm text-sm font-medium transition-colors inline-flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Réessayer
+                </button>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setShowErrorAlert(false)
+                  setQueryError(null)
+                }}
+                className="flex-shrink-0 text-red-300 hover:text-red-100 transition-colors"
+                aria-label="Fermer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Answer Panel - Datack Branding - Resizable bottom sheet on mobile, side panel on desktop */}
       {showAnswer && (

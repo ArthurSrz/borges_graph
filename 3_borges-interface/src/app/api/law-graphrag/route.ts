@@ -30,6 +30,37 @@ const sessionPool: Map<string, PooledSession> = new Map()
 let cleanupInterval: NodeJS.Timeout | null = null
 
 /**
+ * Send MCP shutdown message to properly close a session
+ * This prevents orphaned resources on the MCP server
+ */
+async function closeSession(sessionId: string): Promise<void> {
+  try {
+    const response = await fetch(`${LAW_GRAPHRAG_MCP_URL}/mcp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream',
+        'mcp-session-id': sessionId,
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'shutdown',
+        id: Date.now()
+      })
+    })
+
+    if (!response.ok) {
+      console.warn(`[SessionPool] Shutdown message failed for session ${sessionId}: ${response.status}`)
+    } else {
+      console.log(`[SessionPool] Successfully sent shutdown for session ${sessionId}`)
+    }
+  } catch (error) {
+    // Log warning but don't throw - we still want to remove from pool
+    console.warn(`[SessionPool] Failed to send shutdown for session ${sessionId}:`, error instanceof Error ? error.message : 'Unknown error')
+  }
+}
+
+/**
  * Start periodic cleanup of expired sessions
  */
 function startSessionCleanup() {
@@ -42,8 +73,9 @@ function startSessionCleanup() {
 
 /**
  * Remove expired sessions from the pool
+ * Sends MCP shutdown message before removing to prevent orphaned server resources
  */
-function cleanupExpiredSessions() {
+async function cleanupExpiredSessions(): Promise<void> {
   const now = Date.now()
   const expiredSessions: string[] = []
 
@@ -54,10 +86,14 @@ function cleanupExpiredSessions() {
     }
   }
 
-  for (const sessionId of expiredSessions) {
-    sessionPool.delete(sessionId)
-    console.log(`[SessionPool] Cleaned up expired session: ${sessionId}`)
-  }
+  // Send shutdown messages in parallel for all expired sessions
+  await Promise.all(
+    expiredSessions.map(async (sessionId) => {
+      await closeSession(sessionId)
+      sessionPool.delete(sessionId)
+      console.log(`[SessionPool] Cleaned up expired session: ${sessionId}`)
+    })
+  )
 
   if (expiredSessions.length > 0) {
     console.log(`[SessionPool] Removed ${expiredSessions.length} expired session(s). Pool size: ${sessionPool.size}`)
@@ -99,6 +135,8 @@ async function getAvailableSession(): Promise<string> {
     }
 
     if (oldestSessionId) {
+      // Send shutdown before removing to prevent orphaned server resources
+      await closeSession(oldestSessionId)
       sessionPool.delete(oldestSessionId)
       console.log(`[SessionPool] Removed oldest session to make room: ${oldestSessionId}`)
     }
@@ -423,23 +461,40 @@ export async function POST(request: NextRequest) {
       releaseSession(sessionId)
     }
 
-    return NextResponse.json(transformedResponse)
+    // HTTP Cache-Control headers at the API route level (proper HTTP layer separation)
+    // Graph query results can be cached for 5 minutes (300s) to reduce MCP server load
+    // stale-while-revalidate allows serving stale content while fetching fresh data in background
+    return NextResponse.json(transformedResponse, {
+      headers: {
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=60',
+      },
+    })
   } catch (error) {
     console.error('Law GraphRAG MCP query failed:', error)
 
-    // If session was created, mark it as expired and remove from pool
-    if (sessionId && sessionPool.has(sessionId)) {
-      sessionPool.delete(sessionId)
-      console.log(`[SessionPool] Removed failed session ${sessionId}`)
+    // If session was created, send shutdown and remove from pool
+    if (sessionId) {
+      const currentSessionId = sessionId // Capture for closure
+      // Fire and forget - don't await to avoid delaying error response
+      closeSession(currentSessionId).finally(() => {
+        sessionPool.delete(currentSessionId)
+        console.log(`[SessionPool] Removed failed session ${currentSessionId}`)
+      })
     }
 
+    // Error responses should not be cached to allow retry
     return NextResponse.json(
       {
         success: false,
         error: 'Law GraphRAG query failed',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
     )
   }
 }
@@ -461,6 +516,7 @@ export async function GET() {
       releaseSession(sessionId)
     }
 
+    // Health check can be cached briefly (30s) to reduce server load during monitoring
     return NextResponse.json({
       status: 'healthy',
       proxy: 'law-graphrag-mcp',
@@ -471,23 +527,37 @@ export async function GET() {
         ttl: SESSION_TTL
       },
       data: result
+    }, {
+      headers: {
+        'Cache-Control': 'public, max-age=30, stale-while-revalidate=10',
+      },
     })
   } catch (error) {
     console.error('Law GraphRAG health check failed:', error)
 
-    // If session was created, mark it as expired and remove from pool
-    if (sessionId && sessionPool.has(sessionId)) {
-      sessionPool.delete(sessionId)
-      console.log(`[SessionPool] Removed failed session ${sessionId}`)
+    // If session was created, send shutdown and remove from pool
+    if (sessionId) {
+      const currentSessionId = sessionId // Capture for closure
+      // Fire and forget - don't await to avoid delaying error response
+      closeSession(currentSessionId).finally(() => {
+        sessionPool.delete(currentSessionId)
+        console.log(`[SessionPool] Removed failed session ${currentSessionId}`)
+      })
     }
 
+    // Error responses should not be cached to allow retry
     return NextResponse.json(
       {
         status: 'error',
         error: 'Health check failed',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 503 }
+      {
+        status: 503,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
     )
   }
 }

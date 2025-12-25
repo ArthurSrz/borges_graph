@@ -7,10 +7,12 @@
  */
 
 import type { DebugInfo } from '@/lib/services/reconciliation'
+import type { LawGraphRAGResponse } from '@/types/law-graphrag'
 
 /**
  * Graph data structure matching ReconciliationData
  * Used in GraphVisualization3DForce and other components
+ * @deprecated Use LawGraphRAGResponse for cache storage instead
  */
 export interface ReconciliationData {
   nodes: Array<{
@@ -38,8 +40,8 @@ export interface QueryCacheEntry {
   queryText: string
   communes: string[]
 
-  // Cached response
-  response: ReconciliationData
+  // Cached response - stores the full LawGraphRAGResponse
+  response: LawGraphRAGResponse
   answer: string
   debugInfo: DebugInfo
 

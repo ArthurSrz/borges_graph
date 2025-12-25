@@ -289,11 +289,10 @@ export class ReconciliationService {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
 
+          // Note: Cache-Control headers are managed at the API route level (route.ts)
+          // Request headers should not include cache directives for response caching
           const response = await fetch(url, {
             signal: controller.signal,
-            headers: {
-              'Cache-Control': 'max-age=300',
-            }
           });
 
           clearTimeout(timeoutId);

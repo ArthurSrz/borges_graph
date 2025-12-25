@@ -41,8 +41,8 @@ class LawGraphRAGService {
     const cached = getFromCache(cacheKey)
     if (cached) {
       console.log(`🎯 Cache hit for query: "${query.query.substring(0, 50)}..."`)
-      // Return cached response directly (cast from ReconciliationData structure)
-      return cached.response as unknown as LawGraphRAGResponse
+      // Return cached response directly (type-safe: QueryCacheEntry.response is LawGraphRAGResponse)
+      return cached.response
     }
 
     console.log(`🔍 Cache miss, fetching from MCP: "${query.query.substring(0, 50)}..."`)
@@ -72,7 +72,7 @@ class LawGraphRAGService {
         queryHash: cacheKey,
         queryText: query.query,
         communes: communes,
-        response: result as any, // Store full LawGraphRAGResponse
+        response: result, // Type-safe: QueryCacheEntry.response is now LawGraphRAGResponse
         answer: result.answer,
         debugInfo: {
           processing_phases: {
