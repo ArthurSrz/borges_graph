@@ -10,8 +10,23 @@ import {
   clearCache,
   getCacheStats,
   type QueryCacheEntry,
-  type ReconciliationData,
 } from '../query-cache'
+import type { LawGraphRAGResponse } from '@/types/law-graphrag'
+
+/**
+ * Create a mock LawGraphRAGResponse for testing
+ */
+function createMockResponse(): LawGraphRAGResponse {
+  return {
+    success: true,
+    query: 'test query',
+    answer: 'test answer',
+    graphrag_data: {
+      entities: [],
+      relationships: [],
+    },
+  }
+}
 
 describe('Query Cache', () => {
   beforeEach(() => {
@@ -46,7 +61,7 @@ describe('Query Cache', () => {
         queryHash: key,
         queryText: 'test',
         communes: ['commune1'],
-        response: { nodes: [], relationships: [] },
+        response: createMockResponse(),
         answer: 'test answer',
         debugInfo: {
           processing_phases: {
@@ -81,7 +96,7 @@ describe('Query Cache', () => {
         queryHash: key,
         queryText: 'test',
         communes: ['commune1'],
-        response: { nodes: [], relationships: [] },
+        response: createMockResponse(),
         answer: 'test answer',
         debugInfo: {
           processing_phases: {
@@ -113,7 +128,7 @@ describe('Query Cache', () => {
         queryHash: key,
         queryText: 'test',
         communes: ['commune1'],
-        response: { nodes: [], relationships: [] },
+        response: createMockResponse(),
         answer: 'test answer',
         debugInfo: {
           processing_phases: {
@@ -147,7 +162,7 @@ describe('Query Cache', () => {
         queryHash: key,
         queryText: 'test',
         communes: ['commune1'],
-        response: { nodes: [], relationships: [] },
+        response: createMockResponse(),
         answer: 'test answer',
         debugInfo: {
           processing_phases: {
@@ -179,7 +194,7 @@ describe('Query Cache', () => {
         queryHash: key1,
         queryText: 'test',
         communes: ['commune1'],
-        response: { nodes: [], relationships: [] },
+        response: createMockResponse(),
         answer: 'test answer',
         debugInfo: {
           processing_phases: {

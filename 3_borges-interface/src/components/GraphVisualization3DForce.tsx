@@ -1031,19 +1031,22 @@ export default function GraphVisualization3DForce({
                 </div>
               </div>
             ) : (
-              /* Collapsed: Color dots with expand indicator */
-              <div className="p-2 flex items-center justify-between">
-                <div className="flex flex-wrap gap-1">
-                  {GRAND_DEBAT_ONTOLOGY_TYPES.slice(0, 6).map((type) => (
-                    <div
-                      key={type}
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: getEntityTypeColor(type) }}
-                    ></div>
-                  ))}
-                  <div className="text-datack-gray text-xs ml-1">+18</div>
+              /* Collapsed: Color dots with clear label and expand indicator */
+              <div className="p-2 flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-datack-light text-xs font-medium whitespace-nowrap">Légende</span>
+                  <div className="flex flex-wrap gap-1">
+                    {GRAND_DEBAT_ONTOLOGY_TYPES.slice(0, 6).map((type) => (
+                      <div
+                        key={type}
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: getEntityTypeColor(type) }}
+                      ></div>
+                    ))}
+                    <div className="text-datack-gray text-xs ml-0.5">+18</div>
+                  </div>
                 </div>
-                <span className="text-datack-gray text-xs ml-1">▼</span>
+                <span className="text-datack-yellow text-xs ml-auto flex-shrink-0" aria-label="Tap to expand">▼</span>
               </div>
             )}
           </div>

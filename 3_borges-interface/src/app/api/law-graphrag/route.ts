@@ -30,6 +30,37 @@ const sessionPool: Map<string, PooledSession> = new Map()
 let cleanupInterval: NodeJS.Timeout | null = null
 
 /**
+ * Send MCP shutdown message to properly close a session
+ * This prevents orphaned resources on the MCP server
+ */
+async function closeSession(sessionId: string): Promise<void> {
+  try {
+    const response = await fetch(`${LAW_GRAPHRAG_MCP_URL}/mcp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/event-stream',
+        'mcp-session-id': sessionId,
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'shutdown',
+        id: Date.now()
+      })
+    })
+
+    if (!response.ok) {
+      console.warn(`[SessionPool] Shutdown message failed for session ${sessionId}: ${response.status}`)
+    } else {
+      console.log(`[SessionPool] Successfully sent shutdown for session ${sessionId}`)
+    }
+  } catch (error) {
+    // Log warning but don't throw - we still want to remove from pool
+    console.warn(`[SessionPool] Failed to send shutdown for session ${sessionId}:`, error instanceof Error ? error.message : 'Unknown error')
+  }
+}
+
+/**
  * Start periodic cleanup of expired sessions
  */
 function startSessionCleanup() {
@@ -42,8 +73,9 @@ function startSessionCleanup() {
 
 /**
  * Remove expired sessions from the pool
+ * Sends MCP shutdown message before removing to prevent orphaned server resources
  */
-function cleanupExpiredSessions() {
+async function cleanupExpiredSessions(): Promise<void> {
   const now = Date.now()
   const expiredSessions: string[] = []
 
@@ -54,10 +86,14 @@ function cleanupExpiredSessions() {
     }
   }
 
-  for (const sessionId of expiredSessions) {
-    sessionPool.delete(sessionId)
-    console.log(`[SessionPool] Cleaned up expired session: ${sessionId}`)
-  }
+  // Send shutdown messages in parallel for all expired sessions
+  await Promise.all(
+    expiredSessions.map(async (sessionId) => {
+      await closeSession(sessionId)
+      sessionPool.delete(sessionId)
+      console.log(`[SessionPool] Cleaned up expired session: ${sessionId}`)
+    })
+  )
 
   if (expiredSessions.length > 0) {
     console.log(`[SessionPool] Removed ${expiredSessions.length} expired session(s). Pool size: ${sessionPool.size}`)
@@ -99,6 +135,8 @@ async function getAvailableSession(): Promise<string> {
     }
 
     if (oldestSessionId) {
+      // Send shutdown before removing to prevent orphaned server resources
+      await closeSession(oldestSessionId)
       sessionPool.delete(oldestSessionId)
       console.log(`[SessionPool] Removed oldest session to make room: ${oldestSessionId}`)
     }
@@ -302,16 +340,123 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { query, mode = 'local', commune_id } = body
+    const { query, mode = 'local', commune_id, commune_ids } = body
 
     // Get session from pool (reuses existing or creates new)
     sessionId = await getAvailableSession()
 
-    // If commune_id is provided, query specific commune
-    // Otherwise, query all communes
+    // Determine query strategy:
+    // 1. commune_ids array (multi-commune comparative analysis)
+    // 2. commune_id (single commune query)
+    // 3. No filter (query all communes)
     let result: unknown
 
-    if (commune_id) {
+    if (commune_ids && Array.isArray(commune_ids) && commune_ids.length > 0) {
+      // Multi-commune query: Execute parallel queries and merge results
+      // Constitution Principle #3: Cross-Commune Analysis
+      console.log(`[Multi-Commune] Querying ${commune_ids.length} communes in parallel`)
+
+      const communeResults = await Promise.all(
+        commune_ids.map(async (cid: string) => {
+          try {
+            return await callMcpTool(sessionId!, 'grand_debat_query', {
+              commune_id: cid,
+              query,
+              mode,
+              include_sources: true
+            })
+          } catch (error) {
+            console.error(`[Multi-Commune] Failed for ${cid}:`, error)
+            return null // Partial failure handling
+          }
+        })
+      )
+
+      // Merge results with Set-based deduplication
+      const entityMap = new Map<string, { id: string; name: string; type: string; description?: string; source_commune?: string }>()
+      const relationshipSet = new Set<string>()
+      const relationships: Array<{ source: string; target: string; type: string; description?: string; weight?: number }> = []
+      const sourceQuotes: Array<{ content: string; commune: string; chunk_id: number }> = []
+      const answerParts: string[] = []
+
+      for (const res of communeResults) {
+        if (!res) continue
+        const mcpRes = res as {
+          answer?: string
+          commune_id?: string
+          commune_name?: string
+          provenance?: {
+            entities?: Array<{ id?: string; name?: string; type?: string; description?: string; source_commune?: string }>
+            relationships?: Array<{ source?: string; target?: string; type?: string; description?: string; weight?: number }>
+            source_quotes?: Array<{ content?: string; commune?: string; chunk_id?: number }>
+          }
+        }
+
+        // Collect answer
+        if (mcpRes.answer) {
+          const communeName = mcpRes.commune_name || mcpRes.commune_id || 'Unknown'
+          answerParts.push(`**${communeName}**: ${mcpRes.answer}`)
+        }
+
+        // Deduplicate entities by id
+        if (mcpRes.provenance?.entities) {
+          for (const e of mcpRes.provenance.entities) {
+            if (e && e.id && !entityMap.has(e.id)) {
+              entityMap.set(e.id, {
+                id: e.id,
+                name: e.name || e.id,
+                type: e.type || 'CIVIC_ENTITY',
+                description: e.description,
+                source_commune: e.source_commune
+              })
+            }
+          }
+        }
+
+        // Deduplicate relationships by source-target-type key
+        if (mcpRes.provenance?.relationships) {
+          for (const r of mcpRes.provenance.relationships) {
+            if (r && r.source && r.target) {
+              const key = `${r.source}-${r.target}-${r.type || 'RELATED_TO'}`
+              if (!relationshipSet.has(key)) {
+                relationshipSet.add(key)
+                relationships.push({
+                  source: r.source,
+                  target: r.target,
+                  type: r.type || 'RELATED_TO',
+                  description: r.description,
+                  weight: r.weight
+                })
+              }
+            }
+          }
+        }
+
+        // Collect source quotes with commune attribution
+        if (mcpRes.provenance?.source_quotes) {
+          for (const q of mcpRes.provenance.source_quotes) {
+            if (q && q.content) {
+              sourceQuotes.push({
+                content: q.content,
+                commune: q.commune || mcpRes.commune_id || 'Unknown',
+                chunk_id: q.chunk_id || sourceQuotes.length
+              })
+            }
+          }
+        }
+      }
+
+      // Build merged result in expected format
+      result = {
+        success: true,
+        answer: answerParts.join('\n\n'),
+        provenance: {
+          entities: Array.from(entityMap.values()),
+          relationships,
+          source_quotes: sourceQuotes
+        }
+      }
+    } else if (commune_id) {
       result = await callMcpTool(sessionId, 'grand_debat_query', {
         commune_id,
         query,
@@ -423,32 +568,53 @@ export async function POST(request: NextRequest) {
       releaseSession(sessionId)
     }
 
-    return NextResponse.json(transformedResponse)
+    // HTTP Cache-Control headers at the API route level (proper HTTP layer separation)
+    // Graph query results can be cached for 5 minutes (300s) to reduce MCP server load
+    // stale-while-revalidate allows serving stale content while fetching fresh data in background
+    return NextResponse.json(transformedResponse, {
+      headers: {
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=60',
+      },
+    })
   } catch (error) {
     console.error('Law GraphRAG MCP query failed:', error)
 
-    // If session was created, mark it as expired and remove from pool
-    if (sessionId && sessionPool.has(sessionId)) {
-      sessionPool.delete(sessionId)
-      console.log(`[SessionPool] Removed failed session ${sessionId}`)
+    // If session was created, send shutdown and remove from pool
+    if (sessionId) {
+      const currentSessionId = sessionId // Capture for closure
+      // Fire and forget - don't await to avoid delaying error response
+      closeSession(currentSessionId).finally(() => {
+        sessionPool.delete(currentSessionId)
+        console.log(`[SessionPool] Removed failed session ${currentSessionId}`)
+      })
     }
 
+    // Error responses should not be cached to allow retry
     return NextResponse.json(
       {
         success: false,
         error: 'Law GraphRAG query failed',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
     )
   }
 }
 
 /**
- * Health check - list available communes
+ * Health check and commune list endpoint
+ * GET /api/law-graphrag - Health check
+ * GET /api/law-graphrag?action=list_communes - List communes for selector
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   let sessionId: string | null = null
+  const { searchParams } = new URL(request.url)
+  const action = searchParams.get('action')
 
   try {
     // Get session from pool
@@ -461,6 +627,21 @@ export async function GET() {
       releaseSession(sessionId)
     }
 
+    // If action is list_communes, return just the communes data
+    // This is used by the CommuneSelector component
+    if (action === 'list_communes') {
+      return NextResponse.json({
+        status: 'ok',
+        data: result
+      }, {
+        headers: {
+          // Communes list can be cached for longer (5 minutes) as it rarely changes
+          'Cache-Control': 'public, max-age=300, stale-while-revalidate=60',
+        },
+      })
+    }
+
+    // Default: Health check response
     return NextResponse.json({
       status: 'healthy',
       proxy: 'law-graphrag-mcp',
@@ -471,23 +652,37 @@ export async function GET() {
         ttl: SESSION_TTL
       },
       data: result
+    }, {
+      headers: {
+        'Cache-Control': 'public, max-age=30, stale-while-revalidate=10',
+      },
     })
   } catch (error) {
     console.error('Law GraphRAG health check failed:', error)
 
-    // If session was created, mark it as expired and remove from pool
-    if (sessionId && sessionPool.has(sessionId)) {
-      sessionPool.delete(sessionId)
-      console.log(`[SessionPool] Removed failed session ${sessionId}`)
+    // If session was created, send shutdown and remove from pool
+    if (sessionId) {
+      const currentSessionId = sessionId // Capture for closure
+      // Fire and forget - don't await to avoid delaying error response
+      closeSession(currentSessionId).finally(() => {
+        sessionPool.delete(currentSessionId)
+        console.log(`[SessionPool] Removed failed session ${currentSessionId}`)
+      })
     }
 
+    // Error responses should not be cached to allow retry
     return NextResponse.json(
       {
         status: 'error',
         error: 'Health check failed',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
-      { status: 503 }
+      {
+        status: 503,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
     )
   }
 }
