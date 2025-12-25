@@ -231,13 +231,13 @@ export default function HighlightedText({
         result.push(
           <span
             key={keyIndex++}
-            className="cursor-pointer border-b border-dotted transition-all duration-200 hover:bg-opacity-20"
+            className="cursor-pointer transition-all duration-200 hover:opacity-80"
             style={{
               color: entityColor,
-              borderBottomColor: entityColor,
-              backgroundColor: `${entityColor}15`,
-              padding: '1px 2px',
-              borderRadius: '2px'
+              backgroundColor: '#0a0a0a',
+              padding: '2px 6px',
+              borderRadius: '3px',
+              fontWeight: 500
             }}
             onMouseEnter={(e) => {
               if (showTooltip) {
@@ -385,17 +385,17 @@ export default function HighlightedText({
       if (entity) {
         const entityColor = entity.color || getIntelligenceColor(entity.type, entity.score)
 
-        // Create highlighted span with exact graph colors
+        // Create highlighted span with Datack-style: black fill, colored text
         result.push(
           <span
             key={keyIndex++}
-            className="cursor-pointer border-b border-dotted transition-all duration-200 hover:bg-opacity-20"
+            className="cursor-pointer transition-all duration-200 hover:opacity-80"
             style={{
               color: entityColor,
-              borderBottomColor: entityColor,
-              backgroundColor: `${entityColor}15`, // 15 = ~8% opacity in hex
-              padding: '1px 2px',
-              borderRadius: '2px'
+              backgroundColor: '#0a0a0a',
+              padding: '2px 6px',
+              borderRadius: '3px',
+              fontWeight: 500
             }}
             onMouseEnter={(e) => {
               if (showTooltip) {
