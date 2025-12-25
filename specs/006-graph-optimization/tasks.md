@@ -136,7 +136,7 @@
 - [x] T035 Component splitting evaluation (BorgesLibrary → 4 components) - document decision
 - [x] T036 [P] Response compression evaluation (gzip) - document decision
 - [x] T037 Run full quickstart.md validation checklist (documented in benchmarks/validation-results.md)
-- [ ] T038 Create PR with performance comparison summary
+- [x] T038 Create PR with performance comparison summary (PR #30)
 
 ---
 
