@@ -18,19 +18,22 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Datack Brand Colors - LIGHT THEME (Feature 005-agent-orchestration)
-        'datack-yellow': '#F5C518',
-        'datack-yellow-bright': '#FFD93D',
-        'datack-black': '#FAFAFA',        // Light background (inverted for light theme)
-        'datack-dark': '#FFFFFF',         // White panels
-        'datack-light': '#1A1A1A',        // Dark text (inverted for light theme)
-        'datack-gray': '#6B7280',
-        // Semantic aliases for easier migration
-        'datack-accent': '#F5C518',
-        'datack-secondary': '#FFFFFF',    // White panels
-        'datack-muted': '#6B7280',
-        'datack-border': '#E5E7EB',       // Light gray border
-        'datack-hover': '#FFD93D',
+        // Datack Brand Colors - DARK THEME (Cycle 006)
+        'datack-yellow': '#dbff3b',       // Primary accent (neon lime)
+        'datack-yellow-bright': '#e5ff6b', // Lighter accent for hover
+        'datack-black': '#0a0a0a',        // Primary background
+        'datack-dark': '#0a0a0a',         // Alias for background
+        'datack-panel': '#141414',        // Elevated surfaces (panels)
+        'datack-light': '#f5f5f5',        // Primary text (light on dark)
+        'datack-light-muted': '#d4d4d4',  // Secondary text
+        'datack-gray': '#9d9d9d',         // Muted text
+        // Semantic aliases
+        'datack-accent': '#dbff3b',
+        'datack-secondary': '#1a1a1a',    // Secondary surfaces
+        'datack-muted': '#9d9d9d',
+        'datack-border': '#2a2a2a',       // Subtle borders
+        'datack-hover': '#e5ff6b',
+        'datack-black-hover': '#1a1a1a',  // Hover state for black bg
       },
       fontFamily: {
         'datack': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
@@ -54,11 +57,11 @@ module.exports = {
         'datack-lg': '12px',
       },
       boxShadow: {
-        // Light theme shadows - softer, less aggressive
-        'datack-sm': '0 1px 2px rgba(0,0,0,0.08)',
-        'datack-md': '0 4px 6px rgba(0,0,0,0.1)',
-        'datack-lg': '0 10px 15px rgba(0,0,0,0.15)',
-        'datack-glow': '0 0 20px rgba(245, 197, 24, 0.3)',
+        // Dark theme shadows
+        'datack-sm': '0 1px 2px rgba(0,0,0,0.4)',
+        'datack-md': '0 4px 6px rgba(0,0,0,0.5)',
+        'datack-lg': '0 10px 15px rgba(0,0,0,0.6)',
+        'datack-glow': '0 0 20px rgba(219, 255, 59, 0.3)',
       },
       // Touch-friendly spacing (Constitution Principle VIII: 44x44px touch targets)
       spacing: {

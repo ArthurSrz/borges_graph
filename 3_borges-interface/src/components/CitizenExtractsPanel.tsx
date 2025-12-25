@@ -128,39 +128,39 @@ export default function CitizenExtractsPanel({
   }
 
   return (
-    <div className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 z-50 w-full md:max-w-lg bg-borges-secondary md:border-l border-borges-border shadow-borges-lg overflow-hidden flex flex-col safe-area-top safe-area-bottom">
+    <div className="fixed inset-0 md:inset-y-0 md:left-auto md:right-0 z-50 w-full md:max-w-lg bg-datack-panel md:border-l border-datack-border shadow-lg overflow-hidden flex flex-col safe-area-top safe-area-bottom">
       {/* Mobile drag handle */}
-      <div className="md:hidden flex justify-center py-2 bg-borges-secondary">
-        <div className="w-12 h-1 bg-borges-border rounded-full"></div>
+      <div className="md:hidden flex justify-center py-2 bg-datack-panel">
+        <div className="w-12 h-1 bg-datack-border rounded-full"></div>
       </div>
 
       {/* Header */}
-      <div className="p-4 border-b border-borges-border">
+      <div className="p-4 border-b border-datack-border">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg md:text-xl text-borges-light font-medium mb-2">
+            <h2 className="text-lg md:text-xl text-datack-light font-medium mb-2">
               Extraits Citoyens
             </h2>
             <div className="flex items-center gap-2 flex-wrap mb-2">
               <span
-                className="text-sm px-2 py-1 rounded-borges-sm font-medium"
+                className="text-sm px-2 py-1 rounded font-medium"
                 style={{ backgroundColor: `${entityColor}22`, color: entityColor }}
               >
                 {entity.type}
               </span>
-              <span className="text-sm font-medium text-borges-light">
+              <span className="text-sm font-medium text-datack-light">
                 {entity.name}
               </span>
             </div>
-            <div className="text-xs text-borges-muted">
-              Commune: <span className="text-borges-light-muted">{entity.source_commune}</span>
+            <div className="text-xs text-datack-muted">
+              Commune: <span className="text-datack-muted">{entity.source_commune}</span>
               {' - '}
               {relatedExtracts.length} extrait{relatedExtracts.length !== 1 ? 's' : ''} trouvé{relatedExtracts.length !== 1 ? 's' : ''}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="borges-btn-ghost ml-2 p-2 touch-target flex items-center justify-center"
+            className="datack-btn-ghost ml-2 p-2 touch-target flex items-center justify-center"
             aria-label="Fermer"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -173,7 +173,7 @@ export default function CitizenExtractsPanel({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {relatedExtracts.length === 0 ? (
-          <div className="text-center py-8 text-borges-muted">
+          <div className="text-center py-8 text-datack-muted">
             <div className="text-3xl mb-3">&#128221;</div>
             <p>Aucun extrait citoyen trouv&eacute; pour cette entit&eacute;.</p>
             <p className="text-sm mt-2">
@@ -189,22 +189,22 @@ export default function CitizenExtractsPanel({
             return (
               <div
                 key={extractId || index}
-                className="bg-borges-dark rounded-borges-sm border border-borges-border overflow-hidden"
+                className="bg-datack-black rounded border border-datack-border overflow-hidden"
               >
                 {/* Extract header */}
-                <div className="px-3 py-2 border-b border-borges-border bg-borges-dark flex items-center justify-between">
+                <div className="px-3 py-2 border-b border-datack-border bg-datack-black flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-0.5 bg-borges-secondary rounded text-borges-light-muted">
+                    <span className="text-xs px-2 py-0.5 bg-datack-panel rounded text-datack-muted">
                       #{index + 1}
                     </span>
-                    <span className="text-xs text-borges-muted">
+                    <span className="text-xs text-datack-muted">
                       {extract.commune}
                     </span>
                   </div>
                   {isLong && (
                     <button
                       onClick={() => toggleExpand(extractId)}
-                      className="text-xs text-borges-accent hover:underline"
+                      className="text-xs text-datack-yellow hover:underline"
                     >
                       {isExpanded ? 'R&eacute;duire' : 'Voir tout'}
                     </button>
@@ -214,7 +214,7 @@ export default function CitizenExtractsPanel({
                 {/* Extract content */}
                 <div className="p-3">
                   <div
-                    className={`text-sm text-borges-light leading-relaxed ${
+                    className={`text-sm text-datack-light leading-relaxed ${
                       !isExpanded && isLong ? 'line-clamp-4' : ''
                     }`}
                   >
@@ -234,8 +234,8 @@ export default function CitizenExtractsPanel({
       </div>
 
       {/* Footer */}
-      <div className="p-3 border-t border-borges-border bg-borges-secondary">
-        <div className="text-xs text-borges-muted text-center">
+      <div className="p-3 border-t border-datack-border bg-datack-panel">
+        <div className="text-xs text-datack-muted text-center">
           Principe #7: Tra&ccedil;abilit&eacute; civique de bout en bout
         </div>
       </div>

@@ -75,7 +75,7 @@ export const explosionPhase: AnimationPhaseConfig = {
         fz: Math.sin(angle) * (explosionRadius + randomOffset),
         scale: 0.8 + easedProgress * 0.7,
         opacity: 0.4 + easedProgress * 0.4,
-        color: interpolateColor('#6B7280', '#8B5CF6', easedProgress),
+        color: interpolateColor('#9d9d9d', '#8B5CF6', easedProgress),
         __fx: Math.cos(angle) * (explosionRadius + randomOffset),
         __fy: Math.sin(elevation) * (explosionRadius + randomOffset),
         __fz: Math.sin(angle) * (explosionRadius + randomOffset)
@@ -88,7 +88,7 @@ export const explosionPhase: AnimationPhaseConfig = {
     return links.map(link => ({
       ...link,
       opacity: 0.1 + easedProgress * 0.3,
-      color: '#6B7280',
+      color: '#9d9d9d',
       width: 1 + easedProgress * 0.5
     }))
   },

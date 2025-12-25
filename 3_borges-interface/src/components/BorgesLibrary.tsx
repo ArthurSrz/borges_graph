@@ -30,7 +30,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex1"
             points="100,40 130,57.5 130,92.5 100,110 70,92.5 70,57.5"
-            stroke="#F5C518"
+            stroke="#dbff3b"
             strokeWidth="1.5"
             fill="none"
           />
@@ -39,7 +39,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex2"
             points="100,10 125,25 125,55 100,70 75,55 75,25"
-            stroke="#F5C518"
+            stroke="#dbff3b"
             strokeWidth="1"
             fill="none"
           />
@@ -48,7 +48,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex3"
             points="70,95 95,110 95,140 70,155 45,140 45,110"
-            stroke="#F5C518"
+            stroke="#dbff3b"
             strokeWidth="1"
             fill="none"
           />
@@ -57,7 +57,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex4"
             points="130,95 155,110 155,140 130,155 105,140 105,110"
-            stroke="#F5C518"
+            stroke="#dbff3b"
             strokeWidth="1"
             fill="none"
           />
@@ -66,7 +66,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex5"
             points="50,60 75,75 75,105 50,120 25,105 25,75"
-            stroke="#F5C518"
+            stroke="#dbff3b"
             strokeWidth="0.8"
             fill="none"
           />
@@ -75,16 +75,16 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex5"
             points="150,60 175,75 175,105 150,120 125,105 125,75"
-            stroke="#F5C518"
+            stroke="#dbff3b"
             strokeWidth="0.8"
             fill="none"
             style={{ animationDelay: '1s' }}
           />
 
           {/* Connection lines inside central hexagon - Datack Yellow */}
-          <line className="book-line" x1="80" y1="65" x2="120" y2="65" stroke="#F5C518" strokeWidth="0.5" />
-          <line className="book-line" x1="82" y1="75" x2="118" y2="75" stroke="#F5C518" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
-          <line className="book-line" x1="84" y1="85" x2="116" y2="85" stroke="#F5C518" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
+          <line className="book-line" x1="80" y1="65" x2="120" y2="65" stroke="#dbff3b" strokeWidth="0.5" />
+          <line className="book-line" x1="82" y1="75" x2="118" y2="75" stroke="#dbff3b" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
+          <line className="book-line" x1="84" y1="85" x2="116" y2="85" stroke="#dbff3b" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
         </svg>
         <div className="text-datack-muted text-xs max-w-lg text-center">Chargement du graphe citoyen...</div>
       </div>
@@ -792,9 +792,9 @@ function BorgesLibrary() {
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-2">
             <svg className="w-8 h-8" viewBox="0 0 40 40" fill="none">
-              <rect x="4" y="4" width="32" height="32" rx="4" fill="#F5C518" />
-              <path d="M12 10h8c5.5 0 10 4.5 10 10s-4.5 10-10 10h-8V10z" fill="#1A1A1A" />
-              <path d="M16 14h4c3.3 0 6 2.7 6 6s-2.7 6-6 6h-4V14z" fill="#F5C518" />
+              <rect x="4" y="4" width="32" height="32" rx="4" fill="#dbff3b" />
+              <path d="M12 10h8c5.5 0 10 4.5 10 10s-4.5 10-10 10h-8V10z" fill="#0a0a0a" />
+              <path d="M16 14h4c3.3 0 6 2.7 6 6s-2.7 6-6 6h-4V14z" fill="#dbff3b" />
             </svg>
             <span className="text-datack-yellow font-bold text-lg">DATACK</span>
           </div>
@@ -860,9 +860,9 @@ function BorgesLibrary() {
           <div className="flex items-center gap-2 flex-shrink-0">
             <svg className="w-8 h-8 md:w-10 md:h-10" viewBox="0 0 40 40" fill="none">
               {/* Datack D logo - modernist geometric */}
-              <rect x="4" y="4" width="32" height="32" rx="4" fill="#F5C518" />
-              <path d="M12 10h8c5.5 0 10 4.5 10 10s-4.5 10-10 10h-8V10z" fill="#1A1A1A" />
-              <path d="M16 14h4c3.3 0 6 2.7 6 6s-2.7 6-6 6h-4V14z" fill="#F5C518" />
+              <rect x="4" y="4" width="32" height="32" rx="4" fill="#dbff3b" />
+              <path d="M12 10h8c5.5 0 10 4.5 10 10s-4.5 10-10 10h-8V10z" fill="#0a0a0a" />
+              <path d="M16 14h4c3.3 0 6 2.7 6 6s-2.7 6-6 6h-4V14z" fill="#dbff3b" />
             </svg>
             <span className="text-datack-yellow font-bold text-lg md:text-xl tracking-tight hidden sm:block">DATACK</span>
           </div>
@@ -1109,7 +1109,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex1-overlay"
                       points="100,40 130,57.5 130,92.5 100,110 70,92.5 70,57.5"
-                      stroke="#F5C518"
+                      stroke="#dbff3b"
                       strokeWidth="1.5"
                       fill="none"
                     />
@@ -1118,7 +1118,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex2-overlay"
                       points="100,10 125,25 125,55 100,70 75,55 75,25"
-                      stroke="#F5C518"
+                      stroke="#dbff3b"
                       strokeWidth="1"
                       fill="none"
                     />
@@ -1127,7 +1127,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex3-overlay"
                       points="70,95 95,110 95,140 70,155 45,140 45,110"
-                      stroke="#F5C518"
+                      stroke="#dbff3b"
                       strokeWidth="1"
                       fill="none"
                     />
@@ -1136,7 +1136,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex4-overlay"
                       points="130,95 155,110 155,140 130,155 105,140 105,110"
-                      stroke="#F5C518"
+                      stroke="#dbff3b"
                       strokeWidth="1"
                       fill="none"
                     />
@@ -1145,7 +1145,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex5-overlay"
                       points="50,60 75,75 75,105 50,120 25,105 25,75"
-                      stroke="#F5C518"
+                      stroke="#dbff3b"
                       strokeWidth="0.8"
                       fill="none"
                     />
@@ -1154,16 +1154,16 @@ function BorgesLibrary() {
                     <polygon
                       className="hex5-overlay"
                       points="150,60 175,75 175,105 150,120 125,105 125,75"
-                      stroke="#F5C518"
+                      stroke="#dbff3b"
                       strokeWidth="0.8"
                       fill="none"
                       style={{ animationDelay: '1s' }}
                     />
 
                     {/* Book lines inside central hexagon - simulating shelves */}
-                    <line className="book-line-overlay" x1="80" y1="65" x2="120" y2="65" stroke="#F5C518" strokeWidth="0.5" />
-                    <line className="book-line-overlay" x1="82" y1="75" x2="118" y2="75" stroke="#F5C518" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
-                    <line className="book-line-overlay" x1="84" y1="85" x2="116" y2="85" stroke="#F5C518" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
+                    <line className="book-line-overlay" x1="80" y1="65" x2="120" y2="65" stroke="#dbff3b" strokeWidth="0.5" />
+                    <line className="book-line-overlay" x1="82" y1="75" x2="118" y2="75" stroke="#dbff3b" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
+                    <line className="book-line-overlay" x1="84" y1="85" x2="116" y2="85" stroke="#dbff3b" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
                   </svg>
 
                   {/* Project concept introduction */}

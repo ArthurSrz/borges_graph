@@ -291,7 +291,7 @@ export default function GraphVisualization3DForce({
 
         // Configure graph data and background
         graph.graphData({ nodes: [], links: [] })
-        graph.backgroundColor('#FAFAFA')  // Light theme background
+        graph.backgroundColor('#0a0a0a')  // Dark theme background
         graph.showNavInfo(true)
 
         // Configure node appearance
@@ -305,7 +305,7 @@ export default function GraphVisualization3DForce({
         // Configure link appearance
         graph.linkDirectionalParticles(2)
         graph.linkDirectionalParticleSpeed(0.006)
-        graph.linkColor(() => '#404040')  // Dark links for light background
+        graph.linkColor(() => '#9d9d9d')  // Light links for dark background
         graph.linkWidth(2)
 
         // Configure interactions

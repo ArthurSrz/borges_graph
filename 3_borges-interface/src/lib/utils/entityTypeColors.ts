@@ -114,11 +114,11 @@ export type EntityType = (typeof ENTITY_TYPES)[number]
 export const ENTITY_TYPE_COLORS: Record<EntityType, string> = {
   // ============================================================================
   // GRAND DÉBAT NATIONAL - 24 Types Ontologiques (Prioritaires)
-  // Palette Datack: Jaune #F5C518, variations thématiques
+  // Palette Datack: Lime #dbff3b, Gray #9d9d9d, Black #0a0a0a
   // ============================================================================
-  'CITOYEN': '#F5C518',              // Datack Yellow - Citoyens au centre
-  'CONTRIBUTION': '#FFD93D',         // Yellow Bright - Contributions
-  'CONSULTATION': '#1A1A1A',         // Datack Black - Cadre institutionnel
+  'CITOYEN': '#dbff3b',              // Datack Lime - Citoyens au centre
+  'CONTRIBUTION': '#e5ff6b',         // Lime Bright - Contributions
+  'CONSULTATION': '#9d9d9d',         // Datack Gray - Cadre institutionnel
   'QUESTION': '#7c4dff',             // Purple - Questions posées
   'THEMATIQUE': '#00bcd4',           // Teal - Thèmes
   'ENCODAGE': '#9e9e9e',             // Gray - Encodage technique

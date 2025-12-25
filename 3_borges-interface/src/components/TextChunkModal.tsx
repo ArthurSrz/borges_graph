@@ -85,46 +85,46 @@ export default function TextChunkModal({
 
   const modal = (
     <div
-      className="borges-modal-overlay flex items-center justify-center p-0 md:p-4"
+      className="datack-modal flex items-center justify-center p-0 md:p-4"
       onClick={handleBackdropClick}
     >
       {/* Modal Container - Full screen on mobile, centered on desktop */}
-      <div className="relative w-full h-full md:max-w-6xl md:max-h-[95vh] bg-borges-dark md:border border-borges-border shadow-borges-lg overflow-hidden flex flex-col safe-area-top safe-area-bottom">
+      <div className="relative w-full h-full md:max-w-6xl md:max-h-[95vh] bg-datack-black md:border border-datack-border shadow-lg overflow-hidden flex flex-col safe-area-top safe-area-bottom">
 
         {/* Mobile drag handle */}
-        <div className="md:hidden flex justify-center py-2 bg-borges-secondary">
-          <div className="w-12 h-1 bg-borges-border rounded-full"></div>
+        <div className="md:hidden flex justify-center py-2 bg-datack-panel">
+          <div className="w-12 h-1 bg-datack-border rounded-full"></div>
         </div>
 
         {/* Header - Responsive Basile Minimalism */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-borges-border bg-borges-secondary">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-datack-border bg-datack-panel">
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 flex-1 min-w-0">
-            <h2 className="text-h2-mobile md:text-h2 text-borges-light truncate">
+            <h2 className="text-h2-mobile md:text-h2 text-datack-light truncate">
               Source Text
             </h2>
 
             {bookId && (
-              <div className="text-xs md:text-sm text-borges-light-muted truncate">
-                <span className="text-borges-accent">{bookId}</span>
-                {chunkId && <span className="text-borges-muted ml-2 hidden sm:inline">• {chunkId}</span>}
+              <div className="text-xs md:text-sm text-datack-light-muted truncate">
+                <span className="text-datack-yellow">{bookId}</span>
+                {chunkId && <span className="text-datack-muted ml-2 hidden sm:inline">• {chunkId}</span>}
               </div>
             )}
           </div>
 
           {/* Relationship info - desktop only */}
           {relationshipInfo && (
-            <div className="hidden lg:flex items-center gap-2 text-sm text-borges-light-muted">
-              <span className="text-borges-light">{relationshipInfo.sourceNode}</span>
-              <span className="text-borges-muted">→</span>
-              <span className="text-borges-light">{relationshipInfo.targetNode}</span>
-              <span className="text-borges-muted ml-2">({relationshipInfo.relationType})</span>
+            <div className="hidden lg:flex items-center gap-2 text-sm text-datack-light-muted">
+              <span className="text-datack-light">{relationshipInfo.sourceNode}</span>
+              <span className="text-datack-muted">→</span>
+              <span className="text-datack-light">{relationshipInfo.targetNode}</span>
+              <span className="text-datack-muted ml-2">({relationshipInfo.relationType})</span>
             </div>
           )}
 
           {/* Close Button - Touch-friendly */}
           <button
             onClick={onClose}
-            className="borges-btn-ghost p-2 touch-target flex items-center justify-center hover:bg-borges-dark-hover rounded-borges-sm transition-all ml-2"
+            className="datack-btn-ghost p-2 touch-target flex items-center justify-center hover:bg-datack-black-hover rounded transition-all ml-2"
             title="Close (Esc)"
             aria-label="Close modal"
           >
@@ -139,22 +139,22 @@ export default function TextChunkModal({
           <div className="max-w-4xl mx-auto">
 
             {/* Pipeline Traceability - Responsive */}
-            <div className="mb-4 md:mb-6 p-3 md:p-4 bg-borges-secondary rounded-borges-md border-l-4 border-borges-accent">
-              <h3 className="text-xs md:text-sm font-medium text-borges-light-muted mb-2">Traceability Pipeline</h3>
+            <div className="mb-4 md:mb-6 p-3 md:p-4 bg-datack-panel rounded-lg border-l-4 border-datack-yellow">
+              <h3 className="text-xs md:text-sm font-medium text-datack-light-muted mb-2">Traceability Pipeline</h3>
               <div className="flex flex-wrap gap-1 md:gap-2 text-xs">
-                <span className="bg-borges-dark text-borges-light px-2 py-1 rounded-borges-sm">Source</span>
-                <span className="text-borges-muted">→</span>
-                <span className="bg-borges-dark text-borges-light px-2 py-1 rounded-borges-sm">GraphRAG</span>
-                <span className="text-borges-muted">→</span>
-                <span className="bg-borges-dark text-borges-light px-2 py-1 rounded-borges-sm">Neo4j</span>
-                <span className="text-borges-muted">→</span>
-                <span className="bg-borges-dark text-borges-accent px-2 py-1 rounded-borges-sm">3D</span>
+                <span className="bg-datack-black text-datack-light px-2 py-1 rounded">Source</span>
+                <span className="text-datack-muted">→</span>
+                <span className="bg-datack-black text-datack-light px-2 py-1 rounded">GraphRAG</span>
+                <span className="text-datack-muted">→</span>
+                <span className="bg-datack-black text-datack-light px-2 py-1 rounded">Neo4j</span>
+                <span className="text-datack-muted">→</span>
+                <span className="bg-datack-black text-datack-yellow px-2 py-1 rounded">3D</span>
               </div>
             </div>
 
             {/* Main Text Content with Entity Highlighting */}
-            <div className="bg-borges-dark rounded-borges-md p-4 md:p-6 border border-borges-border">
-              <div className="text-base md:text-lg leading-relaxed text-borges-light">
+            <div className="bg-datack-black rounded-lg p-4 md:p-6 border border-datack-border">
+              <div className="text-base md:text-lg leading-relaxed text-datack-light">
                 {entities.length > 0 ? (
                   <HighlightedText
                     text={chunkText}
@@ -171,24 +171,24 @@ export default function TextChunkModal({
 
             {/* Metadata - Responsive grid */}
             <div className="mt-4 md:mt-6 grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm">
-              <div className="bg-borges-secondary p-2 md:p-4 rounded-borges-sm border border-borges-border">
-                <h4 className="text-borges-muted mb-1 text-xs">Length</h4>
-                <p className="text-borges-light truncate">{chunkText.length}</p>
+              <div className="bg-datack-panel p-2 md:p-4 rounded border border-datack-border">
+                <h4 className="text-datack-muted mb-1 text-xs">Length</h4>
+                <p className="text-datack-light truncate">{chunkText.length}</p>
               </div>
 
-              <div className="bg-borges-secondary p-2 md:p-4 rounded-borges-sm border border-borges-border">
-                <h4 className="text-borges-muted mb-1 text-xs">Entities</h4>
-                <p className="text-borges-light">{entities.length}</p>
+              <div className="bg-datack-panel p-2 md:p-4 rounded border border-datack-border">
+                <h4 className="text-datack-muted mb-1 text-xs">Entities</h4>
+                <p className="text-datack-light">{entities.length}</p>
               </div>
 
-              <div className="bg-borges-secondary p-2 md:p-4 rounded-borges-sm border border-borges-border">
-                <h4 className="text-borges-muted mb-1 text-xs">Source</h4>
-                <p className="text-borges-light truncate">{bookId || 'Unknown'}</p>
+              <div className="bg-datack-panel p-2 md:p-4 rounded border border-datack-border">
+                <h4 className="text-datack-muted mb-1 text-xs">Source</h4>
+                <p className="text-datack-light truncate">{bookId || 'Unknown'}</p>
               </div>
             </div>
 
             {/* Instructions - Responsive */}
-            <div className="mt-4 md:mt-6 text-xs text-borges-muted text-center">
+            <div className="mt-4 md:mt-6 text-xs text-datack-muted text-center">
               <p className="hidden md:block">Click highlighted entities to explore their connections in the 3D graph</p>
               <p className="md:hidden">Tap entities to explore connections</p>
               <p className="hidden md:block">Press Escape or click outside to close</p>

@@ -98,7 +98,7 @@ export function useQueryAnimation(
         fz: Math.sin(angle) * Math.cos(elevation) * explosionRadius,
         scale: 1 + (progress * 0.5), // Scale up slightly
         opacity: 0.7 + (progress * 0.3),
-        color: node.selected ? '#818CF8' : '#6B7280' // Purple for potential selection
+        color: node.selected ? '#818CF8' : '#9d9d9d' // Purple for potential selection
       }
     })
   }, [nodes])
@@ -216,7 +216,7 @@ export function useQueryAnimation(
           return {
             ...link,
             opacity: 0.1 + (progress * 0.2),
-            color: '#6B7280'
+            color: '#9d9d9d'
           }
         case 'filtering':
           return {

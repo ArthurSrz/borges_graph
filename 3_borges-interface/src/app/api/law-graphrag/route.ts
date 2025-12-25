@@ -208,7 +208,9 @@ export async function POST(request: NextRequest) {
           .map((q, i) => ({
             chunk_id: `chunk-${q.chunk_id ?? i}`,
             content: q.content!,
-            document_id: q.commune || 'unknown'
+            // Constitution Principle VII: Civic Provenance Chain
+            // Fallback order: quote.commune > request commune_id > explicit missing marker
+            document_id: q.commune || commune_id || 'PROVENANCE_MISSING'
           })),
         communities: (provenance.communities || [])
           .filter((c): c is NonNullable<typeof c> => c != null)
