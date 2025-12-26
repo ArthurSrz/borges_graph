@@ -937,11 +937,6 @@ function BorgesLibrary() {
       <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-2">
-            <svg className="w-8 h-8" viewBox="0 0 40 40" fill="none">
-              <rect x="4" y="4" width="32" height="32" rx="4" fill="#dbff3b" />
-              <path d="M12 10h8c5.5 0 10 4.5 10 10s-4.5 10-10 10h-8V10z" fill="#0a0a0a" />
-              <path d="M16 14h4c3.3 0 6 2.7 6 6s-2.7 6-6 6h-4V14z" fill="#dbff3b" />
-            </svg>
             <span className="font-bold text-lg bg-[#0a0a0a] text-[#dbff3b] px-4 py-2 rounded-md">DATACK</span>
           </div>
           <button
@@ -1010,15 +1005,9 @@ function BorgesLibrary() {
             </svg>
           </button>
 
-          {/* Datack Logo - Yellow accent on dark */}
+          {/* Datack Logo - Black background with yellow text */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <svg className="w-8 h-8 md:w-10 md:h-10" viewBox="0 0 40 40" fill="none">
-              {/* Datack D logo - modernist geometric */}
-              <rect x="4" y="4" width="32" height="32" rx="4" fill="#dbff3b" />
-              <path d="M12 10h8c5.5 0 10 4.5 10 10s-4.5 10-10 10h-8V10z" fill="#0a0a0a" />
-              <path d="M16 14h4c3.3 0 6 2.7 6 6s-2.7 6-6 6h-4V14z" fill="#dbff3b" />
-            </svg>
-            <span className="font-bold text-lg md:text-xl tracking-tight hidden sm:block bg-[#0a0a0a] text-[#dbff3b] px-4 py-2 rounded-md">DATACK</span>
+            <span className="font-bold text-lg md:text-xl tracking-tight bg-[#0a0a0a] text-[#dbff3b] px-4 py-2 rounded-md">DATACK</span>
           </div>
 
           <div className="h-8 w-px bg-datack-border hidden sm:block" />
