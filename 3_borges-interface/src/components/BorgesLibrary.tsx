@@ -542,7 +542,7 @@ function BorgesLibrary() {
 
         await lawGraphRAGService.fetchFullGraphProgressive(
           (graphData, progress) => {
-            // Callback fired after each batch (10, 20, 30, 40, 50 communes)
+            // Callback fired after each batch (5, 10, 15, 20... 50 communes)
             setCurrentProcessingPhase(`🌐 Chargement ${progress.current}/${progress.total} communes...`)
             setCurrentCommuneCount(progress.current)
 
@@ -569,7 +569,7 @@ function BorgesLibrary() {
               neo4jRelationships: enrichedData.relationships.length
             })
           },
-          10, // Batch size: 10 communes at a time
+          5,  // Batch size: 5 communes at a time (10 batches total)
           50  // Total: 50 communes
         )
 
