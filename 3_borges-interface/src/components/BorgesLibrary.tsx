@@ -1017,7 +1017,7 @@ function BorgesLibrary() {
               Grand Débat National
             </h1>
             <p className="text-datack-gray mt-1 text-xs md:text-sm max-w-2xl hidden md:block">
-              Explorer les contributions citoyennes · 50 communes de Charente-Maritime · <span className="bg-[#0a0a0a] text-[#dbff3b] px-2 py-0.5 rounded text-xs font-medium">Cahiers de Doléances 2019</span>
+              Explorer les contributions citoyennes · 50 communes de Charente-Maritime · <span className="bg-[#0a0a0a] text-[#dbff3b] px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap">Cahiers de Doléances 2019</span>
             </p>
           </div>
         </div>
