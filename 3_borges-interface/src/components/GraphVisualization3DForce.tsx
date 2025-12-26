@@ -1,7 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import TextChunkModal from './TextChunkModal'
+import { getEntityTypeColor, getEntityTypeLabel, ENTITY_TYPE_LABELS, ENTITY_TYPES, GRAND_DEBAT_ONTOLOGY_TYPES } from '@/lib/utils/entityTypeColors'
+import { getLODSettings, DEFAULT_LOD_CONFIG } from '@/lib/utils/lod-config'
 
 interface Node {
   id: string
@@ -11,6 +13,8 @@ interface Node {
   centrality_score?: number
   name?: string
   color?: string
+  val?: number
+  group?: string
 }
 
 interface Link {
@@ -123,8 +127,19 @@ export default function GraphVisualization3DForce({
   const [pinnedLinkPos, setPinnedLinkPos] = useState({ x: 0, y: 0 })
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
+  // LOD: Track camera distance for performance optimization
+  const [cameraDistance, setCameraDistance] = useState<number>(1000)
+
   // Legend expand state for mobile
   const [isLegendExpanded, setIsLegendExpanded] = useState(false)
+
+  // Track unique relationship types from the data
+  const [relationshipTypes, setRelationshipTypes] = useState<Set<string>>(new Set())
+
+  // LOD: Compute current LOD settings based on camera distance
+  const currentLODSettings = useMemo(() => {
+    return getLODSettings(cameraDistance, DEFAULT_LOD_CONFIG)
+  }, [cameraDistance])
 
   // TextChunkModal state
   const [isChunkModalOpen, setIsChunkModalOpen] = useState(false)
@@ -140,15 +155,16 @@ export default function GraphVisualization3DForce({
   } | null>(null)
 
   // Color mapping for different node types
+  // Constitution Principle II: Commune-Centric Architecture
   const typeColors: Record<string, string> = {
     'Personnes': '#ff4757',
     'Lieux': '#00d2d3',
     'Événements': '#5352ed',
     'Concepts': '#7bed9f',
     'Organisations': '#ffa502',
-    'Livres': '#ffd700',        // Bright gold - shiniest color
-    'Communautés': '#ff69b4',   // Pink for communities
-    'BOOK': '#ffd700',          // Bright gold - shiniest color
+    'Communes': '#ffd700',       // Bright gold - central entities (T026)
+    'Communautés': '#ff69b4',    // Pink for thematic communities
+    'COMMUNE': '#ffd700',        // Bright gold for communes (central civic entities)
     'PERSON': '#ff4757',
     'GEO': '#00d2d3',
     'LOCATION': '#00d2d3',
@@ -156,10 +172,13 @@ export default function GraphVisualization3DForce({
     'CONCEPT': '#7bed9f',
     'ORGANIZATION': '#ffa502',
     'Community': '#ff69b4',
+    // Legacy book support (for backward compatibility)
+    'Livres': '#ffd700',
+    'BOOK': '#ffd700',
     'default': '#dfe4ea'
   }
 
-  // Map entity_type from Neo4j to French display labels for legend matching
+  // Map entity_type from Neo4j/GraphML to French display labels for legend matching (T027)
   const entityTypeToFrench: Record<string, string> = {
     'PERSON': 'Personnes',
     'GEO': 'Lieux',
@@ -167,8 +186,10 @@ export default function GraphVisualization3DForce({
     'EVENT': 'Événements',
     'CONCEPT': 'Concepts',
     'ORGANIZATION': 'Organisations',
-    'Book': 'Livres',
+    'COMMUNE': 'Communes',       // Constitution Principle II: Commune-Centric
     'Community': 'Communautés',
+    // Legacy book support (for backward compatibility)
+    'Book': 'Livres',
     // Handle malformed entity_type values (with quotes or pipes from Neo4j)
     '("PERSON': 'Personnes',
     '|"PERSON': 'Personnes',
@@ -182,6 +203,20 @@ export default function GraphVisualization3DForce({
     '|CONCEPT': 'Concepts',
   }
 
+  // Check if a node is a Commune (central civic entity) - T022
+  // Constitution Principle II: Commune-Centric Architecture
+  const isCommune = (node: { id?: string; group?: string; labels?: string[]; properties?: Record<string, any> }): boolean => {
+    // Check entity_type property
+    if (node.properties?.entity_type === 'COMMUNE') return true
+    // Check labels array
+    if (node.labels?.includes('COMMUNE')) return true
+    // Check group (set during graph transformation)
+    if (node.group === 'Communes' || node.group === 'COMMUNE') return true
+    // Check ID pattern (GraphML convention)
+    if (typeof node.id === 'string' && node.id.startsWith('COMMUNE_')) return true
+    return false
+  }
+
   // Get the entity type from node data, prioritizing entity_type property
   const getEntityType = (node: ReconciliationData['nodes'][0]): string => {
     // First try entity_type property (most reliable for actual type)
@@ -192,14 +227,18 @@ export default function GraphVisualization3DForce({
       // If not mapped, return as-is (might be directly usable)
       return rawType
     }
-    // Check if it's a Book node by labels or ID pattern
+    // Check if it's a Commune node (Constitution Principle II: Commune-Centric)
+    if (isCommune(node)) {
+      return 'Communes'
+    }
+    // Check for Community (thematic clusters)
+    if (node.labels?.includes('Community')) {
+      return 'Communautés'
+    }
+    // Legacy: Check if it's a Book node by labels or ID pattern
     if (node.labels?.includes('Book') || node.labels?.includes('BOOK') ||
         String(node.id).startsWith('LIVRE_')) {
       return 'Livres'
-    }
-    // Check for Community
-    if (node.labels?.includes('Community')) {
-      return 'Communautés'
     }
     // Then try the second label (first is usually "Entity")
     if (node.labels && node.labels.length > 1) {
@@ -213,8 +252,13 @@ export default function GraphVisualization3DForce({
     return entityTypeToFrench[firstLabel] || firstLabel
   }
 
-  // Get color for node based on its entity type
+  // Get color for node based on its entity type (using new 62+ entity type mapping)
   const getNodeColor = (node: ReconciliationData['nodes'][0]): string => {
+    // First try the entity_type property (most accurate)
+    if (node.properties?.entity_type) {
+      return getEntityTypeColor(node.properties.entity_type.toString())
+    }
+    // Fall back to existing logic for GraphML compatibility
     const entityType = getEntityType(node)
     return typeColors[entityType] || typeColors.default
   }
@@ -256,21 +300,21 @@ export default function GraphVisualization3DForce({
 
         // Configure graph data and background
         graph.graphData({ nodes: [], links: [] })
-        graph.backgroundColor('#000000')
+        graph.backgroundColor('rgba(255, 255, 255, 1)')  // Light theme background
         graph.showNavInfo(true)
 
         // Configure node appearance
         graph.nodeAutoColorBy('group')
         graph.nodeRelSize(6)
-        graph.nodeResolution(8)
+        graph.nodeResolution(8) // Initial resolution, will be updated by LOD
         graph.nodeVal((node: any) => node.val || 1)
         graph.nodeColor((node: any) => node.color || '#dfe4ea')
         graph.nodeLabel((node: any) => node.name || node.id)
 
-        // Configure link appearance
+        // Configure link appearance - initial values, will be updated by LOD
         graph.linkDirectionalParticles(2)
         graph.linkDirectionalParticleSpeed(0.006)
-        graph.linkColor(() => '#ffffff')
+        graph.linkColor(() => '#9d9d9d')  // Light links for dark background
         graph.linkWidth(2)
 
         // Configure interactions
@@ -318,13 +362,13 @@ export default function GraphVisualization3DForce({
         })
 
         // Principe #4: Proper spacing between nodes for visibility of relationships
-        // Configure forces to create book-centered topology: Books → Hubs → Sub-hubs → Periphery
+        // Constitution Principle II: Commune-Centric Architecture (T023-T025)
+        // Configure forces to create commune-centered topology: Communes → Hubs → Sub-hubs → Periphery
         const chargeForce = graph.d3Force('charge')
         if (chargeForce) {
           chargeForce.strength((node: any) => {
-            // Books have moderate repulsion but stay central
-            const isBook = node.group === 'Livres' || node.group === 'BOOK' || String(node.id).startsWith('LIVRE_')
-            if (isBook) return -200  // Books moderate repulsion for better balance
+            // Communes have moderate repulsion but stay central (T023)
+            if (isCommune(node)) return -200  // Communes moderate repulsion for better balance
 
             // High-degree nodes (hubs) have stronger repulsion for good spreading
             const degree = node.val || 1
@@ -340,11 +384,11 @@ export default function GraphVisualization3DForce({
         if (linkForce) {
           linkForce
             .distance((link: any) => {
-              // Balanced distances for good visibility without excessive spiral effect
-              const sourceIsBook = link.source.group === 'Livres' || link.source.group === 'BOOK' || String(link.source.id).startsWith('LIVRE_')
-              const targetIsBook = link.target.group === 'Livres' || link.target.group === 'BOOK' || String(link.target.id).startsWith('LIVRE_')
+              // Balanced distances for good visibility without excessive spiral effect (T024)
+              const sourceIsCommune = isCommune(link.source)
+              const targetIsCommune = isCommune(link.target)
 
-              if (sourceIsBook || targetIsBook) return 400  // Books to first-hop: balanced distance
+              if (sourceIsCommune || targetIsCommune) return 400  // Communes to first-hop: balanced distance
 
               // Hub-to-hub connections: moderate spacing for good structure
               const sourceDegree = link.source.val || 1
@@ -358,14 +402,13 @@ export default function GraphVisualization3DForce({
             .strength(0.7)  // Stronger links to maintain structural cohesion and reduce spiral
         }
 
-        // Add center force to keep books gravitating toward center
+        // Add center force to keep communes gravitating toward center
         const d3 = await import('d3-force')
         graph.d3Force('center', d3.forceCenter(0, 0).strength(0.1))
 
-        // Add radial force to push non-book nodes outward in much larger layers for long-range visibility
+        // Add radial force to push non-commune nodes outward in layers for long-range visibility (T025)
         graph.d3Force('radial', d3.forceRadial((node: any) => {
-          const isBook = node.group === 'Livres' || node.group === 'BOOK' || String(node.id).startsWith('LIVRE_')
-          if (isBook) return 0  // Books stay at center
+          if (isCommune(node)) return 0  // Communes stay at center
 
           const degree = node.val || 1
           if (degree > 10) return 400  // Hubs in middle ring (4x larger: 100 * 4)
@@ -387,6 +430,75 @@ export default function GraphVisualization3DForce({
 
     initGraph()
   }, [])
+
+  // LOD: Apply Level of Detail settings based on camera distance
+  useEffect(() => {
+    if (!graphRef.current || !isGraphReady) return
+
+    // Set up camera position tracking
+    const graph = graphRef.current
+    let animationFrameId: number
+
+    const updateCameraDistance = () => {
+      try {
+        // Access camera from the graph instance
+        const camera = graph.camera()
+        if (camera && camera.position) {
+          // Calculate distance from origin (where the graph center is)
+          const distance = Math.sqrt(
+            camera.position.x * camera.position.x +
+            camera.position.y * camera.position.y +
+            camera.position.z * camera.position.z
+          )
+
+          // Update camera distance state (triggers LOD recalculation via useMemo)
+          setCameraDistance(distance)
+        }
+      } catch (error) {
+        console.error('Error tracking camera distance:', error)
+      }
+
+      // Continue tracking
+      animationFrameId = requestAnimationFrame(updateCameraDistance)
+    }
+
+    // Start tracking camera position
+    animationFrameId = requestAnimationFrame(updateCameraDistance)
+
+    // Cleanup
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+    }
+  }, [isGraphReady])
+
+  // LOD: Apply LOD settings to graph when they change
+  useEffect(() => {
+    if (!graphRef.current || !isGraphReady) return
+
+    console.log(`🎨 LOD: Applying settings for distance ${cameraDistance.toFixed(0)}:`, currentLODSettings)
+
+    const graph = graphRef.current
+
+    try {
+      // Apply link particle settings based on LOD
+      if (currentLODSettings.linkParticles) {
+        graph.linkDirectionalParticles(2) // Show particles
+        graph.linkDirectionalParticleSpeed(currentLODSettings.linkParticleSpeed)
+      } else {
+        graph.linkDirectionalParticles(0) // Disable particles for performance
+        graph.linkDirectionalParticleSpeed(0)
+      }
+
+      // Apply node resolution based on LOD
+      graph.nodeResolution(currentLODSettings.nodeResolution)
+
+      console.log(`✅ LOD: Applied - particles: ${currentLODSettings.linkParticles}, resolution: ${currentLODSettings.nodeResolution}`)
+    } catch (error) {
+      console.error('Error applying LOD settings:', error)
+    }
+  }, [currentLODSettings, isGraphReady, cameraDistance])
 
   // Dynamically add nodes and links progressively
   const addNodesProgressively = (nodes: Node[], links: Link[], onComplete?: () => void) => {
@@ -481,12 +593,12 @@ export default function GraphVisualization3DForce({
         }
       }
 
-      // Continue until all nodes are added, then process links
+      // Continue until all nodes are added, then process all links (no hardcoded limit)
       const shouldContinue = currentNodeIndex < nodes.length ||
-                           (currentNodeIndex >= nodes.length && processedLinkIndex < Math.min(validLinks.length, 200))
+                           (currentNodeIndex >= nodes.length && processedLinkIndex < validLinks.length)
 
       if (shouldContinue) {
-        setTimeout(addBatch, 250) // Add next batch after 250ms
+        requestAnimationFrame(addBatch) // Sync with display refresh for smoother rendering
       } else {
         console.log(`✅ Graph construction complete: ${nodes.length} nodes, ${processedLinkIndex} links added`)
         if (onComplete) onComplete()
@@ -529,6 +641,14 @@ export default function GraphVisualization3DForce({
         value: 1
       }))
 
+    // Extract all unique relationship types for the legend
+    const uniqueRelTypes = new Set<string>()
+    allValidLinks.forEach(link => {
+      if (link.type) uniqueRelTypes.add(link.type)
+    })
+    setRelationshipTypes(uniqueRelTypes)
+    console.log('📋 Found relationship types:', Array.from(uniqueRelTypes))
+
     // Identify all nodes that participate in at least one relationship
     const connectedNodeIds = new Set<string>()
     allValidLinks.forEach(link => {
@@ -557,14 +677,11 @@ export default function GraphVisualization3DForce({
           ? (node.properties?.name || node.properties?.title || String(node.id))
           : String(node.id)
 
-        // Principle #2: Books are the "core" entities and should be bigger
-        const isBookNode = (node as any).type === 'Book' ||
-                          (node.labels && node.labels.includes('Livres')) ||
-                          (node.labels && node.labels.includes('BOOK')) ||
-                          String(nodeId).startsWith('LIVRE_')
+        // Constitution Principle II: Communes are the "core" entities and should be bigger
+        const isCommuneNode = isCommune(node)
 
         const baseSize = Math.max(1, (node.degree || 0) / 5)
-        const bookMultiplier = isBookNode ? 3 : 1  // Books are 3x larger
+        const communeMultiplier = isCommuneNode ? 3 : 1  // Communes are 3x larger (central civic entities)
 
         // Get entity type for proper color matching with legend
         const entityType = getEntityType(node)
@@ -588,12 +705,20 @@ export default function GraphVisualization3DForce({
           name: getNodeName(node, nodeId),
           group: entityType, // Use entity type for group (used in force calculations)
           color: getNodeColor(node), // Pass full node to get color from entity_type property
-          val: baseSize * bookMultiplier // Books are significantly larger
+          val: baseSize * communeMultiplier, // Communes are significantly larger (central civic entities)
+          degree: node.degree // Preserve degree for sorting
         }
       })
+      // Sort by degree (importance by connections)
+      .sort((a, b) => (b.degree || 0) - (a.degree || 0))
+
+    // Show ALL nodes (both queries and initial loads)
+    // No limit - display complete graph data
+    const displayNodes = nodes
+    console.log(`📊 Displaying all ${displayNodes.length} nodes (no limit applied)`)
 
     // Create a Set of final valid node IDs for link filtering
-    const finalValidNodeIds = new Set(nodes.map(n => n.id))
+    const finalValidNodeIds = new Set(displayNodes.map(n => n.id))
 
     console.log(`🔍 Final connected nodes (zero orphans):`, Array.from(finalValidNodeIds).slice(0, 5), `(showing first 5 of ${finalValidNodeIds.size})`)
 
@@ -606,16 +731,17 @@ export default function GraphVisualization3DForce({
       return isValid
     })
 
-    console.log(`🔗 Connected Subgraph guaranteed: ${links.length}/${allValidLinks.length} links connect ${nodes.length} nodes (all nodes have ≥1 relation)`)
+    console.log(`🔗 Connected Subgraph guaranteed: ${links.length}/${allValidLinks.length} links connect ${displayNodes.length} nodes (all nodes have ≥1 relation)`)
 
     console.log(`🔍 Final processing results:`)
-    console.log(`  • Final nodes to render: ${nodes.length}`)
+    console.log(`  • Nodes available: ${nodes.length}`)
+    console.log(`  • Final nodes to render: ${displayNodes.length}`)
     console.log(`  • Final links to render: ${links.length}`)
-    console.log(`  • Sample nodes:`, nodes.slice(0, 3).map(n => ({ id: n.id, name: n.name, color: n.color })))
+    console.log(`  • Sample nodes:`, displayNodes.slice(0, 3).map(n => ({ id: n.id, name: n.name, color: n.color })))
     console.log(`  • Sample links:`, links.slice(0, 3).map(l => ({ source: l.source, target: l.target, type: l.type })))
 
     // Only proceed if we have valid data to display
-    if (nodes.length === 0 && links.length === 0) {
+    if (displayNodes.length === 0 && links.length === 0) {
       console.warn('⚠️ No valid nodes or links found, keeping existing graph')
       return
     }
@@ -624,7 +750,7 @@ export default function GraphVisualization3DForce({
     if (debugInfo) {
       console.log('🎬 Starting progressive GraphRAG loading...')
       // Only clear the graph if we have data to replace it with
-      if (nodes.length > 0) {
+      if (displayNodes.length > 0) {
         try {
           console.log('🧹 Clearing graph data for progressive loading...')
           graphRef.current.graphData({ nodes: [], links: [] })
@@ -634,10 +760,10 @@ export default function GraphVisualization3DForce({
 
         // Add nodes progressively
         console.log('📈 Starting progressive node/link addition...')
-        addNodesProgressively(nodes, links, () => {
+        addNodesProgressively(displayNodes, links, () => {
           console.log('✅ Progressive loading completed')
           if (onNodeVisibilityChange) {
-            onNodeVisibilityChange(nodes.map(n => n.id))
+            onNodeVisibilityChange(displayNodes.map(n => n.id))
           }
         })
       }
@@ -647,7 +773,7 @@ export default function GraphVisualization3DForce({
       // Show complete graph immediately
       try {
         console.log('🎯 Setting graph data immediately...')
-        graphRef.current.graphData({ nodes, links })
+        graphRef.current.graphData({ nodes: displayNodes, links })
         console.log('✅ Graph data set successfully!')
       } catch (error) {
         console.error('❌ Error loading complete graph:', error)
@@ -655,7 +781,7 @@ export default function GraphVisualization3DForce({
       }
 
       if (onNodeVisibilityChange) {
-        onNodeVisibilityChange(nodes.map(n => n.id))
+        onNodeVisibilityChange(displayNodes.map(n => n.id))
       }
     }
 
@@ -788,7 +914,7 @@ export default function GraphVisualization3DForce({
 
   return (
     <div
-      className="relative w-full h-full bg-black"
+      className="relative w-full h-full bg-datack-black"
       onMouseMove={(e) => {
         const pos = { x: e.clientX, y: e.clientY }
         mousePosRef.current = pos  // Update ref for click handler (avoids stale closure)
@@ -796,10 +922,10 @@ export default function GraphVisualization3DForce({
       }}
     >
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center text-borges-light">
+        <div className="absolute inset-0 flex items-center justify-center text-datack-light pointer-events-none">
           <div className="text-center">
-            <div className="text-2xl mb-2 text-borges-light">Initializing...</div>
-            <div className="text-borges-light-muted">Initialisation du graphe 3D...</div>
+            <div className="text-2xl mb-2 text-datack-yellow">Initializing...</div>
+            <div className="text-datack-muted">Initialisation du graphe 3D...</div>
           </div>
         </div>
       )}
@@ -812,47 +938,54 @@ export default function GraphVisualization3DForce({
 
       {/* Info overlay - Hidden on mobile */}
       {reconciliationData && !isLoading && (
-        <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-borges-secondary border border-borges-border p-2 md:p-3 rounded-borges-md text-xs md:text-sm hidden md:block">
-          <div className="text-borges-light font-medium">Dimensions</div>
-          <div className="text-borges-light-muted">{reconciliationData.nodes.length} noeuds</div>
-          <div className="text-borges-light-muted">{reconciliationData.relationships.length} relations</div>
+        <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-datack-dark border border-datack-border p-2 md:p-3 rounded-lg text-xs md:text-sm hidden md:block">
+          <div className="text-datack-light font-medium">Dimensions</div>
+          <div className="text-datack-muted">{reconciliationData.nodes.length} noeuds</div>
+          <div className="text-datack-muted">{reconciliationData.relationships.length} relations</div>
         </div>
       )}
 
       {/* Legend - Expandable on mobile, hidden when side panel is open */}
       {reconciliationData && !isLoading && !sidePanelOpen && (
-        <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-borges-secondary border border-borges-border p-2 md:p-3 rounded-borges-md text-xs">
-          {/* Desktop: Full legend */}
-          <div className="hidden md:block">
-            <div className="font-medium text-borges-light mb-2">Legend</div>
-            <div className="space-y-1">
-              <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ff4757' }}></div>
-                <span className="text-borges-light-muted">Personnes</span>
+        <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-datack-dark border border-datack-border rounded-lg text-xs max-w-sm md:max-h-[70vh] flex flex-col">
+          {/* Desktop: Scrollable legend */}
+          <div className="hidden md:flex flex-col max-h-[70vh]">
+            <div className="font-medium text-datack-light mb-2 px-3 pt-3 flex-shrink-0">Légende (24 types ontologiques)</div>
+
+            {/* Scrollable entity types and relationship types section */}
+            <div className="overflow-y-auto flex-1 px-3 pb-3">
+              <div className="mb-4">
+                <div className="text-datack-muted text-xs font-medium mb-2 sticky top-0 bg-datack-dark py-1">Types d'entités Grand Débat</div>
+                <div className="space-y-1">
+                  {GRAND_DEBAT_ONTOLOGY_TYPES.map((type) => (
+                    <div key={type} className="flex items-center gap-2 text-xs">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: getEntityTypeColor(type) }}
+                      ></div>
+                      <span className="text-datack-muted truncate" title={ENTITY_TYPE_LABELS[type]}>
+                        {ENTITY_TYPE_LABELS[type]}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#00d2d3' }}></div>
-                <span className="text-borges-light-muted">Lieux</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#5352ed' }}></div>
-                <span className="text-borges-light-muted">Événements</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#7bed9f' }}></div>
-                <span className="text-borges-light-muted">Concepts</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ffa502' }}></div>
-                <span className="text-borges-light-muted">Organisations</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ffd700' }}></div>
-                <span className="text-borges-light-muted">Livres</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ff69b4' }}></div>
-                <span className="text-borges-light-muted">Communautés</span>
+
+              {/* Relationship Types - Dynamic from API data */}
+              <div className="border-t border-datack-border pt-3">
+                <div className="text-datack-muted text-xs font-medium mb-2 sticky top-0 bg-datack-dark py-1">Types de relations</div>
+                <div className="space-y-1 text-datack-muted text-xs">
+                  {relationshipTypes.size > 0 ? (
+                    Array.from(relationshipTypes).sort().map((relType) => (
+                      <div key={relType} className="flex items-center">
+                        <span className="mr-2 text-datack-yellow">→</span>
+                        <span className="font-medium">{relType}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-datack-gray text-xs italic">Aucune relation</div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -862,56 +995,58 @@ export default function GraphVisualization3DForce({
             onClick={() => setIsLegendExpanded(!isLegendExpanded)}
           >
             {isLegendExpanded ? (
-              /* Expanded: Full legend with labels */
-              <div>
+              /* Expanded: Mobile legend with all 24 ontology types */
+              <div className="p-3 space-y-2 max-h-60 overflow-y-auto">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-borges-light">Légende</span>
-                  <span className="text-borges-muted text-xs">▲</span>
+                  <span className="font-medium text-datack-light">Légende (24 types)</span>
+                  <span className="text-datack-gray text-xs">▲</span>
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ff4757' }}></div>
-                    <span className="text-borges-light-muted">Personnes</span>
+                {/* All 24 Ontology Entity Types */}
+                <div>
+                  <div className="text-datack-muted text-xs font-medium mb-1">Types Grand Débat</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {GRAND_DEBAT_ONTOLOGY_TYPES.map((type) => (
+                      <div key={type} className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: getEntityTypeColor(type) }}
+                        ></div>
+                        <span className="text-datack-muted truncate">{ENTITY_TYPE_LABELS[type]}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#00d2d3' }}></div>
-                    <span className="text-borges-light-muted">Lieux</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#5352ed' }}></div>
-                    <span className="text-borges-light-muted">Événements</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#7bed9f' }}></div>
-                    <span className="text-borges-light-muted">Concepts</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ffa502' }}></div>
-                    <span className="text-borges-light-muted">Organisations</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ffd700' }}></div>
-                    <span className="text-borges-light-muted">Livres</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: '#ff69b4' }}></div>
-                    <span className="text-borges-light-muted">Communautés</span>
+                </div>
+                {/* Relations - Dynamic from API data */}
+                <div className="border-t border-datack-border pt-2">
+                  <div className="text-datack-muted text-xs font-medium mb-1">Relations</div>
+                  <div className="space-y-0.5 text-datack-muted text-xs">
+                    {relationshipTypes.size > 0 ? (
+                      Array.from(relationshipTypes).sort().map((relType) => (
+                        <div key={relType}>→ {relType}</div>
+                      ))
+                    ) : (
+                      <div className="text-datack-gray text-xs italic">Aucune relation</div>
+                    )}
                   </div>
                 </div>
               </div>
             ) : (
-              /* Collapsed: Color dots with expand indicator */
-              <div className="flex items-center gap-1">
-                <div className="flex flex-wrap gap-1">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ff4757' }}></div>
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#00d2d3' }}></div>
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#5352ed' }}></div>
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#7bed9f' }}></div>
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ffa502' }}></div>
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ffd700' }}></div>
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ff69b4' }}></div>
+              /* Collapsed: Color dots with clear label and expand indicator */
+              <div className="p-2 flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-datack-light text-xs font-medium whitespace-nowrap">Légende</span>
+                  <div className="flex flex-wrap gap-1">
+                    {GRAND_DEBAT_ONTOLOGY_TYPES.slice(0, 6).map((type) => (
+                      <div
+                        key={type}
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: getEntityTypeColor(type) }}
+                      ></div>
+                    ))}
+                    <div className="text-datack-gray text-xs ml-0.5">+18</div>
+                  </div>
                 </div>
-                <span className="text-borges-muted text-xs ml-1">▼</span>
+                <span className="text-datack-yellow text-xs ml-auto flex-shrink-0" aria-label="Tap to expand">▼</span>
               </div>
             )}
           </div>
@@ -921,25 +1056,25 @@ export default function GraphVisualization3DForce({
       {/* Link Hover Tooltip - follows cursor (only show if not pinned) */}
       {hoveredLink && !pinnedLink && (
         <div
-          className="fixed bg-borges-secondary border border-borges-border p-2 rounded-borges-md text-xs z-50 w-48 pointer-events-none"
+          className="fixed bg-datack-dark border border-datack-border p-2 rounded-lg text-xs z-50 w-48 pointer-events-none"
           style={{
             left: `${mousePos.x + 15}px`,
             top: `${mousePos.y + 15}px`,
           }}
         >
-          <div className="font-medium text-borges-light mb-1">Relation</div>
+          <div className="font-medium text-datack-light mb-1">Relation</div>
           <div className="space-y-1">
             <div>
-              <span className="text-borges-muted">Type:</span>
-              <span className="text-borges-light ml-1">{hoveredLink.type || hoveredLink.relation}</span>
+              <span className="text-datack-gray">Type:</span>
+              <span className="text-datack-light ml-1">{hoveredLink.type || hoveredLink.relation}</span>
             </div>
-            <div className="text-borges-light-muted text-xs">
+            <div className="text-datack-muted text-xs">
               {typeof hoveredLink.source === 'object' ? (hoveredLink.source as any)?.name || 'Unknown' : hoveredLink.source}
-              <span className="mx-1">→</span>
+              <span className="mx-1 text-datack-yellow">→</span>
               {typeof hoveredLink.target === 'object' ? (hoveredLink.target as any)?.name || 'Unknown' : hoveredLink.target}
             </div>
           </div>
-          <div className="border-t border-borges-border mt-2 pt-2 text-borges-muted text-xs">
+          <div className="border-t border-datack-border mt-2 pt-2 text-datack-gray text-xs">
             Click to pin
           </div>
         </div>
@@ -948,7 +1083,7 @@ export default function GraphVisualization3DForce({
       {/* Pinned Link Tooltip - fixed position, interactive */}
       {pinnedLink && (
         <div
-          className="fixed bg-borges-secondary border-2 border-borges-accent p-3 rounded-borges-md text-xs z-50 w-72 max-h-96 overflow-y-auto shadow-borges-lg"
+          className="fixed bg-datack-dark border-2 border-datack-yellow p-3 rounded-lg text-xs z-50 w-72 max-h-96 overflow-y-auto shadow-lg"
           style={{
             left: `${Math.min(pinnedLinkPos.x + 15, window.innerWidth - 300)}px`,
             top: `${Math.min(pinnedLinkPos.y + 15, window.innerHeight - 400)}px`,
@@ -957,12 +1092,12 @@ export default function GraphVisualization3DForce({
           {/* Header with close button */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-borges-accent rounded-full" />
-              <span className="font-medium text-borges-light">Pinned Relation</span>
+              <div className="w-2 h-2 bg-datack-yellow rounded-full" />
+              <span className="font-medium text-datack-light">Pinned Relation</span>
             </div>
             <button
               onClick={() => setPinnedLink(null)}
-              className="text-borges-muted hover:text-borges-light p-1"
+              className="text-datack-gray hover:text-datack-light p-1"
               title="Unpin"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -973,38 +1108,38 @@ export default function GraphVisualization3DForce({
 
           <div className="space-y-2">
             {/* Relation type */}
-            <div className="p-2 bg-borges-dark rounded-borges-sm">
-              <span className="text-borges-muted">Type:</span>
-              <span className="text-borges-light ml-2 font-medium">{pinnedLink.type || pinnedLink.relation}</span>
+            <div className="p-2 bg-datack-black rounded-sm">
+              <span className="text-datack-gray">Type:</span>
+              <span className="text-datack-light ml-2 font-medium">{pinnedLink.type || pinnedLink.relation}</span>
             </div>
 
             {/* Source → Target */}
             <div>
-              <span className="text-borges-muted">Between:</span>
-              <div className="text-borges-light mt-1">
+              <span className="text-datack-gray">Between:</span>
+              <div className="text-datack-light mt-1">
                 {typeof pinnedLink.source === 'object' ? (pinnedLink.source as any)?.name || (pinnedLink.source as any)?.id || 'Unknown' : pinnedLink.source}
-                <span className="text-borges-muted mx-2">→</span>
+                <span className="text-datack-yellow mx-2">→</span>
                 {typeof pinnedLink.target === 'object' ? (pinnedLink.target as any)?.name || (pinnedLink.target as any)?.id || 'Unknown' : pinnedLink.target}
               </div>
             </div>
 
             {pinnedLink.has_graphml_metadata && (
               <>
-                <div className="border-t border-borges-border pt-2 mt-2">
-                  <div className="text-borges-accent text-xs font-medium mb-2">GraphML Metadata</div>
+                <div className="border-t border-datack-border pt-2 mt-2">
+                  <div className="text-datack-yellow text-xs font-medium mb-2">GraphML Metadata</div>
                 </div>
 
                 {pinnedLink.graphml_weight && (
                   <div>
-                    <span className="text-borges-muted">Weight:</span>
-                    <span className="text-borges-light ml-2 font-mono">{pinnedLink.graphml_weight.toFixed(2)}</span>
+                    <span className="text-datack-gray">Weight:</span>
+                    <span className="text-datack-light ml-2 font-mono">{pinnedLink.graphml_weight.toFixed(2)}</span>
                   </div>
                 )}
 
                 {pinnedLink.graphml_description && (
                   <div>
-                    <span className="text-borges-muted">Description:</span>
-                    <div className="text-borges-light-muted mt-1 text-xs leading-relaxed p-2 bg-borges-dark rounded-borges-sm">
+                    <span className="text-datack-gray">Description:</span>
+                    <div className="text-datack-muted mt-1 text-xs leading-relaxed p-2 bg-datack-black rounded-sm">
                       {pinnedLink.graphml_description}
                     </div>
                   </div>
@@ -1013,7 +1148,7 @@ export default function GraphVisualization3DForce({
                 {pinnedLink.graphml_source_chunks && (
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-borges-muted">Source Text:</span>
+                      <span className="text-datack-gray">Source Text:</span>
                       <button
                         onClick={() => handleSourceNavigation(
                           pinnedLink.graphml_source_chunks!,
@@ -1024,13 +1159,13 @@ export default function GraphVisualization3DForce({
                             relationType: pinnedLink.relation || pinnedLink.type || 'RELATED'
                           }
                         )}
-                        className="borges-btn-primary text-xs px-2 py-1"
+                        className="bg-datack-yellow text-datack-black hover:bg-datack-yellow-bright px-2 py-1 rounded text-xs font-medium"
                         title="Open full source text"
                       >
                         Read Source
                       </button>
                     </div>
-                    <div className="text-borges-light-muted text-xs p-2 bg-borges-dark rounded-borges-sm border-l-2 border-borges-accent max-h-32 overflow-y-auto">
+                    <div className="text-datack-muted text-xs p-2 bg-datack-black rounded-sm border-l-2 border-datack-yellow max-h-32 overflow-y-auto">
                       {pinnedLink.graphml_source_chunks}
                     </div>
                   </div>
@@ -1038,22 +1173,22 @@ export default function GraphVisualization3DForce({
 
                 {pinnedLink.graphml_order && pinnedLink.graphml_order > 0 && (
                   <div>
-                    <span className="text-borges-muted">Order:</span>
-                    <span className="text-borges-light ml-2">{pinnedLink.graphml_order}</span>
+                    <span className="text-datack-gray">Order:</span>
+                    <span className="text-datack-light ml-2">{pinnedLink.graphml_order}</span>
                   </div>
                 )}
               </>
             )}
 
             {!pinnedLink.has_graphml_metadata && (
-              <div className="text-borges-muted text-xs p-2 bg-borges-dark rounded-borges-sm">
+              <div className="text-datack-gray text-xs p-2 bg-datack-black rounded-sm">
                 No enriched GraphML metadata available
               </div>
             )}
           </div>
 
           {/* Footer hint */}
-          <div className="border-t border-borges-border mt-3 pt-2 text-borges-muted text-xs">
+          <div className="border-t border-datack-border mt-3 pt-2 text-datack-gray text-xs">
             Click another relation or X to close
           </div>
         </div>

@@ -309,7 +309,7 @@ export default function GraphVisualizationD3({
       {/* Graph Info Overlay */}
       <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white p-3 rounded-lg">
         <div className="text-sm">
-          <div className="text-borges-accent font-semibold">🌐 Graphe de Borges</div>
+          <div className="text-datack-yellow font-semibold">🌐 Graphe de Borges</div>
           <div className="mt-1">
             <span className="text-gray-300">Nœuds:</span> {reconciliationData.nodes.length > 300 ? '300+' : reconciliationData.nodes.length}
           </div>
@@ -332,7 +332,7 @@ export default function GraphVisualizationD3({
 
       {/* Node Types Legend */}
       <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white p-3 rounded-lg text-xs">
-        <div className="text-borges-accent font-semibold mb-2">Types de Nœuds</div>
+        <div className="text-datack-yellow font-semibold mb-2">Types de Nœuds</div>
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ff4757' }}></div>
@@ -381,7 +381,7 @@ export default function GraphVisualizationD3({
 
       {/* Controls Info */}
       <div className="absolute bottom-4 right-4 bg-black bg-opacity-70 text-white p-3 rounded-lg text-xs">
-        <div className="text-borges-accent font-semibold mb-1">Contrôles</div>
+        <div className="text-datack-yellow font-semibold mb-1">Contrôles</div>
         <div>🖱️ Glisser: Déplacer nœuds</div>
         <div>🔄 Molette: Zoom</div>
         <div>🖱️ Clic: Sélectionner nœud</div>
@@ -391,7 +391,7 @@ export default function GraphVisualizationD3({
       {selectedNode && (
         <div className="absolute bottom-4 left-4 bg-black bg-opacity-90 text-white p-4 rounded-lg max-w-80 min-w-64">
           <div className="flex justify-between items-start mb-2">
-            <div className="text-borges-accent font-semibold">📊 Détails du Nœud</div>
+            <div className="text-datack-yellow font-semibold">📊 Détails du Nœud</div>
             <button
               onClick={() => setSelectedNode(null)}
               className="text-gray-400 hover:text-white transition-colors"

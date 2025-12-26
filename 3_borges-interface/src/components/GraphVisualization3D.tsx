@@ -1393,7 +1393,7 @@ export default function GraphVisualization3D({
       {/* Galaxy Info Overlay */}
       <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white p-3 rounded-lg">
         <div className="text-sm">
-          <div className="text-borges-accent font-semibold">🌌 Galaxie de Borges</div>
+          <div className="text-datack-yellow font-semibold">🌌 Galaxie de Borges</div>
           <div className="mt-1">
             <span className="text-gray-300">Nœuds:</span> {nodesRef.current.length}
           </div>
@@ -1416,7 +1416,7 @@ export default function GraphVisualization3D({
 
       {/* Node Types Legend */}
       <div className="absolute top-4 right-4 bg-black bg-opacity-70 text-white p-3 rounded-lg text-xs">
-        <div className="text-borges-accent font-semibold mb-2">Types de Nœuds</div>
+        <div className="text-datack-yellow font-semibold mb-2">Types de Nœuds</div>
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ff4757' }}></div>
@@ -1488,7 +1488,7 @@ export default function GraphVisualization3D({
 
       {/* Controls Info */}
       <div className="absolute bottom-4 right-4 bg-black bg-opacity-70 text-white p-3 rounded-lg text-xs">
-        <div className="text-borges-accent font-semibold mb-1">Contrôles</div>
+        <div className="text-datack-yellow font-semibold mb-1">Contrôles</div>
         <div>🖱️ Glisser: Orbiter</div>
         <div>🔄 Molette: Zoom</div>
         <div>🖱️ Clic: Sélectionner nœud</div>
@@ -1498,7 +1498,7 @@ export default function GraphVisualization3D({
       {selectedNode && (
         <div className="absolute bottom-4 left-4 bg-black bg-opacity-90 text-white p-4 rounded-lg max-w-80 min-w-64">
           <div className="flex justify-between items-start mb-2">
-            <div className="text-borges-accent font-semibold">📊 Détails du Nœud</div>
+            <div className="text-datack-yellow font-semibold">📊 Détails du Nœud</div>
             <button
               onClick={() => setSelectedNode(null)}
               className="text-gray-400 hover:text-white transition-colors"
@@ -1595,7 +1595,7 @@ export default function GraphVisualization3D({
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-700">
-            <div className="text-sm font-semibold text-borges-accent">
+            <div className="text-sm font-semibold text-datack-yellow">
               {clickedItem.type === 'node' ? '🎯 Nœud sélectionné' : '🔗 Relation sélectionnée'}
             </div>
             <button
@@ -1710,7 +1710,7 @@ export default function GraphVisualization3D({
                     {hasGraphML && sourceChunks && (
                       <div>
                         <div className="text-xs text-gray-400 mb-1">Source textuelle</div>
-                        <div className="text-xs text-gray-300 bg-gray-800 p-2 rounded border-l-2 border-borges-accent">
+                        <div className="text-xs text-gray-300 bg-gray-800 p-2 rounded border-l-2 border-datack-yellow">
                           {sourceChunks.substring(0, 100)}
                           {sourceChunks.length > 100 && '...'}
                         </div>
