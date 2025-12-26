@@ -204,27 +204,59 @@ class LawGraphRAGService {
 
   /**
    * Fetch the full graph from MCP for initial load
-   * Uses grand_debat_query_all which now queries ALL 50 communes in both modes:
-   * - local mode: entities, relationships, source quotes
-   * - global mode: community summaries
-   * @returns Full graph data for visualization
+   * Uses grand_debat_get_full_graph which reads GraphML files in PARALLEL
+   * WITHOUT running LLM queries - fast and efficient for initial page load.
+   * @returns Full graph data for visualization (200+ nodes in <3s)
    */
   async fetchFullGraph(): Promise<LawGraphRAGGraphData | null> {
     try {
-      // Use a broad query to get comprehensive data across all communes
-      const response = await this.query({
-        query: 'Grand Débat National préoccupations citoyennes',
-        mode: 'global',  // Mode is ignored - MCP queries both modes now
+      console.log('🚀 Fetching full graph using grand_debat_get_full_graph (parallel GraphML)')
+
+      // Use the GET endpoint with get_full_graph action
+      // This calls the MCP tool that reads GraphML files in parallel (10 workers)
+      const response = await fetch(`${this.baseUrl}?action=get_full_graph&max_communes=50&include_relationships=true`, {
+        method: 'GET',
       })
 
-      if (response.success === false) {
-        console.error('Failed to fetch full graph:', response.error)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch full graph: ${response.status}`)
+      }
+
+      const result: LawGraphRAGResponse = await response.json()
+
+      console.log('📦 Full Graph Response:', {
+        success: result.success,
+        hasGraphData: !!result.graphrag_data,
+        entitiesCount: result.graphrag_data?.entities?.length ?? 0,
+        relationshipsCount: result.graphrag_data?.relationships?.length ?? 0
+      })
+
+      if (result.success === false) {
+        console.error('❌ MCP get_full_graph failed:', result.error)
         return null
       }
 
-      return this.transformToGraphData(response)
+      if (!result.graphrag_data || result.graphrag_data.entities.length === 0) {
+        console.warn('⚠️ MCP returned no graph data')
+        return null
+      }
+
+      const graphData = this.transformToGraphData(result)
+
+      if (!graphData || graphData.nodes.length === 0) {
+        console.warn('⚠️ transformToGraphData returned empty graph')
+        return null
+      }
+
+      console.log('✅ Full graph loaded:', {
+        nodes: graphData.nodes.length,
+        relationships: graphData.relationships.length
+      })
+
+      return graphData
     } catch (error) {
-      console.error('Error fetching full graph from MCP:', error)
+      console.error('❌ Error fetching full graph from MCP:', error)
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
       return null
     }
   }
