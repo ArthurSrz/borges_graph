@@ -105,6 +105,7 @@ interface GraphVisualization3DForceProps {
   isProcessing?: boolean
   currentProcessingPhase?: string | null
   sidePanelOpen?: boolean
+  communeCount?: number
 }
 
 export default function GraphVisualization3DForce({
@@ -115,7 +116,8 @@ export default function GraphVisualization3DForce({
   onNodeClick,
   isProcessing,
   currentProcessingPhase,
-  sidePanelOpen = false
+  sidePanelOpen = false,
+  communeCount
 }: GraphVisualization3DForceProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const graphRef = useRef<any>(null)
@@ -940,6 +942,7 @@ export default function GraphVisualization3DForce({
       {reconciliationData && !isLoading && (
         <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-datack-dark border border-datack-border p-2 md:p-3 rounded-lg text-xs md:text-sm hidden md:block">
           <div className="text-datack-light font-medium">Dimensions</div>
+          {communeCount && <div className="text-datack-muted">{communeCount} communes</div>}
           <div className="text-datack-muted">{reconciliationData.nodes.length} noeuds</div>
           <div className="text-datack-muted">{reconciliationData.relationships.length} relations</div>
         </div>

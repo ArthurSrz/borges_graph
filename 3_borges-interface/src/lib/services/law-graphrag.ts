@@ -303,9 +303,9 @@ class LawGraphRAGService {
           }
         }
 
-        // Small delay between batches for smooth animation (300ms)
+        // Small delay between batches for smooth animation (900ms)
         if (loaded < totalCommunes) {
-          await new Promise(resolve => setTimeout(resolve, 300))
+          await new Promise(resolve => setTimeout(resolve, 900))
         }
       }
 

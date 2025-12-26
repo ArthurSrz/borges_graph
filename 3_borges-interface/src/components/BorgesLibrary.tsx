@@ -204,6 +204,7 @@ function BorgesLibrary() {
   const [availableCommunes, setAvailableCommunes] = useState<Commune[]>([])
   const [selectedCommunes, setSelectedCommunes] = useState<string[]>([])
   const [loadingCommunes, setLoadingCommunes] = useState(true)
+  const [currentCommuneCount, setCurrentCommuneCount] = useState<number>(0)
 
   const [processingStartTime, setProcessingStartTime] = useState<number | null>(null)
   const [elapsedTime, setElapsedTime] = useState<number>(0)
@@ -543,6 +544,7 @@ function BorgesLibrary() {
           (graphData, progress) => {
             // Callback fired after each batch (10, 20, 30, 40, 50 communes)
             setCurrentProcessingPhase(`🌐 Chargement ${progress.current}/${progress.total} communes...`)
+            setCurrentCommuneCount(progress.current)
 
             console.log(`✅ Batch ${progress.current}/${progress.total}: ${graphData.nodes.length} nodes`)
 
@@ -1239,6 +1241,7 @@ function BorgesLibrary() {
                   isProcessing={isProcessing}
                   currentProcessingPhase={currentProcessingPhase}
                   sidePanelOpen={!!selectedEntityId}
+                  communeCount={currentCommuneCount}
               />
 
             {/* Interactive Tutorial Overlay */}
