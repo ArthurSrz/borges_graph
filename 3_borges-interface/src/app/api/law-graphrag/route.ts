@@ -467,7 +467,7 @@ export async function POST(request: NextRequest) {
       // Query all communes for full dataset - Constitution: 50 communes in Charente-Maritime
       result = await callMcpTool(sessionId, 'grand_debat_query_all', {
         query,
-        mode: 'global',
+        mode,  // Respect requested mode: 'local' for entities, 'global' for communities
         max_communes: 50,  // Full dataset: all 50 communes in Charente-Maritime (target: 200+ nodes)
         include_sources: true
       })

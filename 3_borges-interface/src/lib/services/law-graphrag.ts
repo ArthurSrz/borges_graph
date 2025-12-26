@@ -212,10 +212,10 @@ class LawGraphRAGService {
   async fetchFullGraph(): Promise<LawGraphRAGGraphData | null> {
     try {
       // Use a broad query to get comprehensive data across all communes
-      // Add timestamp to bypass cache and ensure fresh data on initial load
+      // Use 'local' mode to get entities and relationships (global mode only returns communities)
       const response = await this.query({
         query: 'Grand Débat National - préoccupations citoyennes 2019',
-        mode: 'global',  // Mode is ignored - MCP queries both modes now
+        mode: 'local',  // Local mode returns entities + relationships + source chunks
       })
 
       if (response.success === false) {
