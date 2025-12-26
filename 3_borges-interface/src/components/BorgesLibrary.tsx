@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 
 const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DForce'), {
@@ -99,6 +99,7 @@ import TutorialOverlay from './TutorialOverlay'
 import TextChunkModal from './TextChunkModal'
 import ProvenancePanel from './ProvenancePanel'
 import EntityDetailModal from './EntityDetailModal'
+import CommuneSelector, { CommuneSelectorMobile, type Commune } from './CommuneSelector'
 // CitizenExtractsPanel merged into EntityDetailModal (Feature 005-agent-orchestration)
 import { lawGraphRAGService } from '@/lib/services/law-graphrag'
 import type { CitizenExtract, GrandDebatEntity } from '@/types/law-graphrag'
@@ -184,6 +185,9 @@ function BorgesLibrary() {
   const [answerPanelHeight, setAnswerPanelHeight] = useState(30) // Default 30vh on mobile
   // Entity coloring state for interpretability
   const [coloredEntities, setColoredEntities] = useState<EntityColorInfo[]>([])
+  // Query error handling state
+  const [queryError, setQueryError] = useState<string | null>(null)
+  const [showErrorAlert, setShowErrorAlert] = useState(false)
 
   // TextChunkModal state for entity click navigation
   const [isEntityChunkModalOpen, setIsEntityChunkModalOpen] = useState(false)
@@ -195,6 +199,12 @@ function BorgesLibrary() {
   } | null>(null)
   // Single-purpose: Grand Débat National GraphRAG only (Constitution v3.0.0 Principle VI)
   const [mode, setMode] = useState<'local' | 'global'>('global')
+
+  // Commune selection for filtered/comparative analysis (Constitution Principles #2, #3)
+  const [availableCommunes, setAvailableCommunes] = useState<Commune[]>([])
+  const [selectedCommunes, setSelectedCommunes] = useState<string[]>([])
+  const [loadingCommunes, setLoadingCommunes] = useState(true)
+
   const [processingStartTime, setProcessingStartTime] = useState<number | null>(null)
   const [elapsedTime, setElapsedTime] = useState<number>(0)
   const [processingStats, setProcessingStats] = useState<{
@@ -249,6 +259,35 @@ function BorgesLibrary() {
       return () => clearInterval(interval)
     }
   }, [showLoadingOverlay, isLoadingGraph, civicQuotes.length])
+
+  // Auto-dismiss error alert after 10 seconds (user can manually dismiss earlier)
+  useEffect(() => {
+    if (showErrorAlert) {
+      const timeout = setTimeout(() => {
+        setShowErrorAlert(false)
+      }, 10000)
+      return () => clearTimeout(timeout)
+    }
+  }, [showErrorAlert])
+
+  // Fetch available communes on mount (Constitution Principle #2: Commune-Centric)
+  useEffect(() => {
+    const fetchCommunes = async () => {
+      try {
+        setLoadingCommunes(true)
+        const communes = await lawGraphRAGService.fetchCommunes()
+        // Sort communes alphabetically
+        const sortedCommunes = communes.sort((a, b) => a.name.localeCompare(b.name))
+        setAvailableCommunes(sortedCommunes)
+        console.log(`🏛️ Loaded ${sortedCommunes.length} communes for selection`)
+      } catch (error) {
+        console.error('Failed to fetch communes:', error)
+      } finally {
+        setLoadingCommunes(false)
+      }
+    }
+    fetchCommunes()
+  }, [])
 
   // Function to extract chunks related to a specific entity
   const extractEntityChunks = (entityId: string) => {
@@ -358,13 +397,70 @@ function BorgesLibrary() {
     )
   }
 
-  // DISABLED: GraphML static file loading - now using live MCP API data
-  // The full graph is loaded from MCP API on component mount (see useEffect below)
-  // This avoids race condition between GraphML and MCP data loads
+  // Memoized node normalization - Graph Performance Optimization (006-graph-optimization)
+  // Transforms raw graph nodes into normalized format with guaranteed properties
+  const normalizeGraphNodes = useMemo(() => {
+    return (nodes: any[]) => {
+      return nodes.map(node => ({
+        ...node,
+        properties: node.properties as Record<string, any>,
+        degree: node.degree ?? 1,
+        centrality_score: node.centrality_score ?? 0.5
+      }))
+    }
+  }, [])
 
-  // Placeholder state for compatibility (no longer loads GraphML)
-  const isGraphMLLoading = false
-  const graphMLError = null
+  // Memoized entity color mapping - Graph Performance Optimization (006-graph-optimization)
+  // Transforms graph nodes into entity color format for interpretability
+  const mapNodesToColorEntities = useMemo(() => {
+    return (nodes: any[]) => {
+      return nodes.map((node: any, idx: number) => ({
+        id: node.properties?.name || node.id,
+        type: node.labels?.[0] || 'CIVIC_ENTITY',
+        description: node.properties?.description,
+        score: node.centrality_score || 0.5,
+        order: idx
+      }))
+    }
+  }, [])
+
+  // Memoized query keyword matcher - Graph Performance Optimization (006-graph-optimization)
+  // Filters nodes based on query keywords with O(n) complexity but memoized function
+  const createQueryMatcher = useMemo(() => {
+    return (query: string, nodes: any[]) => {
+      const queryLower = query.toLowerCase()
+      const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3)
+
+      return nodes.filter(node => {
+        const labels = node.labels.map((l: string) => l.toLowerCase())
+        const name = (node.properties?.name || '').toLowerCase()
+        const description = (node.properties?.description || '').toLowerCase()
+
+        return queryWords.some(word =>
+          labels.some((label: string) => label.includes(word)) ||
+          name.includes(word) ||
+          description.includes(word)
+        )
+      })
+    }
+  }, [])
+
+  // Load GraphML data for instant startup visualization (Constitution Principle - instant graph display)
+  // GraphML file contains the 50 communes with their relationships
+  const {
+    document: graphMLDocument,
+    isLoading: isGraphMLLoading,
+    error: graphMLError
+  } = useGraphMLData({
+    url: '/data/grand-debat.graphml',
+    filterOrphans: true, // Constitution Principle I: No orphan nodes
+    onLoad: (doc) => {
+      console.log(`📊 GraphML loaded: ${doc.nodes.length} nodes, ${doc.edges.length} edges`)
+    },
+    onError: (err) => {
+      console.error('❌ GraphML loading error:', err)
+    }
+  })
 
   // Check localStorage for tutorial skip on mount
   useEffect(() => {
@@ -377,21 +473,79 @@ function BorgesLibrary() {
     }
   }, [])
 
-  // Load full graph from MCP API on component mount
+  // Transform GraphML data to reconciliation format when loaded
   useEffect(() => {
-    const loadFullGraph = async () => {
+    if (graphMLDocument && graphMLDocument.nodes.length > 0) {
+      console.log('🏛️ Transforming GraphML data for visualization...')
+      setCurrentProcessingPhase('🏛️ Chargement du graphe citoyen...')
+
+      // Transform GraphML to reconciliation data format
+      const transformedData = transformToReconciliationData(graphMLDocument)
+
+      const graphData: ReconciliationGraphData = {
+        nodes: transformedData.nodes.map(node => ({
+          id: node.id,
+          labels: node.labels,
+          properties: node.properties,
+          degree: typeof node.degree === 'number' ? node.degree : 1,
+          centrality_score: typeof node.centrality_score === 'number' ? node.centrality_score : 0.5
+        })),
+        relationships: transformedData.relationships.map(rel => ({
+          id: rel.id,
+          type: rel.type,
+          source: rel.source,
+          target: rel.target,
+          properties: rel.properties
+        }))
+      }
+
+      // Store as base graph for subgraph queries
+      baseGraphDataRef.current = graphData
+
+      setReconciliationData(graphData)
+      setProcessingStats({
+        nodes: graphData.nodes.length,
+        communities: 0,
+        neo4jRelationships: graphData.relationships.length
+      })
+
+      console.log(`✅ Graph loaded: ${graphData.nodes.length} nodes, ${graphData.relationships.length} relationships`)
+
+      setIsLoadingGraph(false)
+      setShowLoadingOverlay(false)
+      setCurrentProcessingPhase(null)
+    }
+  }, [graphMLDocument])
+
+  // Handle GraphML loading errors
+  useEffect(() => {
+    if (graphMLError) {
+      console.error('❌ GraphML loading failed:', graphMLError)
+      setCurrentProcessingPhase('❌ Erreur de chargement du graphe')
+      setIsLoadingGraph(false)
+      setShowLoadingOverlay(false)
+    }
+  }, [graphMLError])
+
+  // Background fetch: Load full graph from MCP API after GraphML displays
+  // This provides rich data (150-200+ nodes) while GraphML gives instant feedback
+  useEffect(() => {
+    // Only fetch once, after GraphML has loaded (prevents race condition)
+    if (mcpFetchedRef.current || !graphMLDocument || isGraphMLLoading) return
+
+    const fetchFullMCPGraph = async () => {
+      mcpFetchedRef.current = true  // Mark as initiated to prevent duplicate calls
       try {
-        console.log('🏛️ Loading full Grand Débat graph from MCP API...')
-        setIsLoadingGraph(true)
-        setCurrentProcessingPhase('🏛️ Chargement du graphe complet depuis l\'API...')
+        console.log('🌐 Background: Fetching full graph from MCP API...')
+        setCurrentProcessingPhase('🌐 Enrichissement du graphe...')
 
         const graphData = await lawGraphRAGService.fetchFullGraph()
 
         if (graphData && graphData.nodes.length > 0) {
-          console.log(`✅ Loaded ${graphData.nodes.length} nodes and ${graphData.relationships.length} relationships from MCP`)
+          console.log(`✅ MCP loaded: ${graphData.nodes.length} nodes, ${graphData.relationships.length} relationships`)
 
           // Transform to reconciliation data format
-          const reconciliationData: ReconciliationGraphData = {
+          const enrichedData: ReconciliationGraphData = {
             nodes: graphData.nodes.map(node => ({
               id: node.id,
               labels: node.labels,
@@ -402,34 +556,33 @@ function BorgesLibrary() {
             relationships: graphData.relationships
           }
 
-          // Store as base graph for subgraph queries
-          baseGraphDataRef.current = reconciliationData
-
-          setReconciliationData(reconciliationData)
+          // Update graph with richer MCP data
+          baseGraphDataRef.current = enrichedData
+          setReconciliationData(enrichedData)
           setProcessingStats({
-            nodes: graphData.nodes.length,
+            nodes: enrichedData.nodes.length,
             communities: 0,
-            neo4jRelationships: graphData.relationships.length
+            neo4jRelationships: enrichedData.relationships.length
           })
 
-          console.log('📊 Full graph loaded and displayed')
+          console.log('📊 Graph enriched with MCP data')
         } else {
-          console.warn('⚠️ No graph data returned from MCP')
-          throw new Error('MCP returned empty graph data')
+          // NEW: Show what went wrong
+          console.warn('⚠️ MCP fetch returned empty or null data')
+          console.log('MCP response:', graphData)
         }
       } catch (error) {
-        console.error('❌ Error loading full graph from MCP:', error)
-        // Show error to user
-        setCurrentProcessingPhase('❌ Erreur de chargement - rechargez la page')
+        console.warn('⚠️ Background MCP fetch failed (GraphML still displayed):', error)
+        // Don't show error - GraphML is still displayed
       } finally {
-        setIsLoadingGraph(false)
-        setShowLoadingOverlay(false)
         setCurrentProcessingPhase(null)
       }
     }
 
-    loadFullGraph()
-  }, [])
+    // Delay slightly to ensure GraphML renders first
+    const timer = setTimeout(fetchFullMCPGraph, 500)
+    return () => clearTimeout(timer)
+  }, [graphMLDocument, isGraphMLLoading])
 
   // Handler for tutorial completion
   const handleTutorialComplete = () => {
@@ -504,6 +657,9 @@ function BorgesLibrary() {
   // Store base GraphML data for restoring after queries
   const baseGraphDataRef = useRef<ReconciliationGraphData | null>(null)
 
+  // Track if MCP background fetch has already been initiated (prevents race condition)
+  const mcpFetchedRef = useRef(false)
+
   // Update base graph data when GraphML loads
   useEffect(() => {
     if (reconciliationData && reconciliationData.nodes.length > 0 && !baseGraphDataRef.current) {
@@ -522,6 +678,8 @@ function BorgesLibrary() {
     setShowAnswer(false)
     setSearchPath(null)
     setDebugInfo(null)
+    setQueryError(null)
+    setShowErrorAlert(false)
     // DON'T clear reconciliationData - keep base graph visible for subgraph highlighting
 
     setIsProcessing(true)
@@ -535,7 +693,29 @@ function BorgesLibrary() {
       console.log('🏛️ Querying Grand Débat National MCP API')
       setCurrentProcessingPhase('🏛️ Analyzing citizen contributions...')
 
-      const result = await lawGraphRAGService.query({ query, mode })
+      // Create timeout promise (30 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('TIMEOUT')), 30000)
+      })
+
+      // Build query params with optional commune filtering
+      // Constitution Principles #2 (Commune-Centric) and #3 (Cross-Commune Analysis)
+      const queryParams: { query: string; mode: 'local' | 'global'; commune_ids?: string[] } = {
+        query,
+        mode
+      }
+
+      // Only include commune_ids if a subset of communes is selected (not all)
+      if (selectedCommunes.length > 0 && selectedCommunes.length < availableCommunes.length) {
+        queryParams.commune_ids = selectedCommunes
+        console.log(`🏛️ Filtering by ${selectedCommunes.length} selected communes`)
+      }
+
+      // Race between query and timeout
+      const result = await Promise.race([
+        lawGraphRAGService.query(queryParams),
+        timeoutPromise
+      ])
 
       if (result.success !== false) {
         setCurrentProcessingPhase('✓ Civic analysis complete')
@@ -584,12 +764,8 @@ function BorgesLibrary() {
             neo4jRelationships: graphData.relationships.length
           })
 
-          const normalizedNodes = graphData.nodes.map(node => ({
-            ...node,
-            properties: node.properties as Record<string, any>,
-            degree: node.degree ?? 1,
-            centrality_score: node.centrality_score ?? 0.5
-          }))
+          // Use memoized node normalization - Graph Performance Optimization (006-graph-optimization)
+          const normalizedNodes = normalizeGraphNodes(graphData.nodes)
 
           setQueryResultNodes(normalizedNodes)
           setReconciliationData({
@@ -597,13 +773,8 @@ function BorgesLibrary() {
             relationships: graphData.relationships
           })
 
-          const entitiesToColor = graphData.nodes.map((node: any, idx: number) => ({
-            id: node.properties?.name || node.id,
-            type: node.labels?.[0] || 'CIVIC_ENTITY',
-            description: node.properties?.description,
-            score: node.centrality_score || 0.5,
-            order: idx
-          }))
+          // Use memoized entity color mapping - Graph Performance Optimization (006-graph-optimization)
+          const entitiesToColor = mapNodesToColorEntities(graphData.nodes)
 
           if (entitiesToColor.length > 0) {
             const enrichedEntities = colorService.enrichEntitiesWithColors(entitiesToColor)
@@ -614,22 +785,8 @@ function BorgesLibrary() {
           // MCP returned no graph data - build subgraph from base GraphML based on query
           console.log('📊 Building subgraph from base GraphML for query:', query)
 
-          // Extract keywords from query for matching
-          const queryLower = query.toLowerCase()
-          const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3)
-
-          // Find nodes that match query keywords in their labels or properties
-          const matchingNodes = baseGraph.nodes.filter(node => {
-            const labels = node.labels.map(l => l.toLowerCase())
-            const name = (node.properties?.name || '').toLowerCase()
-            const description = (node.properties?.description || '').toLowerCase()
-
-            return queryWords.some(word =>
-              labels.some(label => label.includes(word)) ||
-              name.includes(word) ||
-              description.includes(word)
-            )
-          })
+          // Use memoized query matcher - Graph Performance Optimization (006-graph-optimization)
+          const matchingNodes = createQueryMatcher(query, baseGraph.nodes)
 
           // If no direct matches, show nodes connected to commune nodes
           let subgraphNodes = matchingNodes
@@ -678,14 +835,8 @@ function BorgesLibrary() {
             relationships: subgraphRelationships
           })
 
-          // Color entities for interpretability
-          const entitiesToColor = subgraphNodes.map((node, idx) => ({
-            id: node.properties?.name || node.id,
-            type: node.labels?.[0] || 'CIVIC_ENTITY',
-            description: node.properties?.description,
-            score: node.centrality_score || 0.5,
-            order: idx
-          }))
+          // Use memoized entity color mapping - Graph Performance Optimization (006-graph-optimization)
+          const entitiesToColor = mapNodesToColorEntities(subgraphNodes)
 
           if (entitiesToColor.length > 0) {
             const enrichedEntities = colorService.enrichEntitiesWithColors(entitiesToColor)
@@ -764,26 +915,29 @@ function BorgesLibrary() {
       let errorMessage = 'Une erreur est survenue lors du traitement de votre requête.'
 
       const errorDetail = error instanceof Error ? error.message : 'Unknown error'
-      if (errorDetail.includes('fetch') || errorDetail.includes('network') || errorDetail.includes('ECONNREFUSED')) {
-        errorMessage = '🏛️ Impossible de se connecter au service Grand Débat National. Vérifiez votre connexion.'
+      if (errorDetail === 'TIMEOUT') {
+        errorMessage = 'La requête a dépassé le délai maximum de 30 secondes. Le serveur MCP ne répond pas.'
+      } else if (errorDetail.includes('fetch') || errorDetail.includes('network') || errorDetail.includes('ECONNREFUSED')) {
+        errorMessage = 'Impossible de se connecter au service Grand Débat National. Vérifiez que le serveur MCP est accessible.'
       } else if (errorDetail.includes('timeout') || errorDetail.includes('ETIMEDOUT')) {
-        errorMessage = '🏛️ La requête a expiré. Essayez une question plus simple ou réessayez plus tard.'
+        errorMessage = 'La requête a expiré. Le serveur MCP met trop de temps à répondre.'
       } else if (errorDetail.includes('500') || errorDetail.includes('Internal Server')) {
-        errorMessage = '🏛️ Le service a rencontré une erreur. Veuillez réessayer plus tard.'
+        errorMessage = 'Le service a rencontré une erreur interne. Veuillez réessayer plus tard.'
       } else {
-        errorMessage = `🏛️ Erreur: ${errorDetail}`
+        errorMessage = `Erreur: ${errorDetail}`
       }
       console.error('Civic GraphRAG error details:', errorDetail)
 
-      setQueryAnswer(errorMessage)
-      setShowAnswer(true)
+      // Set error state and show alert
+      setQueryError(errorMessage)
+      setShowErrorAlert(true)
       setColoredEntities([])
     } finally {
       setIsProcessing(false)
       setProcessingStartTime(null)
       setCurrentProcessingPhase(null)
     }
-  }, [mode])
+  }, [mode, selectedCommunes, availableCommunes])
 
   return (
     <div className="min-h-screen bg-datack-black text-datack-light">
@@ -791,12 +945,7 @@ function BorgesLibrary() {
       <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-2">
-            <svg className="w-8 h-8" viewBox="0 0 40 40" fill="none">
-              <rect x="4" y="4" width="32" height="32" rx="4" fill="#dbff3b" />
-              <path d="M12 10h8c5.5 0 10 4.5 10 10s-4.5 10-10 10h-8V10z" fill="#0a0a0a" />
-              <path d="M16 14h4c3.3 0 6 2.7 6 6s-2.7 6-6 6h-4V14z" fill="#dbff3b" />
-            </svg>
-            <span className="text-datack-yellow font-bold text-lg">DATACK</span>
+            <span className="font-bold text-lg bg-[#0a0a0a] text-[#dbff3b] px-4 py-2 rounded-md">DATACK</span>
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
@@ -817,6 +966,14 @@ function BorgesLibrary() {
             <div className="text-xs text-datack-gray mt-1">50 communes · Charente-Maritime</div>
           </div>
         </div>
+
+        {/* Mobile Commune Selector - Constitution Principles #2, #3 */}
+        <CommuneSelectorMobile
+          communes={availableCommunes}
+          selectedCommunes={selectedCommunes}
+          onSelectionChange={setSelectedCommunes}
+          disabled={isProcessing || loadingCommunes}
+        />
 
         {/* Mobile Mode Toggle */}
         <div className="mobile-nav-item">
@@ -856,15 +1013,9 @@ function BorgesLibrary() {
             </svg>
           </button>
 
-          {/* Datack Logo - Yellow accent on dark */}
+          {/* Datack Logo - Black background with yellow text */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <svg className="w-8 h-8 md:w-10 md:h-10" viewBox="0 0 40 40" fill="none">
-              {/* Datack D logo - modernist geometric */}
-              <rect x="4" y="4" width="32" height="32" rx="4" fill="#dbff3b" />
-              <path d="M12 10h8c5.5 0 10 4.5 10 10s-4.5 10-10 10h-8V10z" fill="#0a0a0a" />
-              <path d="M16 14h4c3.3 0 6 2.7 6 6s-2.7 6-6 6h-4V14z" fill="#dbff3b" />
-            </svg>
-            <span className="text-datack-yellow font-bold text-lg md:text-xl tracking-tight hidden sm:block">DATACK</span>
+            <span className="font-bold text-lg md:text-xl tracking-tight bg-[#0a0a0a] text-[#dbff3b] px-4 py-2 rounded-md">DATACK</span>
           </div>
 
           <div className="h-8 w-px bg-datack-border hidden sm:block" />
@@ -874,7 +1025,7 @@ function BorgesLibrary() {
               Grand Débat National
             </h1>
             <p className="text-datack-gray mt-1 text-xs md:text-sm max-w-2xl hidden md:block">
-              Explorer les contributions citoyennes · 50 communes de Charente-Maritime · <span className="text-datack-yellow">Cahiers de Doléances 2019</span>
+              Explorer les contributions citoyennes · 50 communes de Charente-Maritime · <span className="bg-[#0a0a0a] text-[#dbff3b] px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap">Cahiers de Doléances 2019</span>
             </p>
           </div>
         </div>
@@ -894,6 +1045,15 @@ function BorgesLibrary() {
                     🏛️ Grand Débat National
                   </div>
                 </div>
+
+                {/* Commune Selector - Constitution Principles #2, #3 */}
+                <CommuneSelector
+                  communes={availableCommunes}
+                  selectedCommunes={selectedCommunes}
+                  onSelectionChange={setSelectedCommunes}
+                  disabled={isProcessing || loadingCommunes}
+                  className="hidden md:block"
+                />
 
                 {/* Search Input - Full width on mobile */}
                 <div className="flex gap-2 flex-1">
@@ -923,7 +1083,7 @@ function BorgesLibrary() {
                         handleSimpleQuery(query)
                       }
                     }}
-                    className={`datack-btn-primary disabled:opacity-50 min-w-touch ${isProcessing ? 'animate-pulse-brightness' : ''}`}
+                    className={`px-4 py-2 bg-[#0a0a0a] text-[#dbff3b] font-medium hover:opacity-80 transition-colors rounded disabled:opacity-50 min-w-touch ${isProcessing ? 'animate-pulse-brightness' : ''}`}
                     style={isProcessing ? {
                       animation: 'pulseBrightness 1.2s ease-in-out infinite'
                     } : undefined}
@@ -935,14 +1095,14 @@ function BorgesLibrary() {
                   </button>
                 </div>
 
-                {/* Desktop-only: Mode Toggle - Datack Yellow Active */}
+                {/* Desktop-only: Mode Toggle - Datack Inverted (black bg + yellow text) */}
                 <div className="hidden md:flex gap-1 bg-datack-dark rounded-datack-sm p-1 border border-datack-border">
                   <button
                     onClick={() => setMode('local')}
                     disabled={isProcessing}
-                    className={`flex items-center px-2 py-1 text-xs rounded-datack-sm font-medium transition-colors disabled:opacity-50 ${
+                    className={`flex items-center px-2 py-1 text-xs rounded font-medium transition-colors disabled:opacity-50 ${
                       mode === 'local'
-                        ? 'bg-datack-yellow text-datack-black'
+                        ? 'bg-[#0a0a0a] text-[#dbff3b]'
                         : 'text-datack-muted hover:text-datack-light'
                     }`}
                     title="Recherche locale par commune"
@@ -952,9 +1112,9 @@ function BorgesLibrary() {
                   <button
                     onClick={() => setMode('global')}
                     disabled={isProcessing}
-                    className={`flex items-center px-2 py-1 text-xs rounded-datack-sm font-medium transition-colors disabled:opacity-50 ${
+                    className={`flex items-center px-2 py-1 text-xs rounded font-medium transition-colors disabled:opacity-50 ${
                       mode === 'global'
-                        ? 'bg-datack-yellow text-datack-black'
+                        ? 'bg-[#0a0a0a] text-[#dbff3b]'
                         : 'text-datack-muted hover:text-datack-light'
                     }`}
                     title="Recherche globale toutes communes"
@@ -966,7 +1126,11 @@ function BorgesLibrary() {
 
               {/* Mobile-only: Current settings indicator */}
               <div className="flex md:hidden items-center justify-between text-xs text-datack-muted">
-                <span>🏛️ Grand Débat National</span>
+                <span>
+                  🏛️ {selectedCommunes.length > 0 && selectedCommunes.length < availableCommunes.length
+                    ? `${selectedCommunes.length} commune${selectedCommunes.length > 1 ? 's' : ''}`
+                    : 'Grand Débat National'}
+                </span>
                 <span>{mode === 'local' ? 'Local' : 'Global'}</span>
               </div>
             </div>
@@ -1229,6 +1393,59 @@ function BorgesLibrary() {
       )}
 
       {/* Citizen Extracts now merged into EntityDetailModal - Constitution Principle #7 */}
+
+      {/* Error Alert - Dismissible with Retry Button */}
+      {showErrorAlert && queryError && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-lg">
+          <div className="bg-red-900/95 border border-red-500 rounded-datack-md p-4 shadow-datack-lg backdrop-blur-sm">
+            <div className="flex items-start gap-3">
+              {/* Error Icon */}
+              <div className="flex-shrink-0 text-red-400 mt-0.5">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+
+              {/* Error Content */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-red-100 font-medium text-sm mb-1">Erreur de requête</h3>
+                <p className="text-red-200 text-sm leading-relaxed">{queryError}</p>
+
+                {/* Retry Button */}
+                <button
+                  onClick={() => {
+                    setShowErrorAlert(false)
+                    setQueryError(null)
+                    if (currentQuery) {
+                      handleSimpleQuery(currentQuery)
+                    }
+                  }}
+                  className="mt-3 px-4 py-2 bg-red-700 hover:bg-red-600 text-red-100 rounded-datack-sm text-sm font-medium transition-colors inline-flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Réessayer
+                </button>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setShowErrorAlert(false)
+                  setQueryError(null)
+                }}
+                className="flex-shrink-0 text-red-300 hover:text-red-100 transition-colors"
+                aria-label="Fermer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Answer Panel - Datack Branding - Resizable bottom sheet on mobile, side panel on desktop */}
       {showAnswer && (
