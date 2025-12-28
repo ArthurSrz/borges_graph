@@ -540,21 +540,11 @@ function BorgesLibrary() {
       try {
         console.log('🌐 Progressive loading: Fetching graph in batches...')
 
-        // Show loading overlay during progressive loading
-        setShowLoadingOverlay(true)
-
         await lawGraphRAGService.fetchFullGraphProgressive(
           (graphData, progress) => {
             // Callback fired after each batch (5, 10, 15, 20... 50 communes)
             setCurrentProcessingPhase(`🌐 Chargement ${progress.current}/${progress.total} communes...`)
             setCurrentCommuneCount(progress.current)
-
-            // Update loading progress for the overlay
-            setLoadingProgress({
-              step: 'building',
-              current: progress.current,
-              total: progress.total
-            })
 
             console.log(`✅ Batch ${progress.current}/${progress.total}: ${graphData.nodes.length} nodes`)
 
@@ -589,8 +579,6 @@ function BorgesLibrary() {
         // Don't show error - GraphML is still displayed
       } finally {
         setCurrentProcessingPhase(null)
-        setLoadingProgress(null)
-        setShowLoadingOverlay(false)
       }
     }
 
@@ -1369,7 +1357,7 @@ function BorgesLibrary() {
                         <span>Tissage des connexions civiques... {loadingProgress.current}/{loadingProgress.total}</span>
                       )}
                       {loadingProgress.step === 'building' && (
-                        <span>Chargement des communes... {loadingProgress.current}/{loadingProgress.total}</span>
+                        <span>Construction du graphe citoyen... {loadingProgress.current} entités</span>
                       )}
                     </div>
                   )}
