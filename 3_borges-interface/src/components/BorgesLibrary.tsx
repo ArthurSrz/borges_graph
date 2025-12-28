@@ -1279,6 +1279,14 @@ function BorgesLibrary() {
                           0% { stroke-dashoffset: 0; opacity: 0.3; }
                           100% { stroke-dashoffset: -440; opacity: 0.15; }
                         }
+                        @keyframes textGlow {
+                          0%, 100% {
+                            text-shadow: 0 0 8px rgba(219, 255, 59, 0.4), 0 0 16px rgba(219, 255, 59, 0.2);
+                          }
+                          50% {
+                            text-shadow: 0 0 16px rgba(219, 255, 59, 0.6), 0 0 24px rgba(219, 255, 59, 0.3), 0 0 32px rgba(219, 255, 59, 0.1);
+                          }
+                        }
                         .doc-1 { animation: docFloat1 2s ease-in-out infinite; }
                         .doc-2 { animation: docFloat2 2s ease-in-out 0.3s infinite; }
                         .doc-3 { animation: docFloat3 2s ease-in-out 0.6s infinite; }
@@ -1367,7 +1375,7 @@ function BorgesLibrary() {
                   {/* Processing text below animation */}
                   <div className="text-center mt-2">
                     <div className="inline-block px-4 py-2 bg-[#0a0a0a] rounded-lg border border-[#dbff3b]/30">
-                      <span className="text-[#dbff3b] text-sm font-medium">
+                      <span className="text-[#dbff3b] text-sm font-medium" style={{ animation: 'textGlow 2s ease-in-out infinite' }}>
                         Nous consultons les contributions des citoyens
                       </span>
                     </div>
