@@ -702,8 +702,12 @@ export default function GraphVisualization3DForce({
         // Constitution Principle II: Communes are the "core" entities and should be bigger
         const isCommuneNode = isCommune(node)
 
-        const baseSize = Math.max(1, (node.degree || 0) / 5)
-        const communeMultiplier = isCommuneNode ? 3 : 1  // Communes are 3x larger (central civic entities)
+        // Enhanced node sizing with more contrast based on degree (in/out relationships)
+        // Power scale: small nodes stay visible, high-degree nodes become significantly larger
+        // degree 1 → ~2.5, degree 5 → ~4.5, degree 10 → ~6, degree 30 → ~10, degree 100 → ~17
+        const degree = Math.max(1, node.degree || 1)
+        const baseSize = 1.5 + Math.pow(degree, 0.55) * 1.2
+        const communeMultiplier = isCommuneNode ? 2.5 : 1  // Communes are larger (central civic entities)
 
         // Get entity type for proper color matching with legend
         const entityType = getEntityType(node)
