@@ -395,7 +395,8 @@ export async function POST(request: NextRequest) {
         // Collect answer
         if (mcpRes.answer) {
           const communeName = mcpRes.commune_name || mcpRes.commune_id || 'Unknown'
-          answerParts.push(`**${communeName}**: ${mcpRes.answer}`)
+          // Use newline after header so markdown ## renders properly at line start
+          answerParts.push(`### ${communeName}\n\n${mcpRes.answer}`)
         }
 
         // Deduplicate entities by id
@@ -507,9 +508,10 @@ export async function POST(request: NextRequest) {
     // Build answer from results if multi-commune query
     let answer = mcpResult.answer || ''
     if (mcpResult.results && Array.isArray(mcpResult.results)) {
+      // Use newline after header so markdown ## renders properly at line start
       answer = mcpResult.results
         .filter(r => r && (r.commune_id || r.commune_name))
-        .map(r => `**${r.commune_name || r.commune_id}**: ${r.answer_summary || 'Aucune réponse'}`)
+        .map(r => `### ${r.commune_name || r.commune_id}\n\n${r.answer_summary || 'Aucune réponse'}`)
         .join('\n\n')
     }
 
