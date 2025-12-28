@@ -171,19 +171,36 @@ function BorgesLibrary() {
   }
   const [reconciliationData, setReconciliationData] = useState<ReconciliationGraphData | null>(null)
   const [isLoadingGraph, setIsLoadingGraph] = useState(true) // Start as true to show loading
-  // Initialize tutorial state synchronously from localStorage to avoid race conditions
-  const [showTutorial, setShowTutorial] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return !localStorage.getItem('borges-tutorial-seen')
+  // Track if this is a first-time user (for progressive vs instant loading)
+  const isFirstTimeUserRef = useRef<boolean | null>(null)
+  // Initialize tutorial state - will be set correctly on client mount
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false)
+  const [isClientMounted, setIsClientMounted] = useState(false)
+
+  // Set tutorial state on client mount to avoid SSR/hydration issues
+  useEffect(() => {
+    const tutorialSeen = localStorage.getItem('borges-tutorial-seen')
+    const isFirstTime = !tutorialSeen
+    isFirstTimeUserRef.current = isFirstTime
+
+    console.log('🎓 MOUNT EFFECT - Tutorial check:', {
+      tutorialSeen,
+      isFirstTime,
+      willShowTutorial: isFirstTime,
+      willShowLoadingOverlay: !isFirstTime
+    })
+
+    if (isFirstTime) {
+      console.log('🎓 Setting showTutorial = true (first-time user)')
+      setShowTutorial(true)
+    } else {
+      console.log('🔄 Setting showLoadingOverlay = true (returning user)')
+      setShowLoadingOverlay(true)
     }
-    return false
-  })
-  const [showLoadingOverlay, setShowLoadingOverlay] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return !!localStorage.getItem('borges-tutorial-seen')
-    }
-    return false
-  })
+    setIsClientMounted(true)
+    console.log('✅ Client mounted, isClientMounted = true')
+  }, [])
   const [loadingProgress, setLoadingProgress] = useState<{ step: string; current: number; total: number } | null>(null)
   const [visibleNodeIds, setVisibleNodeIds] = useState<string[]>([])
   const [searchPath, setSearchPath] = useState<any>(null)
@@ -514,15 +531,31 @@ function BorgesLibrary() {
 
       console.log(`✅ Graph loaded: ${graphData.nodes.length} nodes, ${graphData.relationships.length} relationships`)
 
+      // Wait for client mount before hiding loading (prevents race condition with tutorial check)
+      // This ensures isFirstTimeUserRef.current is set before we decide to hide loading
+      if (!isClientMounted) {
+        console.log('⏳ GRAPHML EFFECT - Waiting for client mount before hiding loading...')
+        return
+      }
+
+      console.log('🔍 GRAPHML EFFECT - Loading decision:', {
+        showTutorial,
+        isClientMounted,
+        willHideLoading: !showTutorial
+      })
+
       // Don't hide loading state if tutorial is still showing (first-time users)
       // This prevents the tutorial from disappearing when GraphML loads quickly
       if (!showTutorial) {
+        console.log('🔓 GRAPHML EFFECT - Hiding loading (returning user path)')
         setIsLoadingGraph(false)
         setShowLoadingOverlay(false)
+      } else {
+        console.log('🔒 GRAPHML EFFECT - Keeping loading visible (tutorial still showing)')
       }
       setCurrentProcessingPhase(null)
     }
-  }, [graphMLDocument, showTutorial])
+  }, [graphMLDocument, showTutorial, isClientMounted])
 
   // Handle GraphML loading errors
   useEffect(() => {
@@ -535,26 +568,74 @@ function BorgesLibrary() {
   }, [graphMLError])
 
   // Background fetch: Load full graph from MCP API after GraphML displays
-  // PROGRESSIVE: Loads in batches for smooth animation (no blink!)
-  // Each batch uses parallel GraphML reading (fast!) but results arrive smoothly
+  // First-time users: Progressive loading with batches (see graph expand)
+  // Returning users: Instant loading (full graph immediately)
   useEffect(() => {
+    // Wait for client mount to ensure isFirstTimeUserRef.current is set
+    // This prevents the race condition where we check user type before it's determined
+    if (!isClientMounted) return
+
     // Only fetch once, after GraphML has loaded (prevents race condition)
     if (mcpFetchedRef.current || !graphMLDocument || isGraphMLLoading) return
 
     const fetchFullMCPGraph = async () => {
       mcpFetchedRef.current = true  // Mark as initiated to prevent duplicate calls
+
+      const isFirstTime = isFirstTimeUserRef.current
+      console.log('🚀 MCP FETCH - Starting fetch:', {
+        isFirstTime,
+        isFirstTimeUserRef: isFirstTimeUserRef.current,
+        path: isFirstTime ? 'progressive' : 'instant'
+      })
+
       try {
-        console.log('🌐 Progressive loading: Fetching graph in batches...')
+        if (isFirstTime) {
+          // FIRST-TIME USERS: Progressive loading with batches
+          console.log('🎬 MCP FETCH - First-time user: Progressive loading in batches...')
 
-        await lawGraphRAGService.fetchFullGraphProgressive(
-          (graphData, progress) => {
-            // Callback fired after each batch (5, 10, 15, 20... 50 communes)
-            setCurrentProcessingPhase(`🌐 Chargement ${progress.current}/${progress.total} communes...`)
-            setCurrentCommuneCount(progress.current)
+          await lawGraphRAGService.fetchFullGraphProgressive(
+            (graphData, progress) => {
+              // Callback fired after each batch (5, 10, 15, 20... 50 communes)
+              setCurrentProcessingPhase(`🌐 Chargement ${progress.current}/${progress.total} communes...`)
+              setCurrentCommuneCount(progress.current)
 
-            console.log(`✅ Batch ${progress.current}/${progress.total}: ${graphData.nodes.length} nodes`)
+              console.log(`✅ Batch ${progress.current}/${progress.total}: ${graphData.nodes.length} nodes`)
 
-            // Transform to reconciliation data format
+              // Transform to reconciliation data format
+              const enrichedData: ReconciliationGraphData = {
+                nodes: graphData.nodes.map(node => ({
+                  id: node.id,
+                  labels: node.labels,
+                  properties: node.properties as Record<string, any>,
+                  degree: node.degree ?? 1,
+                  centrality_score: node.centrality_score ?? 0.5
+                })),
+                relationships: graphData.relationships
+              }
+
+              // Update graph smoothly with new batch (replaces previous - cumulative)
+              baseGraphDataRef.current = enrichedData
+              setReconciliationData(enrichedData)
+              setProcessingStats({
+                nodes: enrichedData.nodes.length,
+                communities: 0,
+                neo4jRelationships: enrichedData.relationships.length
+              })
+            },
+            5,  // Batch size: 5 communes at a time (10 batches total)
+            50  // Total: 50 communes
+          )
+
+          console.log('📊 Progressive loading complete!')
+        } else {
+          // RETURNING USERS: Instant full graph loading
+          console.log('⚡ MCP FETCH - Returning user: Loading full graph instantly...')
+
+          const graphData = await lawGraphRAGService.fetchFullGraph()
+
+          if (graphData && graphData.nodes.length > 0) {
+            setCurrentCommuneCount(50)
+
             const enrichedData: ReconciliationGraphData = {
               nodes: graphData.nodes.map(node => ({
                 id: node.id,
@@ -566,7 +647,6 @@ function BorgesLibrary() {
               relationships: graphData.relationships
             }
 
-            // Update graph smoothly with new batch (replaces previous - cumulative)
             baseGraphDataRef.current = enrichedData
             setReconciliationData(enrichedData)
             setProcessingStats({
@@ -574,24 +654,23 @@ function BorgesLibrary() {
               communities: 0,
               neo4jRelationships: enrichedData.relationships.length
             })
-          },
-          5,  // Batch size: 5 communes at a time (10 batches total)
-          50  // Total: 50 communes
-        )
 
-        console.log('📊 Progressive loading complete!')
+            console.log(`⚡ Instant load complete: ${graphData.nodes.length} nodes`)
+          }
+        }
       } catch (error) {
-        console.warn('⚠️ Progressive MCP fetch failed (GraphML still displayed):', error)
+        console.warn('⚠️ MCP fetch failed (GraphML still displayed):', error)
         // Don't show error - GraphML is still displayed
       } finally {
         setCurrentProcessingPhase(null)
+        setShowLoadingOverlay(false)
       }
     }
 
     // Delay slightly to ensure GraphML renders first
     const timer = setTimeout(fetchFullMCPGraph, 500)
     return () => clearTimeout(timer)
-  }, [graphMLDocument, isGraphMLLoading])
+  }, [graphMLDocument, isGraphMLLoading, isClientMounted])
 
   // Handler for tutorial completion
   const handleTutorialComplete = () => {
@@ -946,6 +1025,15 @@ function BorgesLibrary() {
       setCurrentProcessingPhase(null)
     }
   }, [mode, selectedCommunes, availableCommunes])
+
+  // Debug logging for tutorial state at each render
+  console.log('🖼️ RENDER - Tutorial state:', {
+    showTutorial,
+    showLoadingOverlay,
+    isLoadingGraph,
+    isClientMounted,
+    isFirstTimeUser: isFirstTimeUserRef.current
+  })
 
   return (
     <div className="min-h-screen bg-datack-black text-datack-light">
