@@ -260,9 +260,29 @@ export default function GraphVisualization3DForce({
     if (node.properties?.entity_type) {
       return getEntityTypeColor(node.properties.entity_type.toString())
     }
-    // Fall back to existing logic for GraphML compatibility
-    const entityType = getEntityType(node)
-    return typeColors[entityType] || typeColors.default
+
+    // Check for commune (Constitution Principle II)
+    if (isCommune(node)) {
+      return getEntityTypeColor('COMMUNE')
+    }
+
+    // Check for community
+    if (node.labels?.includes('Community')) {
+      return getEntityTypeColor('COMMUNITY')
+    }
+
+    // Try to extract entity type from labels and convert to English
+    if (node.labels && node.labels.length > 1) {
+      const secondLabel = node.labels[1]
+      // Try direct lookup first
+      const color = getEntityTypeColor(secondLabel)
+      if (color !== getEntityTypeColor('CIVIC_ENTITY')) {
+        return color
+      }
+    }
+
+    // Fallback: Use CIVIC_ENTITY default color
+    return getEntityTypeColor('CIVIC_ENTITY')
   }
 
   // Handle source navigation to open TextChunkModal
@@ -847,7 +867,7 @@ export default function GraphVisualization3DForce({
                   return '#ff9800' // Orange for processed entities
                 }
 
-                return node.color || typeColors[node.group] || typeColors.default
+                return node.color || getEntityTypeColor(node.group) || getEntityTypeColor('CIVIC_ENTITY')
               })
             }
 
@@ -909,7 +929,7 @@ export default function GraphVisualization3DForce({
         if (highlightedNodeIds.includes(node.id)) {
           return '#ffeb3b' // Yellow for highlighted nodes
         }
-        return node.color || typeColors[node.group] || typeColors.default
+        return node.color || getEntityTypeColor(node.group) || getEntityTypeColor('CIVIC_ENTITY')
       })
 
   }, [searchPath])
