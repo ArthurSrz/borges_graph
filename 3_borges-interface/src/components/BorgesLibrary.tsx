@@ -512,11 +512,15 @@ function BorgesLibrary() {
 
       console.log(`✅ Graph loaded: ${graphData.nodes.length} nodes, ${graphData.relationships.length} relationships`)
 
-      setIsLoadingGraph(false)
-      setShowLoadingOverlay(false)
+      // Don't hide loading state if tutorial is still showing (first-time users)
+      // This prevents the tutorial from disappearing when GraphML loads quickly
+      if (!showTutorial) {
+        setIsLoadingGraph(false)
+        setShowLoadingOverlay(false)
+      }
       setCurrentProcessingPhase(null)
     }
-  }, [graphMLDocument])
+  }, [graphMLDocument, showTutorial])
 
   // Handle GraphML loading errors
   useEffect(() => {
@@ -590,10 +594,9 @@ function BorgesLibrary() {
   // Handler for tutorial completion
   const handleTutorialComplete = () => {
     setShowTutorial(false)
-    // If graph is still loading, show the hexagon loading animation
-    if (isLoadingGraph) {
-      setShowLoadingOverlay(true)
-    }
+    // Graph is now ready (GraphML loaded during tutorial)
+    setIsLoadingGraph(false)
+    setShowLoadingOverlay(false)
   }
 
 
