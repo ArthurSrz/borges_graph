@@ -980,7 +980,9 @@ export default function GraphVisualization3DForce({
               <div className="mb-4">
                 <div className="text-datack-muted text-xs font-medium mb-2 sticky top-0 bg-datack-dark py-1">Types d'entités Grand Débat</div>
                 <div className="space-y-1">
-                  {GRAND_DEBAT_ONTOLOGY_TYPES.map((type) => (
+                  {[...GRAND_DEBAT_ONTOLOGY_TYPES]
+                    .sort((a, b) => ENTITY_TYPE_LABELS[a].localeCompare(ENTITY_TYPE_LABELS[b]))
+                    .map((type) => (
                     <div key={type} className="flex items-center gap-2 text-xs">
                       <div
                         className="w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -1028,7 +1030,9 @@ export default function GraphVisualization3DForce({
                 <div>
                   <div className="text-datack-muted text-xs font-medium mb-1">Types Grand Débat</div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    {GRAND_DEBAT_ONTOLOGY_TYPES.map((type) => (
+                    {[...GRAND_DEBAT_ONTOLOGY_TYPES]
+                      .sort((a, b) => ENTITY_TYPE_LABELS[a].localeCompare(ENTITY_TYPE_LABELS[b]))
+                      .map((type) => (
                       <div key={type} className="flex items-center gap-2">
                         <div
                           className="w-2 h-2 rounded-full flex-shrink-0"
@@ -1059,7 +1063,10 @@ export default function GraphVisualization3DForce({
                 <div className="flex items-center gap-1.5">
                   <span className="text-datack-light text-xs font-medium whitespace-nowrap">Légende</span>
                   <div className="flex flex-wrap gap-1">
-                    {GRAND_DEBAT_ONTOLOGY_TYPES.slice(0, 6).map((type) => (
+                    {[...GRAND_DEBAT_ONTOLOGY_TYPES]
+                      .sort((a, b) => ENTITY_TYPE_LABELS[a].localeCompare(ENTITY_TYPE_LABELS[b]))
+                      .slice(0, 6)
+                      .map((type) => (
                       <div
                         key={type}
                         className="w-2.5 h-2.5 rounded-full"
