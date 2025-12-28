@@ -909,14 +909,28 @@ export default function GraphVisualization3DForce({
       }
 
       console.log('✅ GraphRAG animation completed')
+
+      // Fix #3: Reapply searchPath highlighting after animation completes
+      // Animation modifies node colors, so we need to restore highlighting
+      if (searchPath?.entities && graphRef.current) {
+        const highlightedIds = searchPath.entities.map((e: any) => e.id)
+        graphRef.current.nodeColor((node: any) => {
+          if (highlightedIds.includes(node.id)) {
+            return '#ffeb3b'  // Yellow highlight for query results
+          }
+          return node.color || getEntityTypeColor(node.group) || getEntityTypeColor('CIVIC_ENTITY')
+        })
+        console.log(`🎯 Reapplied highlighting to ${highlightedIds.length} nodes after animation`)
+      }
     }
 
     animatePhases()
-  }, [debugInfo])
+  }, [debugInfo, searchPath])
 
-  // Handle search path highlighting (fallback for non-GraphRAG searches)
+  // Handle search path highlighting for query results
+  // Fix #2: Removed debugInfo guard - highlighting should work alongside animations
   useEffect(() => {
-    if (!searchPath || !graphRef.current || debugInfo) return
+    if (!searchPath || !graphRef.current) return
 
     console.log('🎯 Highlighting search path in 3D graph')
 

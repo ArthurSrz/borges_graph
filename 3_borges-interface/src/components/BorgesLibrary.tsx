@@ -868,6 +868,21 @@ function BorgesLibrary() {
             console.log(`🌈 Civic entities enriched: ${enrichedEntities.length}`)
             setColoredEntities(enrichedEntities)
           }
+
+          // Fix #1: Create searchPath for MCP query result highlighting
+          // Previously missing - searchPath was only set in fallback branch
+          setSearchPath({
+            entities: normalizedNodes.map(n => ({
+              id: n.id,
+              name: n.properties?.name || n.id
+            })),
+            relations: graphData.relationships.map(r => ({
+              source: r.source,
+              target: r.target,
+              type: r.type
+            }))
+          })
+          console.log(`🎯 SearchPath created for ${normalizedNodes.length} MCP entities`)
         } else if (baseGraph && baseGraph.nodes.length > 0) {
           // MCP returned no graph data - build subgraph from base GraphML based on query
           console.log('📊 Building subgraph from base GraphML for query:', query)
