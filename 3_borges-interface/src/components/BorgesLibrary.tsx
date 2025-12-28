@@ -1320,7 +1320,7 @@ function BorgesLibrary() {
                   </div>
                   {/* Processing text below hexagon */}
                   <div className="text-center mt-2 text-blue-400 text-sm font-medium animate-pulse">
-                    Exploration en cours...
+                    Nous consultons les contributions des citoyens
                   </div>
                 </div>
               )}
