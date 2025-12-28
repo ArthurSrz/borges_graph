@@ -1241,85 +1241,131 @@ function BorgesLibrary() {
               {/* Only shows during query processing, NOT during initial graph loading */}
               {isProcessing && !isLoadingGraph && (
                 <div className="absolute top-8 left-1/2 -translate-x-1/2 z-[60] pointer-events-none">
-                  {/* Hexagon Assembly Animation - LARGER and MORE VISIBLE with blue glow */}
-                  <div className="relative w-40 h-40">
+                  {/* Civic Contributions Animation - Documents flowing into civic assembly */}
+                  <div className="relative w-48 h-48">
                     <svg viewBox="0 0 200 200" className="w-full h-full">
                       <style>{`
-                        @keyframes hexBlueWhite1 {
-                          0%, 100% { stroke: #3b82f6; opacity: 0.6; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4)); }
-                          50% { stroke: #ffffff; opacity: 1; filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 35px rgba(59, 130, 246, 0.8)); }
+                        @keyframes docFloat1 {
+                          0% { transform: translate(-60px, -40px) rotate(-15deg); opacity: 0; }
+                          50% { opacity: 0.8; }
+                          100% { transform: translate(0, 0) rotate(0deg); opacity: 0.9; }
                         }
-                        @keyframes hexBlueWhite2 {
-                          0%, 100% { stroke: #3b82f6; opacity: 0.4; }
-                          50% { stroke: #ffffff; opacity: 0.9; }
+                        @keyframes docFloat2 {
+                          0% { transform: translate(60px, -40px) rotate(15deg); opacity: 0; }
+                          50% { opacity: 0.7; }
+                          100% { transform: translate(0, 0) rotate(0deg); opacity: 0.85; }
                         }
-                        @keyframes hexBlueWhite3 {
-                          0%, 100% { stroke: #3b82f6; opacity: 0.3; }
-                          50% { stroke: #ffffff; opacity: 0.85; }
+                        @keyframes docFloat3 {
+                          0% { transform: translate(-50px, 40px) rotate(-10deg); opacity: 0; }
+                          50% { opacity: 0.6; }
+                          100% { transform: translate(0, 0) rotate(0deg); opacity: 0.8; }
                         }
-                        @keyframes shelfBlueWhite {
-                          0%, 100% { stroke: #3b82f6; opacity: 0.3; }
-                          50% { stroke: #ffffff; opacity: 1; }
+                        @keyframes docFloat4 {
+                          0% { transform: translate(50px, 40px) rotate(10deg); opacity: 0; }
+                          50% { opacity: 0.5; }
+                          100% { transform: translate(0, 0) rotate(0deg); opacity: 0.75; }
                         }
-                        @keyframes rotateHex { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                        .proc-hex-main { animation: hexBlueWhite1 1.5s ease-in-out infinite; }
-                        .proc-hex-top { animation: hexBlueWhite2 1.5s ease-in-out 0.1s infinite; }
-                        .proc-hex-bl { animation: hexBlueWhite3 1.5s ease-in-out 0.2s infinite; }
-                        .proc-hex-br { animation: hexBlueWhite3 1.5s ease-in-out 0.3s infinite; }
-                        .proc-shelf { animation: shelfBlueWhite 1s ease-in-out infinite; }
-                        .proc-rotate { animation: rotateHex 8s linear infinite; transform-origin: center; }
+                        @keyframes civicPulse {
+                          0%, 100% {
+                            fill: #dbff3b;
+                            filter: drop-shadow(0 0 8px rgba(219, 255, 59, 0.6));
+                          }
+                          50% {
+                            fill: #ffffff;
+                            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 30px rgba(219, 255, 59, 0.8));
+                          }
+                        }
+                        @keyframes gatherRing {
+                          0% { stroke-dashoffset: 0; opacity: 0.6; }
+                          100% { stroke-dashoffset: -440; opacity: 0.3; }
+                        }
+                        .doc-1 { animation: docFloat1 2s ease-in-out infinite; }
+                        .doc-2 { animation: docFloat2 2s ease-in-out 0.3s infinite; }
+                        .doc-3 { animation: docFloat3 2s ease-in-out 0.6s infinite; }
+                        .doc-4 { animation: docFloat4 2s ease-in-out 0.9s infinite; }
+                        .civic-center { animation: civicPulse 2s ease-in-out infinite; }
+                        .gather-ring { animation: gatherRing 3s linear infinite; }
                       `}</style>
 
-                      {/* Rotating outer ring */}
-                      <g className="proc-rotate">
-                        <circle cx="100" cy="75" r="70" stroke="#3b82f6" strokeWidth="1" fill="none" opacity="0.3" strokeDasharray="8 4" />
+                      {/* Gathering ring - shows documents converging */}
+                      <circle
+                        className="gather-ring"
+                        cx="100"
+                        cy="100"
+                        r="70"
+                        stroke="#dbff3b"
+                        strokeWidth="2"
+                        fill="none"
+                        strokeDasharray="10 5"
+                      />
+
+                      {/* Floating contribution documents (cahiers) - coming from 4 directions */}
+                      {/* Top-left document */}
+                      <g className="doc-1">
+                        <rect x="85" y="85" width="14" height="18" rx="1" fill="none" stroke="#60a5fa" strokeWidth="1.5" />
+                        <line x1="88" y1="89" x2="96" y2="89" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <line x1="88" y1="92" x2="96" y2="92" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <line x1="88" y1="95" x2="94" y2="95" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
                       </g>
 
-                      {/* Central hexagon - LARGER stroke */}
-                      <polygon
-                        className="proc-hex-main"
-                        points="100,35 135,55 135,95 100,115 65,95 65,55"
-                        stroke="#3b82f6"
-                        strokeWidth="3"
-                        fill="rgba(59, 130, 246, 0.1)"
-                      />
+                      {/* Top-right document */}
+                      <g className="doc-2">
+                        <rect x="101" y="85" width="14" height="18" rx="1" fill="none" stroke="#60a5fa" strokeWidth="1.5" />
+                        <line x1="104" y1="89" x2="112" y2="89" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <line x1="104" y1="92" x2="112" y2="92" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <line x1="104" y1="95" x2="110" y2="95" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                      </g>
 
-                      {/* Book shelves inside - brighter */}
-                      <line className="proc-shelf" x1="75" y1="60" x2="125" y2="60" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0s' }} />
-                      <line className="proc-shelf" x1="78" y1="72" x2="122" y2="72" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0.15s' }} />
-                      <line className="proc-shelf" x1="80" y1="84" x2="120" y2="84" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0.3s' }} />
-                      <line className="proc-shelf" x1="83" y1="96" x2="117" y2="96" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0.45s' }} />
+                      {/* Bottom-left document */}
+                      <g className="doc-3">
+                        <rect x="85" y="105" width="14" height="18" rx="1" fill="none" stroke="#60a5fa" strokeWidth="1.5" />
+                        <line x1="88" y1="109" x2="96" y2="109" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <line x1="88" y1="112" x2="96" y2="112" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <line x1="88" y1="115" x2="94" y2="115" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                      </g>
 
-                      {/* Top hexagon */}
-                      <polygon
-                        className="proc-hex-top"
-                        points="100,10 125,24 125,52 100,66 75,52 75,24"
-                        stroke="#60a5fa"
-                        strokeWidth="2"
-                        fill="none"
-                      />
+                      {/* Bottom-right document */}
+                      <g className="doc-4">
+                        <rect x="101" y="105" width="14" height="18" rx="1" fill="none" stroke="#60a5fa" strokeWidth="1.5" />
+                        <line x1="104" y1="109" x2="112" y2="109" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <line x1="104" y1="112" x2="112" y2="112" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <line x1="104" y1="115" x2="110" y2="115" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                      </g>
 
-                      {/* Bottom left hexagon */}
-                      <polygon
-                        className="proc-hex-bl"
-                        points="65,95 90,109 90,137 65,151 40,137 40,109"
-                        stroke="#60a5fa"
-                        strokeWidth="2"
-                        fill="none"
-                      />
+                      {/* Central civic assembly icon (simplified town hall/mairie) */}
+                      <g>
+                        {/* Building base */}
+                        <rect x="85" y="95" width="30" height="25" rx="2" fill="none" stroke="#dbff3b" strokeWidth="2" opacity="0.8" />
 
-                      {/* Bottom right hexagon */}
-                      <polygon
-                        className="proc-hex-br"
-                        points="135,95 160,109 160,137 135,151 110,137 110,109"
-                        stroke="#60a5fa"
-                        strokeWidth="2"
-                        fill="none"
-                      />
+                        {/* Columns */}
+                        <line x1="90" y1="95" x2="90" y2="120" stroke="#dbff3b" strokeWidth="1.5" opacity="0.6" />
+                        <line x1="100" y1="95" x2="100" y2="120" stroke="#dbff3b" strokeWidth="1.5" opacity="0.6" />
+                        <line x1="110" y1="95" x2="110" y2="120" stroke="#dbff3b" strokeWidth="1.5" opacity="0.6" />
+
+                        {/* Pediment (triangular roof) */}
+                        <path d="M 80 95 L 100 85 L 120 95 Z" fill="none" stroke="#dbff3b" strokeWidth="2" />
+
+                        {/* Central pulsing dot (represents active consultation) */}
+                        <circle className="civic-center" cx="100" cy="107" r="3" />
+                      </g>
+
+                      {/* Citizen voices/contributions indicators (small dots gathering) */}
+                      <circle cx="75" cy="100" r="1.5" fill="#60a5fa" opacity="0.5">
+                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite" />
+                      </circle>
+                      <circle cx="125" cy="100" r="1.5" fill="#60a5fa" opacity="0.5">
+                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" begin="0.5s" repeatCount="indefinite" />
+                      </circle>
+                      <circle cx="100" cy="80" r="1.5" fill="#60a5fa" opacity="0.5">
+                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" begin="1s" repeatCount="indefinite" />
+                      </circle>
+                      <circle cx="100" cy="130" r="1.5" fill="#60a5fa" opacity="0.5">
+                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" begin="1.5s" repeatCount="indefinite" />
+                      </circle>
                     </svg>
                   </div>
-                  {/* Processing text below hexagon */}
-                  <div className="text-center mt-2 text-blue-400 text-sm font-medium animate-pulse">
+                  {/* Processing text below animation */}
+                  <div className="text-center mt-2 text-[#dbff3b] text-sm font-medium animate-pulse">
                     Nous consultons les contributions des citoyens
                   </div>
                 </div>
