@@ -171,8 +171,19 @@ function BorgesLibrary() {
   }
   const [reconciliationData, setReconciliationData] = useState<ReconciliationGraphData | null>(null)
   const [isLoadingGraph, setIsLoadingGraph] = useState(true) // Start as true to show loading
-  const [showTutorial, setShowTutorial] = useState(false)
-  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false) // For returning users
+  // Initialize tutorial state synchronously from localStorage to avoid race conditions
+  const [showTutorial, setShowTutorial] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !localStorage.getItem('borges-tutorial-seen')
+    }
+    return false
+  })
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('borges-tutorial-seen')
+    }
+    return false
+  })
   const [loadingProgress, setLoadingProgress] = useState<{ step: string; current: number; total: number } | null>(null)
   const [visibleNodeIds, setVisibleNodeIds] = useState<string[]>([])
   const [searchPath, setSearchPath] = useState<any>(null)
@@ -463,16 +474,7 @@ function BorgesLibrary() {
     }
   })
 
-  // Check localStorage for tutorial skip on mount
-  useEffect(() => {
-    const tutorialSeen = localStorage.getItem('borges-tutorial-seen')
-    if (!tutorialSeen) {
-      setShowTutorial(true)
-    } else {
-      // For returning users, show loading overlay while data loads
-      setShowLoadingOverlay(true)
-    }
-  }, [])
+  // Tutorial state now initialized synchronously above to avoid race conditions
 
   // Transform GraphML data to reconciliation format when loaded
   useEffect(() => {
