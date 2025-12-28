@@ -178,11 +178,15 @@ class LawGraphRAGService {
     }
 
     // Single-pass node transformation with degree calculation
+    // FIX: Use entity.name as node ID to match relationship source/target identifiers
+    // MCP relationships use entity names (e.g., "IMPÔTS") not entity IDs
     const nodes = new Array(entities.length)
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i]
+      // Use name as ID since relationships reference entities by name
+      const nodeId = entity.name || entity.id
       nodes[i] = {
-        id: entity.id,
+        id: nodeId,
         labels: [entity.type],
         properties: {
           name: entity.name,
@@ -191,7 +195,7 @@ class LawGraphRAGService {
           entity_type: entity.type,
           importance_score: entity.importance_score || 0.5,
         },
-        degree: degreeMap.get(entity.id) || 1,
+        degree: degreeMap.get(nodeId) || 1,
         centrality_score: entity.importance_score || 0.5, // Use importance_score for sizing
       }
     }
