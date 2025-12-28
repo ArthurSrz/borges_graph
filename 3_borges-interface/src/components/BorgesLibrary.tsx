@@ -1268,16 +1268,16 @@ function BorgesLibrary() {
                         @keyframes civicPulse {
                           0%, 100% {
                             fill: #dbff3b;
-                            filter: drop-shadow(0 0 8px rgba(219, 255, 59, 0.6));
+                            filter: drop-shadow(0 0 6px rgba(219, 255, 59, 0.4));
                           }
                           50% {
-                            fill: #ffffff;
-                            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 30px rgba(219, 255, 59, 0.8));
+                            fill: #dbff3b;
+                            filter: drop-shadow(0 0 12px rgba(219, 255, 59, 0.6));
                           }
                         }
                         @keyframes gatherRing {
-                          0% { stroke-dashoffset: 0; opacity: 0.6; }
-                          100% { stroke-dashoffset: -440; opacity: 0.3; }
+                          0% { stroke-dashoffset: 0; opacity: 0.3; }
+                          100% { stroke-dashoffset: -440; opacity: 0.15; }
                         }
                         .doc-1 { animation: docFloat1 2s ease-in-out infinite; }
                         .doc-2 { animation: docFloat2 2s ease-in-out 0.3s infinite; }
@@ -1294,7 +1294,7 @@ function BorgesLibrary() {
                         cy="100"
                         r="70"
                         stroke="#dbff3b"
-                        strokeWidth="2"
+                        strokeWidth="1.5"
                         fill="none"
                         strokeDasharray="10 5"
                       />
@@ -1302,65 +1302,65 @@ function BorgesLibrary() {
                       {/* Floating contribution documents (cahiers) - coming from 4 directions */}
                       {/* Top-left document */}
                       <g className="doc-1">
-                        <rect x="85" y="85" width="14" height="18" rx="1" fill="none" stroke="#60a5fa" strokeWidth="1.5" />
-                        <line x1="88" y1="89" x2="96" y2="89" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
-                        <line x1="88" y1="92" x2="96" y2="92" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
-                        <line x1="88" y1="95" x2="94" y2="95" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <rect x="85" y="85" width="14" height="18" rx="1" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.2" opacity="0.9" />
+                        <line x1="88" y1="89" x2="96" y2="89" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="88" y1="92" x2="96" y2="92" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="88" y1="95" x2="94" y2="95" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
                       </g>
 
                       {/* Top-right document */}
                       <g className="doc-2">
-                        <rect x="101" y="85" width="14" height="18" rx="1" fill="none" stroke="#60a5fa" strokeWidth="1.5" />
-                        <line x1="104" y1="89" x2="112" y2="89" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
-                        <line x1="104" y1="92" x2="112" y2="92" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
-                        <line x1="104" y1="95" x2="110" y2="95" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <rect x="101" y="85" width="14" height="18" rx="1" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.2" opacity="0.85" />
+                        <line x1="104" y1="89" x2="112" y2="89" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="104" y1="92" x2="112" y2="92" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="104" y1="95" x2="110" y2="95" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
                       </g>
 
                       {/* Bottom-left document */}
                       <g className="doc-3">
-                        <rect x="85" y="105" width="14" height="18" rx="1" fill="none" stroke="#60a5fa" strokeWidth="1.5" />
-                        <line x1="88" y1="109" x2="96" y2="109" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
-                        <line x1="88" y1="112" x2="96" y2="112" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
-                        <line x1="88" y1="115" x2="94" y2="115" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <rect x="85" y="105" width="14" height="18" rx="1" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.2" opacity="0.8" />
+                        <line x1="88" y1="109" x2="96" y2="109" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="88" y1="112" x2="96" y2="112" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="88" y1="115" x2="94" y2="115" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
                       </g>
 
                       {/* Bottom-right document */}
                       <g className="doc-4">
-                        <rect x="101" y="105" width="14" height="18" rx="1" fill="none" stroke="#60a5fa" strokeWidth="1.5" />
-                        <line x1="104" y1="109" x2="112" y2="109" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
-                        <line x1="104" y1="112" x2="112" y2="112" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
-                        <line x1="104" y1="115" x2="110" y2="115" stroke="#60a5fa" strokeWidth="0.8" opacity="0.6" />
+                        <rect x="101" y="105" width="14" height="18" rx="1" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.2" opacity="0.75" />
+                        <line x1="104" y1="109" x2="112" y2="109" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="104" y1="112" x2="112" y2="112" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="104" y1="115" x2="110" y2="115" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
                       </g>
 
                       {/* Central civic assembly icon (simplified town hall/mairie) */}
                       <g>
                         {/* Building base */}
-                        <rect x="85" y="95" width="30" height="25" rx="2" fill="none" stroke="#dbff3b" strokeWidth="2" opacity="0.8" />
+                        <rect x="85" y="95" width="30" height="25" rx="2" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.8" opacity="0.9" />
 
                         {/* Columns */}
-                        <line x1="90" y1="95" x2="90" y2="120" stroke="#dbff3b" strokeWidth="1.5" opacity="0.6" />
-                        <line x1="100" y1="95" x2="100" y2="120" stroke="#dbff3b" strokeWidth="1.5" opacity="0.6" />
-                        <line x1="110" y1="95" x2="110" y2="120" stroke="#dbff3b" strokeWidth="1.5" opacity="0.6" />
+                        <line x1="90" y1="95" x2="90" y2="120" stroke="#dbff3b" strokeWidth="1.2" opacity="0.5" />
+                        <line x1="100" y1="95" x2="100" y2="120" stroke="#dbff3b" strokeWidth="1.2" opacity="0.5" />
+                        <line x1="110" y1="95" x2="110" y2="120" stroke="#dbff3b" strokeWidth="1.2" opacity="0.5" />
 
                         {/* Pediment (triangular roof) */}
-                        <path d="M 80 95 L 100 85 L 120 95 Z" fill="none" stroke="#dbff3b" strokeWidth="2" />
+                        <path d="M 80 95 L 100 85 L 120 95 Z" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.8" opacity="0.9" />
 
                         {/* Central pulsing dot (represents active consultation) */}
                         <circle className="civic-center" cx="100" cy="107" r="3" />
                       </g>
 
                       {/* Citizen voices/contributions indicators (small dots gathering) */}
-                      <circle cx="75" cy="100" r="1.5" fill="#60a5fa" opacity="0.5">
-                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite" />
+                      <circle cx="75" cy="100" r="1.5" fill="#dbff3b" opacity="0.4">
+                        <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" repeatCount="indefinite" />
                       </circle>
-                      <circle cx="125" cy="100" r="1.5" fill="#60a5fa" opacity="0.5">
-                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" begin="0.5s" repeatCount="indefinite" />
+                      <circle cx="125" cy="100" r="1.5" fill="#dbff3b" opacity="0.4">
+                        <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" begin="0.5s" repeatCount="indefinite" />
                       </circle>
-                      <circle cx="100" cy="80" r="1.5" fill="#60a5fa" opacity="0.5">
-                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" begin="1s" repeatCount="indefinite" />
+                      <circle cx="100" cy="80" r="1.5" fill="#dbff3b" opacity="0.4">
+                        <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" begin="1s" repeatCount="indefinite" />
                       </circle>
-                      <circle cx="100" cy="130" r="1.5" fill="#60a5fa" opacity="0.5">
-                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" begin="1.5s" repeatCount="indefinite" />
+                      <circle cx="100" cy="130" r="1.5" fill="#dbff3b" opacity="0.4">
+                        <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" begin="1.5s" repeatCount="indefinite" />
                       </circle>
                     </svg>
                   </div>
