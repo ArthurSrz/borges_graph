@@ -702,12 +702,12 @@ export default function GraphVisualization3DForce({
         // Constitution Principle II: Communes are the "core" entities and should be bigger
         const isCommuneNode = isCommune(node)
 
-        // Exponential node sizing for maximum contrast based on degree (in/out relationships)
-        // High-degree hubs dominate visually, low-degree nodes stay small but visible
-        // degree 1 → 3, degree 5 → 5, degree 10 → 8, degree 30 → 15, degree 100 → 34
+        // Node sizing based on actual degree distribution (max ~1000, median 1, P99 = 34)
+        // Using sqrt scale to handle wide range while maintaining visual contrast
+        // degree 1 → 3, degree 10 → 5, degree 50 → 9, degree 200 → 16, degree 1000 → 34
         const degree = Math.max(1, node.degree || 1)
-        const baseSize = 2 + Math.pow(degree, 0.75)
-        const communeMultiplier = isCommuneNode ? 2 : 1  // Communes are larger (central civic entities)
+        const baseSize = 2 + Math.sqrt(degree) * 1.0
+        const communeMultiplier = isCommuneNode ? 1.5 : 1  // Communes slightly larger
 
         // Get entity type for proper color matching with legend
         const entityType = getEntityType(node)
