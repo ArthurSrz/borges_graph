@@ -780,9 +780,9 @@ function BorgesLibrary() {
       console.log('🏛️ Querying Grand Débat National MCP API')
       setCurrentProcessingPhase('🏛️ Analyzing citizen contributions...')
 
-      // Create timeout promise (30 seconds)
+      // Create timeout promise (45 seconds)
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('TIMEOUT')), 30000)
+        setTimeout(() => reject(new Error('TIMEOUT')), 45000)
       })
 
       // Build query params with optional commune filtering
@@ -871,9 +871,10 @@ function BorgesLibrary() {
 
           // Fix #1: Create searchPath for MCP query result highlighting
           // Previously missing - searchPath was only set in fallback branch
+          // Fix #2: Use name as ID to match GraphVisualization3DForce node ID format
           setSearchPath({
             entities: normalizedNodes.map(n => ({
-              id: n.id,
+              id: n.properties?.name || n.id,
               name: n.properties?.name || n.id
             })),
             relations: graphData.relationships.map(r => ({
@@ -1018,7 +1019,7 @@ function BorgesLibrary() {
 
       const errorDetail = error instanceof Error ? error.message : 'Unknown error'
       if (errorDetail === 'TIMEOUT') {
-        errorMessage = 'La requête a dépassé le délai maximum de 30 secondes. Le serveur MCP ne répond pas.'
+        errorMessage = 'La requête a dépassé le délai maximum de 45 secondes. Le serveur MCP ne répond pas.'
       } else if (errorDetail.includes('fetch') || errorDetail.includes('network') || errorDetail.includes('ECONNREFUSED')) {
         errorMessage = 'Impossible de se connecter au service Grand Débat National. Vérifiez que le serveur MCP est accessible.'
       } else if (errorDetail.includes('timeout') || errorDetail.includes('ETIMEDOUT')) {
