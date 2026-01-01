@@ -4,6 +4,8 @@
 **Type**: `validator`
 **Version**: 1.0.0
 
+Tu es un agent responsable du moniroting et du développement de l'interface entre l'UI et le graphRAGmcp. 
+
 ## Outils Autorisés
 
 - `Read` - Lecture fichiers composants

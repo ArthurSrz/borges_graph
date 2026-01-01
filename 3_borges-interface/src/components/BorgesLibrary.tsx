@@ -205,12 +205,15 @@ function BorgesLibrary() {
   const [visibleNodeIds, setVisibleNodeIds] = useState<string[]>([])
   const [searchPath, setSearchPath] = useState<any>(null)
   const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [provenanceGraphData, setProvenanceGraphData] = useState<ReconciliationGraphData | null>(null)  // MCP subgraph for progressive display
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentProcessingPhase, setCurrentProcessingPhase] = useState<string | null>(null)
   const [currentQuery, setCurrentQuery] = useState<string>('')
   const [queryAnswer, setQueryAnswer] = useState<string>('')
   const [showAnswer, setShowAnswer] = useState(false)
   const [answerPanelHeight, setAnswerPanelHeight] = useState(30) // Default 30vh on mobile
+  const [desktopPanelHeight, setDesktopPanelHeight] = useState(45) // Default 45vh on desktop
+  const [desktopPanelWidth, setDesktopPanelWidth] = useState(420) // Default 420px on desktop
   // Entity coloring state for interpretability
   const [coloredEntities, setColoredEntities] = useState<EntityColorInfo[]>([])
   // Query error handling state
@@ -723,6 +726,7 @@ function BorgesLibrary() {
   const handleClearHighlight = () => {
     console.log('🧹 Clearing highlights in BorgesLibrary')
     setSearchPath(null)
+    setProvenanceGraphData(null)  // Restore full graph
   }
 
   const handleProcessingStart = () => {
@@ -764,6 +768,7 @@ function BorgesLibrary() {
     setQueryAnswer('')
     setShowAnswer(false)
     setSearchPath(null)
+    setProvenanceGraphData(null)  // Clear previous provenance subgraph
     setDebugInfo(null)
     setQueryError(null)
     setShowErrorAlert(false)
@@ -780,9 +785,17 @@ function BorgesLibrary() {
       console.log('🏛️ Querying Grand Débat National MCP API')
       setCurrentProcessingPhase('🏛️ Analyzing citizen contributions...')
 
-      // Create timeout promise (45 seconds)
+      // Show extended wait message after 30 seconds
+      const extendedWaitTimer = setTimeout(() => {
+        setCurrentProcessingPhase('🏛️ Beaucoup de citoyens se sont exprimés sur cette question... merci de patienter')
+      }, 30000)
+
+      // Create timeout promise (60 seconds)
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('TIMEOUT')), 45000)
+        setTimeout(() => {
+          clearTimeout(extendedWaitTimer)
+          reject(new Error('TIMEOUT'))
+        }, 60000)
       })
 
       // Build query params with optional commune filtering
@@ -803,6 +816,9 @@ function BorgesLibrary() {
         lawGraphRAGService.query(queryParams),
         timeoutPromise
       ])
+
+      // Clear the extended wait timer since query completed
+      clearTimeout(extendedWaitTimer)
 
       if (result.success !== false) {
         setCurrentProcessingPhase('✓ Civic analysis complete')
@@ -855,10 +871,14 @@ function BorgesLibrary() {
           const normalizedNodes = normalizeGraphNodes(graphData.nodes)
 
           setQueryResultNodes(normalizedNodes)
-          setReconciliationData({
+
+          // Set provenanceGraphData for progressive display of MCP subgraph
+          // This is the community detection + multi-hop subgraph from GraphRAG
+          setProvenanceGraphData({
             nodes: normalizedNodes,
             relationships: graphData.relationships
           })
+          console.log(`🎯 ProvenanceGraphData set: ${normalizedNodes.length} nodes, ${graphData.relationships.length} relationships`)
 
           // Use memoized entity color mapping - Graph Performance Optimization (006-graph-optimization)
           const entitiesToColor = mapNodesToColorEntities(graphData.nodes)
@@ -869,9 +889,7 @@ function BorgesLibrary() {
             setColoredEntities(enrichedEntities)
           }
 
-          // Fix #1: Create searchPath for MCP query result highlighting
-          // Previously missing - searchPath was only set in fallback branch
-          // Fix #2: Use name as ID to match GraphVisualization3DForce node ID format
+          // Keep searchPath for entity highlighting (used by animation effect)
           setSearchPath({
             entities: normalizedNodes.map(n => ({
               id: n.properties?.name || n.id,
@@ -883,7 +901,6 @@ function BorgesLibrary() {
               type: r.type
             }))
           })
-          console.log(`🎯 SearchPath created for ${normalizedNodes.length} MCP entities`)
         } else if (baseGraph && baseGraph.nodes.length > 0) {
           // MCP returned no graph data - build subgraph from base GraphML based on query
           console.log('📊 Building subgraph from base GraphML for query:', query)
@@ -933,10 +950,12 @@ function BorgesLibrary() {
           })
 
           setQueryResultNodes(subgraphNodes)
-          setReconciliationData({
-            nodes: subgraphNodes,
-            relationships: subgraphRelationships
-          })
+          // Performance fix: Don't replace reconciliationData with subgraph
+          // This avoids rebuilding the entire 3D graph on each query
+          // setReconciliationData({
+          //   nodes: subgraphNodes,
+          //   relationships: subgraphRelationships
+          // })
 
           // Use memoized entity color mapping - Graph Performance Optimization (006-graph-optimization)
           const entitiesToColor = mapNodesToColorEntities(subgraphNodes)
@@ -1042,14 +1061,14 @@ function BorgesLibrary() {
     }
   }, [mode, selectedCommunes, availableCommunes])
 
-  // Debug logging for tutorial state at each render
-  console.log('🖼️ RENDER - Tutorial state:', {
-    showTutorial,
-    showLoadingOverlay,
-    isLoadingGraph,
-    isClientMounted,
-    isFirstTimeUser: isFirstTimeUserRef.current
-  })
+  // Debug logging for tutorial state - DISABLED to fix freeze
+  // console.log('🖼️ RENDER - Tutorial state:', {
+  //   showTutorial,
+  //   showLoadingOverlay,
+  //   isLoadingGraph,
+  //   isClientMounted,
+  //   isFirstTimeUser: isFirstTimeUserRef.current
+  // })
 
   return (
     <div className="min-h-screen bg-datack-black text-datack-light">
@@ -1402,6 +1421,7 @@ function BorgesLibrary() {
                 <GraphVisualization3DForce
                   reconciliationData={reconciliationData}
                   searchPath={searchPath}
+                  provenanceGraphData={provenanceGraphData}
                   debugInfo={debugInfo}
                   onNodeVisibilityChange={setVisibleNodeIds}
                   onNodeClick={handleNodeClick}
@@ -1618,15 +1638,78 @@ function BorgesLibrary() {
         </div>
       )}
 
-      {/* Answer Panel - Datack Branding - Resizable bottom sheet on mobile, side panel on desktop */}
+      {/* Answer Panel - Datack Branding - Resizable on both mobile and desktop */}
       {showAnswer && (
         <div
-          className="datack-panel fixed bottom-0 left-0 right-0 md:bottom-4 md:left-4 md:right-auto w-full md:w-[400px] md:max-h-[45vh] overflow-hidden text-datack-light shadow-datack-lg z-30 rounded-t-2xl md:rounded-datack-md safe-area-bottom flex flex-col"
+          className="datack-panel fixed bottom-0 left-0 right-0 md:bottom-4 md:left-4 md:right-auto w-full overflow-hidden text-datack-light shadow-datack-lg z-30 rounded-t-2xl md:rounded-datack-md safe-area-bottom flex flex-col"
           style={{
-            height: typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : undefined,
-            maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : undefined
+            height: typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : `${desktopPanelHeight}vh`,
+            maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : `${desktopPanelHeight}vh`,
+            width: typeof window !== 'undefined' && window.innerWidth >= 768 ? `${desktopPanelWidth}px` : undefined,
+            minWidth: typeof window !== 'undefined' && window.innerWidth >= 768 ? '320px' : undefined,
+            maxWidth: typeof window !== 'undefined' && window.innerWidth >= 768 ? '800px' : undefined
           }}
         >
+          {/* Desktop horizontal resize handle - on the right edge */}
+          <div
+            className="hidden md:block absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-datack-yellow/20 transition-colors z-10"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              const startX = e.clientX
+              const startWidth = desktopPanelWidth
+
+              const handleMouseMove = (moveEvent: MouseEvent) => {
+                const deltaX = moveEvent.clientX - startX
+                const newWidth = Math.min(800, Math.max(320, startWidth + deltaX))
+                setDesktopPanelWidth(newWidth)
+              }
+
+              const handleMouseUp = () => {
+                document.removeEventListener('mousemove', handleMouseMove)
+                document.removeEventListener('mouseup', handleMouseUp)
+                document.body.style.cursor = ''
+                document.body.style.userSelect = ''
+              }
+
+              document.body.style.cursor = 'ew-resize'
+              document.body.style.userSelect = 'none'
+              document.addEventListener('mousemove', handleMouseMove)
+              document.addEventListener('mouseup', handleMouseUp)
+            }}
+          />
+          {/* Desktop resize handle - at the top */}
+          <div
+            className="hidden md:flex justify-center py-1.5 cursor-ns-resize select-none hover:bg-datack-dark/50 transition-colors group"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              const startY = e.clientY
+              const startHeight = desktopPanelHeight
+              const viewportHeight = window.innerHeight
+
+              const handleMouseMove = (moveEvent: MouseEvent) => {
+                const currentY = moveEvent.clientY
+                const deltaY = startY - currentY
+                const deltaVh = (deltaY / viewportHeight) * 100
+                const newHeight = Math.min(85, Math.max(20, startHeight + deltaVh))
+                setDesktopPanelHeight(newHeight)
+              }
+
+              const handleMouseUp = () => {
+                document.removeEventListener('mousemove', handleMouseMove)
+                document.removeEventListener('mouseup', handleMouseUp)
+                document.body.style.cursor = ''
+                document.body.style.userSelect = ''
+              }
+
+              document.body.style.cursor = 'ns-resize'
+              document.body.style.userSelect = 'none'
+              document.addEventListener('mousemove', handleMouseMove)
+              document.addEventListener('mouseup', handleMouseUp)
+            }}
+          >
+            <div className="w-16 h-1 bg-datack-border rounded-full group-hover:bg-datack-yellow/50 transition-colors"></div>
+          </div>
+
           {/* Mobile drag handle - draggable to resize */}
           <div
             className="md:hidden flex justify-center py-2 cursor-ns-resize touch-none select-none"
@@ -1657,14 +1740,23 @@ function BorgesLibrary() {
           <div className="flex justify-between items-start mb-2 md:mb-3 px-1">
             <h3 className="text-sm md:text-h3 text-datack-light font-medium">Réponse citoyenne</h3>
             <div className="flex items-center gap-1">
-              {/* Mobile expand/collapse button */}
+              {/* Expand/collapse button - visible on both mobile and desktop */}
               <button
-                onClick={() => setAnswerPanelHeight(answerPanelHeight < 40 ? 65 : 20)}
-                className="md:hidden datack-btn-ghost p-1 touch-target flex items-center justify-center"
-                aria-label={answerPanelHeight < 40 ? "Développer" : "Réduire"}
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+                    // Desktop: toggle between 45vh and 75vh
+                    setDesktopPanelHeight(desktopPanelHeight < 60 ? 75 : 45)
+                  } else {
+                    // Mobile: toggle between 20vh and 65vh
+                    setAnswerPanelHeight(answerPanelHeight < 40 ? 65 : 20)
+                  }
+                }}
+                className="datack-btn-ghost p-1 touch-target flex items-center justify-center"
+                aria-label={desktopPanelHeight < 60 ? "Agrandir" : "Réduire"}
+                title={desktopPanelHeight < 60 ? "Agrandir le panneau" : "Réduire le panneau"}
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  {answerPanelHeight < 40 ? (
+                  {(typeof window !== 'undefined' && window.innerWidth >= 768 ? desktopPanelHeight < 60 : answerPanelHeight < 40) ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                   ) : (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -1687,6 +1779,7 @@ function BorgesLibrary() {
               <HighlightedText
                 text={queryAnswer}
                 entities={coloredEntities}
+                relationships={searchPath?.relations || []}
                 className="text-sm text-datack-light leading-relaxed break-words"
                 onEntityClick={handleEntityClick}
                 showTooltip={true}

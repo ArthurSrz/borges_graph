@@ -99,6 +99,7 @@ interface DebugInfo {
 interface GraphVisualization3DForceProps {
   reconciliationData?: ReconciliationData | null
   searchPath?: any
+  provenanceGraphData?: ReconciliationData | null  // MCP subgraph to display progressively
   debugInfo?: DebugInfo | null
   onNodeVisibilityChange?: (nodeIds: string[]) => void
   onNodeClick?: (nodeId: string, nodeLabel: string, bookId?: string) => void
@@ -111,6 +112,7 @@ interface GraphVisualization3DForceProps {
 export default function GraphVisualization3DForce({
   reconciliationData,
   searchPath,
+  provenanceGraphData,
   debugInfo,
   onNodeVisibilityChange,
   onNodeClick,
@@ -122,6 +124,8 @@ export default function GraphVisualization3DForce({
   const containerRef = useRef<HTMLDivElement>(null)
   const graphRef = useRef<any>(null)
   const mousePosRef = useRef({ x: 0, y: 0 })  // Ref to avoid stale closure in click handler
+  const animationAbortRef = useRef<AbortController | null>(null)  // Abort controller for animation cancellation
+  const fullGraphDataRef = useRef<{ nodes: Node[], links: Link[] } | null>(null)  // Store full graph for restoration
   const [isLoading, setIsLoading] = useState(true)
   const [isGraphReady, setIsGraphReady] = useState(false)
   const [hoveredLink, setHoveredLink] = useState<Link | null>(null)
@@ -772,139 +776,153 @@ export default function GraphVisualization3DForce({
       return
     }
 
-    // If debugInfo is present, do progressive loading. Otherwise load immediately
-    if (debugInfo) {
-      console.log('🎬 Starting progressive GraphRAG loading...')
-      // Only clear the graph if we have data to replace it with
-      if (displayNodes.length > 0) {
-        try {
-          console.log('🧹 Clearing graph data for progressive loading...')
-          graphRef.current.graphData({ nodes: [], links: [] })
-        } catch (error) {
-          console.error('❌ Error clearing graph:', error)
-        }
+    // ALWAYS load full graph immediately - provenance subgraph handled by searchPath effect
+    console.log('📊 Loading complete 3D Force Graph immediately...')
+    console.log('  • Graph instance available:', !!graphRef.current)
+    try {
+      console.log('🎯 Setting graph data immediately...')
+      graphRef.current.graphData({ nodes: displayNodes, links })
+      console.log('✅ Graph data set successfully!')
 
-        // Add nodes progressively
-        console.log('📈 Starting progressive node/link addition...')
-        addNodesProgressively(displayNodes, links, () => {
-          console.log('✅ Progressive loading completed')
-          if (onNodeVisibilityChange) {
-            onNodeVisibilityChange(displayNodes.map(n => n.id))
-          }
-        })
-      }
-    } else {
-      console.log('📊 Loading complete 3D Force Graph immediately...')
-      console.log('  • Graph instance available:', !!graphRef.current)
-      // Show complete graph immediately
-      try {
-        console.log('🎯 Setting graph data immediately...')
-        graphRef.current.graphData({ nodes: displayNodes, links })
-        console.log('✅ Graph data set successfully!')
-      } catch (error) {
-        console.error('❌ Error loading complete graph:', error)
-        console.error('Error details:', error)
-      }
-
-      if (onNodeVisibilityChange) {
-        onNodeVisibilityChange(displayNodes.map(n => n.id))
-      }
+      // Store full graph for restoration after provenance view
+      fullGraphDataRef.current = { nodes: displayNodes, links }
+      console.log('💾 Full graph stored for restoration')
+    } catch (error) {
+      console.error('❌ Error loading complete graph:', error)
+      console.error('Error details:', error)
     }
 
-  }, [reconciliationData, debugInfo, onNodeVisibilityChange, isGraphReady])
+    if (onNodeVisibilityChange) {
+      onNodeVisibilityChange(displayNodes.map(n => n.id))
+    }
 
-  // Animate GraphRAG processing phases
+  }, [reconciliationData, onNodeVisibilityChange, isGraphReady])
+
+  // Animate GraphRAG processing phases - OPTIMIZED with Set-based O(1) lookups
   useEffect(() => {
     if (!debugInfo || !graphRef.current) return
+
+    // Cancel any previous animation
+    if (animationAbortRef.current) {
+      animationAbortRef.current.abort()
+      console.log('🛑 Previous animation cancelled')
+    }
+
+    // Create new abort controller for this animation
+    animationAbortRef.current = new AbortController()
+    const signal = animationAbortRef.current.signal
 
     console.log('🎬 Starting GraphRAG animation with debug info')
 
     const animatePhases = async () => {
       const timeline = debugInfo.animation_timeline
+      const entities = debugInfo.processing_phases?.entity_selection?.entities || []
+      const relationships = debugInfo.processing_phases?.relationship_mapping?.relationships || []
+
+      // Get current graph data once
+      const currentData = graphRef.current.graphData()
+      const graphNodes = currentData.nodes || []
+
+      // PRE-COMPUTE: Build entity name -> matching node IDs map (O(entities × nodes) once)
+      const entityToNodeIds = new Map<string, Set<string>>()
+      entities.forEach((entity: DebugEntity) => {
+        const entityNameLower = entity.name.toLowerCase()
+        const matchingIds = new Set<string>()
+
+        graphNodes.forEach((node: any) => {
+          const nodeName = (node.name || '').toLowerCase()
+          const nodeId = node.id.toString().toLowerCase()
+
+          if (nodeName.includes(entityNameLower) ||
+              entityNameLower.includes(nodeName) ||
+              nodeId.includes(entityNameLower)) {
+            matchingIds.add(node.id)
+          }
+        })
+
+        entityToNodeIds.set(entity.name, matchingIds)
+      })
+
+      console.log(`📊 Pre-computed ${entityToNodeIds.size} entity-node mappings`)
 
       for (let i = 0; i < timeline.length; i++) {
+        if (signal.aborted) {
+          console.log('🛑 Animation aborted at phase', i)
+          return
+        }
+
         const phase = timeline[i]
         console.log(`🔥 Animation phase ${i + 1}: ${phase.phase} - ${phase.description}`)
 
-        // Highlight entities during explosion phase
-        if (phase.phase === 'explosion' && debugInfo.processing_phases.entity_selection.entities.length > 0) {
-          const entities = debugInfo.processing_phases.entity_selection.entities
-
-          // Find actual nodes in the graph that match entity names
-          const currentData = graphRef.current.graphData()
-          const graphNodes = currentData.nodes || []
+        // Highlight entities during explosion phase - OPTIMIZED
+        if (phase.phase === 'explosion' && entities.length > 0) {
+          // Track which nodes have been highlighted (cumulative)
+          const highlightedNodeIds = new Set<string>()
+          const currentHighlightIds = new Set<string>()
 
           for (let j = 0; j < entities.length; j++) {
+            if (signal.aborted) {
+              console.log('🛑 Animation aborted during entity loop')
+              return
+            }
+
             const entity = entities[j]
+            const matchingIds = entityToNodeIds.get(entity.name) || new Set<string>()
 
-            // Find matching nodes by searching for name patterns
-            const matchingNodes = graphNodes.filter((node: any) => {
-              const nodeName = (node.name || '').toLowerCase()
-              const entityName = entity.name.toLowerCase()
+            // Move previous current highlights to "processed" set
+            currentHighlightIds.forEach(id => highlightedNodeIds.add(id))
+            currentHighlightIds.clear()
 
-              // Check for exact match or partial match
-              return nodeName.includes(entityName) ||
-                     entityName.includes(nodeName) ||
-                     node.id.toString().toLowerCase().includes(entityName)
-            })
+            // Add new matches to current highlight
+            matchingIds.forEach(id => currentHighlightIds.add(id))
 
-            if (matchingNodes.length > 0) {
-              console.log(`🎯 Found ${matchingNodes.length} nodes matching entity "${entity.name}"`)
+            if (matchingIds.size > 0) {
+              console.log(`🎯 Highlighting ${matchingIds.size} nodes for "${entity.name}"`)
 
-              // Highlight matching nodes
+              // O(n) nodeColor with O(1) Set lookups
               graphRef.current.nodeColor((node: any) => {
-                if (matchingNodes.some((m: any) => m.id === node.id)) {
-                  return '#ffeb3b' // Bright yellow for currently processing entity
+                if (currentHighlightIds.has(node.id)) {
+                  return '#ffeb3b' // Yellow for current entity
                 }
-                // Keep previously highlighted nodes orange
-                const previousEntities = entities.slice(0, j)
-                const wasPreviouslyHighlighted = previousEntities.some(prevEntity => {
-                  const prevMatches = graphNodes.filter((n: any) => {
-                    const nName = (n.name || '').toLowerCase()
-                    const prevName = prevEntity.name.toLowerCase()
-                    return nName.includes(prevName) || prevName.includes(nName) || n.id.toString().toLowerCase().includes(prevName)
-                  })
-                  return prevMatches.some((m: any) => m.id === node.id)
-                })
-
-                if (wasPreviouslyHighlighted) {
+                if (highlightedNodeIds.has(node.id)) {
                   return '#ff9800' // Orange for processed entities
                 }
-
                 return node.color || getEntityTypeColor(node.group) || getEntityTypeColor('CIVIC_ENTITY')
               })
             }
 
-            // Wait between entity highlights
-            await new Promise(resolve => setTimeout(resolve, 200))
+            // Wait between entity highlights (faster: 100ms instead of 200ms)
+            await new Promise(resolve => setTimeout(resolve, 100))
           }
         }
 
-        // Highlight relationships during synthesis phase
-        if (phase.phase === 'synthesis' && debugInfo.processing_phases.relationship_mapping.relationships.length > 0) {
-          const relationships = debugInfo.processing_phases.relationship_mapping.relationships
-          const currentData = graphRef.current.graphData()
-          const graphNodes = currentData.nodes || []
+        // Highlight relationships during synthesis phase - OPTIMIZED
+        if (phase.phase === 'synthesis' && relationships.length > 0) {
+          // PRE-COMPUTE: Build Set of highlighted link keys
+          const highlightedLinkKeys = new Set<string>()
 
-          graphRef.current.linkColor((link: any) => {
-            // Try to match relationships by entity names
-            const isHighlighted = relationships.some(rel => {
-              const sourceMatches = graphNodes.filter((node: any) => {
-                const nodeName = (node.name || '').toLowerCase()
-                const sourceName = rel.source.toLowerCase()
-                return nodeName.includes(sourceName) || sourceName.includes(nodeName)
+          relationships.forEach((rel: DebugRelationship) => {
+            const sourceNodes = entityToNodeIds.get(rel.source) || new Set<string>()
+            const targetNodes = entityToNodeIds.get(rel.target) || new Set<string>()
+
+            // Create link keys for all combinations
+            sourceNodes.forEach(sourceId => {
+              targetNodes.forEach(targetId => {
+                highlightedLinkKeys.add(`${sourceId}-${targetId}`)
+                highlightedLinkKeys.add(`${targetId}-${sourceId}`) // Bidirectional
               })
-
-              const targetMatches = graphNodes.filter((node: any) => {
-                const nodeName = (node.name || '').toLowerCase()
-                const targetName = rel.target.toLowerCase()
-                return nodeName.includes(targetName) || targetName.includes(nodeName)
-              })
-
-              return sourceMatches.some((s: any) => s.id === (link.source.id || link.source)) &&
-                     targetMatches.some((t: any) => t.id === (link.target.id || link.target))
             })
-            return isHighlighted ? '#ff4757' : '#ffffff'
+          })
+
+          console.log(`🔗 Highlighting ${highlightedLinkKeys.size} relationship keys`)
+
+          // O(links) with O(1) Set lookups
+          graphRef.current.linkColor((link: any) => {
+            const sourceId = link.source.id || link.source
+            const targetId = link.target.id || link.target
+            const linkKey = `${sourceId}-${targetId}`
+
+            return highlightedLinkKeys.has(linkKey) ? '#ff4757' : '#ffffff'
           })
         }
 
@@ -913,44 +931,85 @@ export default function GraphVisualization3DForce({
       }
 
       console.log('✅ GraphRAG animation completed')
-
-      // Fix #3: Reapply searchPath highlighting after animation completes
-      // Animation modifies node colors, so we need to restore highlighting
-      if (searchPath?.entities && graphRef.current) {
-        const highlightedIds = searchPath.entities.map((e: any) => e.id)
-        graphRef.current.nodeColor((node: any) => {
-          if (highlightedIds.includes(node.id)) {
-            return '#ffeb3b'  // Yellow highlight for query results
-          }
-          return node.color || getEntityTypeColor(node.group) || getEntityTypeColor('CIVIC_ENTITY')
-        })
-        console.log(`🎯 Reapplied highlighting to ${highlightedIds.length} nodes after animation`)
-      }
     }
 
     animatePhases()
-  }, [debugInfo, searchPath])
 
-  // Handle search path highlighting for query results
-  // Fix #2: Removed debugInfo guard - highlighting should work alongside animations
+    // Cleanup: abort animation when effect re-runs or component unmounts
+    return () => {
+      if (animationAbortRef.current) {
+        animationAbortRef.current.abort()
+      }
+    }
+  }, [debugInfo])  // Removed searchPath from dependencies - handled by separate effect
+
+  // Handle provenance graph data: display MCP subgraph progressively
+  // When provenanceGraphData is set: display it progressively
+  // When provenanceGraphData is cleared: restore full graph
   useEffect(() => {
-    if (!searchPath || !graphRef.current) return
+    if (!graphRef.current || !isGraphReady) return
 
-    console.log('🎯 Highlighting search path in 3D graph')
+    // If provenanceGraphData is cleared, restore full graph
+    if (!provenanceGraphData || provenanceGraphData.nodes.length === 0) {
+      if (fullGraphDataRef.current && fullGraphDataRef.current.nodes.length > 0) {
+        console.log('🔄 Restoring full graph (provenanceGraphData cleared)')
+        graphRef.current.graphData(fullGraphDataRef.current)
+      }
+      return
+    }
 
-    // Extract entity IDs from search path
-    const highlightedNodeIds = searchPath.entities?.map((e: any) => e.id) || []
+    console.log(`🎯 Displaying MCP provenance subgraph: ${provenanceGraphData.nodes.length} nodes, ${provenanceGraphData.relationships.length} relationships`)
 
-    // Update node colors to highlight search path
-    graphRef.current
-      .nodeColor((node: any) => {
-        if (highlightedNodeIds.includes(node.id)) {
-          return '#ffeb3b' // Yellow for highlighted nodes
-        }
-        return node.color || getEntityTypeColor(node.group) || getEntityTypeColor('CIVIC_ENTITY')
-      })
+    // Transform provenance data to display format (same as reconciliationData processing)
+    const getEntityType = (node: any): string => {
+      if (node.properties?.entity_type) return node.properties.entity_type
+      if (node.labels && node.labels.length > 0) {
+        const nonEntityLabel = node.labels.find((l: string) => l !== 'Entity' && l !== '__Entity__')
+        if (nonEntityLabel) return nonEntityLabel
+      }
+      return 'CIVIC_ENTITY'
+    }
 
-  }, [searchPath])
+    const provenanceNodes: Node[] = provenanceGraphData.nodes.map(node => {
+      const entityType = getEntityType(node)
+      const degree = Math.max(1, node.degree || 1)
+      const baseSize = 2 + Math.sqrt(degree) * 1.0
+
+      return {
+        id: node.id,
+        name: node.properties?.name || node.properties?.title || node.id,
+        group: entityType,
+        color: getEntityTypeColor(entityType),
+        val: baseSize,
+        degree: node.degree
+      }
+    })
+
+    const provenanceNodeIds = new Set(provenanceNodes.map(n => n.id))
+
+    const provenanceLinks: Link[] = provenanceGraphData.relationships
+      .filter(rel => provenanceNodeIds.has(rel.source) && provenanceNodeIds.has(rel.target))
+      .map(rel => ({
+        source: rel.source,
+        target: rel.target,
+        type: rel.type || 'RELATED_TO'
+      }))
+
+    console.log(`📊 Transformed: ${provenanceNodes.length} nodes, ${provenanceLinks.length} links`)
+
+    // Clear graph and add provenance nodes progressively
+    console.log('🎬 Starting progressive provenance display...')
+    graphRef.current.graphData({ nodes: [], links: [] })
+
+    // Add provenance nodes progressively
+    addNodesProgressively(provenanceNodes, provenanceLinks, () => {
+      console.log('✅ Provenance subgraph loaded progressively')
+      if (onNodeVisibilityChange) {
+        onNodeVisibilityChange(provenanceNodes.map(n => n.id))
+      }
+    })
+
+  }, [provenanceGraphData, isGraphReady, onNodeVisibilityChange])
 
   return (
     <div
@@ -979,10 +1038,25 @@ export default function GraphVisualization3DForce({
       {/* Info overlay - Hidden on mobile */}
       {reconciliationData && !isLoading && (
         <div className="absolute top-2 left-2 md:top-4 md:left-4 bg-datack-dark border border-datack-border p-2 md:p-3 rounded-lg text-xs md:text-sm hidden md:block">
-          <div className="text-datack-light font-medium">Dimensions</div>
-          {communeCount && <div className="text-datack-muted">{communeCount} communes</div>}
-          <div className="text-datack-muted">{reconciliationData.nodes.length} noeuds</div>
-          <div className="text-datack-muted">{reconciliationData.relationships.length} relations</div>
+          {/* Show subgraph dimensions when provenance is active */}
+          {provenanceGraphData && provenanceGraphData.nodes.length > 0 ? (
+            <>
+              <div className="text-datack-yellow font-medium">Sous-graphe</div>
+              <div className="text-datack-muted">
+                {new Set(provenanceGraphData.nodes.map(n => n.properties?.source_commune).filter(Boolean)).size} communes
+              </div>
+              <div className="text-datack-muted">{provenanceGraphData.nodes.length} noeuds</div>
+              <div className="text-datack-muted">{provenanceGraphData.relationships.length} relations</div>
+              <div className="text-datack-muted/50 text-xs mt-1">sur {reconciliationData.nodes.length} total</div>
+            </>
+          ) : (
+            <>
+              <div className="text-datack-light font-medium">Dimensions</div>
+              {communeCount && <div className="text-datack-muted">{communeCount} communes</div>}
+              <div className="text-datack-muted">{reconciliationData.nodes.length} noeuds</div>
+              <div className="text-datack-muted">{reconciliationData.relationships.length} relations</div>
+            </>
+          )}
         </div>
       )}
 

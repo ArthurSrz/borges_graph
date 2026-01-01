@@ -287,7 +287,7 @@ export class ReconciliationService {
           console.log(`📡 Fetching (attempt ${attempt}/${maxRetries}), URL: ${url.substring(0, 150)}...`);
 
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
+          const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
           // Note: Cache-Control headers are managed at the API route level (route.ts)
           // Request headers should not include cache directives for response caching

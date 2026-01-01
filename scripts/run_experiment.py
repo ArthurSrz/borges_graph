@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from rag_comparison.clients.dust_client import DustClient
-from rag_comparison.clients.graphrag_client import GraphRAGClient
+from rag_comparison.clients.mcp_client import MCPGraphRAGClient
 from rag_comparison.config import ExperimentConfig
 from rag_comparison.runner import ExperimentRunner
 
@@ -198,11 +198,11 @@ async def run_experiment(args: argparse.Namespace) -> dict:
         timeout=config.timeout_seconds,
     )
 
-    graphrag_client = GraphRAGClient(
+    graphrag_client = MCPGraphRAGClient(
         api_url=config.graphrag_api_url,
         timeout=config.timeout_seconds,
         default_mode=config.graphrag_mode,
-        default_book_id=config.graphrag_book_id,
+        default_commune=config.graphrag_book_id or "Rochefort",
     )
 
     # Run experiment

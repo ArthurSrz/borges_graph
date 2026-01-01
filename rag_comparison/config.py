@@ -37,9 +37,18 @@ class ExperimentConfig:
     enable_llm_judge: bool = False
 
     # Experiment settings
-    timeout_seconds: float = 30.0
+    timeout_seconds: float = 120.0  # Dust agent takes 30-60s for complex questions
     parallel_workers: int = 8
-    metrics: list[str] = field(default_factory=lambda: ["contains", "latency", "status"])
+    metrics: list[str] = field(default_factory=lambda: [
+        "contains",
+        "latency",
+        "status",
+        "llm_precision",
+        "answer_relevance",
+        "hallucination",
+        "meaning_match",
+        "usefulness",
+    ])
 
     @classmethod
     def from_env(cls, dotenv_path: Optional[str] = None) -> ExperimentConfig:
@@ -91,7 +100,7 @@ class ExperimentConfig:
             openai_api_key=openai_api_key,
             openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             enable_llm_judge=enable_llm_judge,
-            timeout_seconds=float(os.getenv("TIMEOUT_SECONDS", "30.0")),
+            timeout_seconds=float(os.getenv("TIMEOUT_SECONDS", "120.0")),
             parallel_workers=int(os.getenv("PARALLEL_WORKERS", "8")),
         )
 

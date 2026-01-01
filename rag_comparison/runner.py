@@ -4,11 +4,16 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import random
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable, Optional
 
+import nest_asyncio
 import opik
+
+# Allow nested event loops - required when OPIK's evaluate() runs async internally
+nest_asyncio.apply()
 from opik.evaluation import evaluate
 from opik.evaluation.metrics import BaseMetric, Contains
 
@@ -16,6 +21,12 @@ from rag_comparison.clients.base import QueryResult, RAGClient
 from rag_comparison.config import ExperimentConfig
 from rag_comparison.metrics.latency import LatencyMetric
 from rag_comparison.metrics.llm_judge import LLMPrecisionJudge
+from rag_comparison.metrics.opik_metrics import (
+    AnswerRelevanceWrapper,
+    HallucinationWrapper,
+    MeaningMatchMetric,
+    UsefulnessWrapper,
+)
 from rag_comparison.metrics.status import StatusMetric
 
 logger = logging.getLogger(__name__)
@@ -94,6 +105,14 @@ class ExperimentRunner:
                     ))
                 else:
                     logger.warning("LLM precision metric requested but OPENAI_API_KEY not set")
+            elif metric_name == "answer_relevance" and self.config.enable_llm_judge:
+                metrics.append(AnswerRelevanceWrapper(model=self.config.openai_model))
+            elif metric_name == "hallucination" and self.config.enable_llm_judge:
+                metrics.append(HallucinationWrapper(model=self.config.openai_model))
+            elif metric_name == "meaning_match" and self.config.enable_llm_judge:
+                metrics.append(MeaningMatchMetric(model=self.config.openai_model))
+            elif metric_name == "usefulness" and self.config.enable_llm_judge:
+                metrics.append(UsefulnessWrapper(model=self.config.openai_model))
 
         return metrics
 
@@ -173,36 +192,60 @@ class ExperimentRunner:
             logger.error(f"Failed to load dataset: {e}")
             raise
 
-        metrics = self._get_metrics()
+        # Clone metrics for each experiment (avoid shared state bias)
+        dust_metrics = self._get_metrics()
+        graphrag_metrics = self._get_metrics()
         project = self.config.opik_project_name
 
-        # Run Dust experiment
-        logger.info("Running Dust RAG experiment...")
-        dust_task = self._create_task_function(self.dust_client)
-        dust_result = evaluate(
-            dataset=dataset,
-            task=dust_task,
-            scoring_metrics=metrics,
-            experiment_name=f"{experiment_name}_dust",
-            project_name=project,
-            nb_samples=sample_size,
-            experiment_config={"system": "dust", "base_experiment": experiment_name},
-            verbose=1,
-        )
+        # Randomize execution order to eliminate order bias
+        dust_first = random.choice([True, False])
+        execution_order = "dust_first" if dust_first else "graphrag_first"
+        logger.info(f"Execution order (randomized): {execution_order}")
 
-        # Run GraphRAG experiment
-        logger.info("Running GraphRAG experiment...")
-        graphrag_task = self._create_task_function(self.graphrag_client)
-        graphrag_result = evaluate(
-            dataset=dataset,
-            task=graphrag_task,
-            scoring_metrics=metrics,
-            experiment_name=f"{experiment_name}_graphrag",
-            project_name=project,
-            nb_samples=sample_size,
-            experiment_config={"system": "graphrag", "base_experiment": experiment_name},
-            verbose=1,
-        )
+        def run_dust_experiment():
+            logger.info("Running Dust RAG experiment...")
+            dust_task = self._create_task_function(self.dust_client)
+            return evaluate(
+                dataset=dataset,
+                task=dust_task,
+                scoring_metrics=dust_metrics,
+                experiment_name=f"{experiment_name}_dust",
+                project_name=project,
+                nb_samples=sample_size,
+                experiment_config={
+                    "system": "dust",
+                    "base_experiment": experiment_name,
+                    "execution_order": execution_order,
+                },
+                task_threads=1,  # Sequential execution - Dust rate-limits parallel requests
+                verbose=1,
+            )
+
+        def run_graphrag_experiment():
+            logger.info("Running GraphRAG experiment...")
+            graphrag_task = self._create_task_function(self.graphrag_client)
+            return evaluate(
+                dataset=dataset,
+                task=graphrag_task,
+                scoring_metrics=graphrag_metrics,
+                experiment_name=f"{experiment_name}_graphrag",
+                project_name=project,
+                nb_samples=sample_size,
+                experiment_config={
+                    "system": "graphrag",
+                    "base_experiment": experiment_name,
+                    "execution_order": execution_order,
+                },
+                verbose=1,
+            )
+
+        # Execute in randomized order
+        if dust_first:
+            dust_result = run_dust_experiment()
+            graphrag_result = run_graphrag_experiment()
+        else:
+            graphrag_result = run_graphrag_experiment()
+            dust_result = run_dust_experiment()
 
         # Build summary
         summary = self._build_summary_from_results(
@@ -264,8 +307,12 @@ class ExperimentRunner:
         dust_precision = dust_scores.get("llm_precision", [])
         graphrag_precision = graphrag_scores.get("llm_precision", [])
 
+        # Get question count from latency list (each question has a latency)
+        question_count = max(len(dust_latencies), len(graphrag_latencies))
+
         return {
             "experiment_name": experiment_name,
+            "question_count": question_count,
             "dust_experiment": f"{experiment_name}_dust",
             "graphrag_experiment": f"{experiment_name}_graphrag",
             "dust": {

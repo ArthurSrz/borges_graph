@@ -27,7 +27,7 @@ class DustClient(RAGClient):
         api_key: str,
         workspace_id: str,
         agent_id: str = "beTfWHdTC6",
-        timeout: float = 30.0,
+        timeout: float = 120.0,
     ) -> None:
         """Initialize Dust client.
 
@@ -48,16 +48,18 @@ class DustClient(RAGClient):
         return "dust"
 
     async def _get_session(self) -> aiohttp.ClientSession:
-        """Get or create aiohttp session."""
-        if self._session is None or self._session.closed:
-            self._session = aiohttp.ClientSession(
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                timeout=aiohttp.ClientTimeout(total=self.timeout),
-            )
-        return self._session
+        """Get or create aiohttp session.
+
+        Note: Creates a new session each time to avoid event loop issues
+        when called from different async contexts (e.g., OPIK evaluate).
+        """
+        return aiohttp.ClientSession(
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            timeout=aiohttp.ClientTimeout(total=self.timeout),
+        )
 
     async def close(self) -> None:
         """Close the HTTP session."""
@@ -80,6 +82,7 @@ class DustClient(RAGClient):
             QueryResult with aggregated answer and latency.
         """
         start_time = time.perf_counter()
+        session = None
 
         try:
             session = await self._get_session()
@@ -135,6 +138,9 @@ class DustClient(RAGClient):
         except Exception as e:
             latency_ms = (time.perf_counter() - start_time) * 1000
             return QueryResult.error(str(e), latency_ms)
+        finally:
+            if session and not session.closed:
+                await session.close()
 
     async def _poll_for_response(
         self,

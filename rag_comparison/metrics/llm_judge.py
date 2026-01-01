@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
+import time
 from typing import Optional
 
 from openai import AsyncOpenAI, OpenAI
@@ -14,6 +16,9 @@ from opik.evaluation.metrics.score_result import ScoreResult
 from rag_comparison.errors import LLMJudgeError
 
 logger = logging.getLogger(__name__)
+
+# Import shared rate limiter from opik_metrics
+from rag_comparison.metrics.opik_metrics import _rate_limited_call
 
 
 class LLMPrecisionJudge(BaseMetric):
@@ -190,7 +195,9 @@ RAG Response: {response}"""
             client = self._get_sync_client()
             user_prompt = self._build_user_prompt(input, expected_output, output)
 
-            response = client.chat.completions.create(
+            # Use rate-limited call to avoid OpenAI rate limits
+            response = _rate_limited_call(
+                client.chat.completions.create,
                 model=self.model,
                 messages=[
                     {"role": "system", "content": self.JUDGE_PROMPT},
