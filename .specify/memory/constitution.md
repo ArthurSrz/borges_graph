@@ -1,108 +1,121 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version Change: 1.4.1 → 1.5.0 (Minor - Added mobile responsiveness principle)
+Version Change: 2.0.0 → 3.0.0 (MAJOR - Single-purpose Grand Débat National interface)
 
 Modified Principles:
-- None
+- Title: Law GraphRAG Constitution → Grand Débat National GraphRAG Constitution
+- Principle IV: Legal Document-Centric → Commune-Centric Architecture (refocused on civic data)
+- Principle V: Cross-Document Legal Analysis → Cross-Commune Civic Analysis
+- Principle VI: Extensible Legal Corpus → Single-Source Civic Data Foundation (scope narrowed)
+- Principle VII: Functional Legal Interface → Functional Civic Interface
 
-Added Principles:
-- Principle VIII - Mobile-First Responsiveness: Interface MUST be fully usable on mobile devices
+Scope Changes:
+- REMOVED: Dual-source toggle (Borges/Law GraphRAG) - now single-purpose
+- REMOVED: Generic "legal document" references - now specifically Grand Débat National data
+- ADDED: Explicit MCP server specification (graphragmcp-production.up.railway.app)
+- ADDED: Commune-based data model (50 communes, Cahiers de Doléances)
 
-Removed Principles:
-- None removed
+Domain Pivot:
+- FROM: Generic legal knowledge graph interface with source selection
+- TO: Single-purpose Grand Débat National citizen contribution explorer
 
-Clarifications Added:
-- None
+Data Source:
+- Single MCP Server: https://graphragmcp-production.up.railway.app
+- Dataset: Grand Débat National 2019 "Cahiers de Doléances"
+- Coverage: 50 communes in Charente-Maritime
+- Entities: ~8,000+ extracted from citizen contributions
 
 Templates Requiring Updates:
-- spec.md template: Add responsive design section to UI specifications ✅ done
-- tasks.md: Include mobile testing tasks for UI changes ✅ done
-
-Follow-up TODOs:
-- Audit current interface for mobile compatibility
-- Add responsive breakpoints to design tokens
-- Test graph interaction on touch devices
+- specs/003-rag-observability-comparison/spec.md: ⚠ needs update to reflect single-purpose
+- specs/003-rag-observability-comparison/plan.md: ⚠ needs update to remove source toggle
+- specs/003-rag-observability-comparison/tasks.md: ⚠ needs update to remove RAGSourceSelector
+- CLAUDE.md: ⚠ needs update to remove Borges references
 
 Change Rationale:
-- MINOR version (1.5.0) because new principle added
-- Many users will access the Borges Library on mobile devices
-- Graph exploration should work seamlessly on touch interfaces
-- Ensures accessibility across all device types
+- MAJOR version (3.0.0) because:
+  1. Fundamental scope change from multi-source to single-source
+  2. Domain pivot from generic legal to specific civic dataset
+  3. Removal of source selection functionality
+  4. Architecture simplification to single MCP server
 -->
 
-# The Borges Library constitution
+# Grand Débat National GraphRAG Constitution
 
-## Core principles
+**Single-Purpose Civic Knowledge Graph Interface**
 
-### I. End-to-end interpretability
+This interface is exclusively designed for exploring citizen contributions from the
+French Grand Débat National 2019 "Cahiers de Doléances" dataset. It connects to a
+single GraphRAG backend and does NOT support multiple data sources.
 
-**The system MUST enable navigation from text chunks to RAG answers through graph.**
+**Data Source**: `https://graphragmcp-production.up.railway.app`
+**Dataset**: 50 communes in Charente-Maritime, ~8,000+ entities
+
+## Core Principles
+
+### I. End-to-End Interpretability
+
+**The system MUST enable navigation from text chunks to RAG answers through the civic knowledge graph.**
 
 Users MUST be able to trace the complete reasoning path of the GraphRAG system:
-- From original text chunks in source books
-- Through extracted entities and relationships
-- Across graph traversal paths
-- To final RAG-generated answers
+- From original text chunks in citizen contributions (Cahiers de Doléances)
+- Through extracted entities (themes, actors, concepts, proposals)
+- Across graph traversal paths and community structures
+- To final RAG-generated answers with source attribution
 
 Every step of the knowledge extraction, storage, retrieval, and generation pipeline
 MUST be inspectable and navigable.
 
-**Rationale**: Interpretability is essential for trust, debugging, and learning. Users
-need to understand how answers were derived, validate the reasoning, and explore
-alternative paths through the knowledge graph. This transparency distinguishes the
-Borges Library from black-box RAG systems.
+**Rationale**: Citizens and researchers need to understand how answers were derived from
+actual citizen contributions. Transparency in civic RAG systems builds trust and enables
+validation of insights against source material.
 
-**Implementation requirements**:
-- Text chunk storage MUST preserve source attribution (book, page, section)
+**Implementation Requirements**:
+- Text chunk storage MUST preserve source attribution (commune, contribution order)
 - Entity extraction MUST maintain bidirectional links to source chunks
 - Graph queries MUST return traversal paths, not just final results
 - RAG responses MUST include provenance chains (answer → nodes → relationships → chunks)
 - UI MUST provide click-through navigation across the entire pipeline
-- All intermediate representations MUST be accessible via API and interface
+- Source quotes MUST link directly to original citizen text passages
 
 ---
 
-### II. Babel library mimetism (infinite exploration architecture)
+### II. Civic Provenance Chain
 
-**The system MUST embody Borges' Library of Babel principles: infinite exploration, emergent meaning, and progressive discovery.**
+**The system MUST maintain traceable attribution to citizen contributions.**
 
-Like Borges' infinite library of hexagonal galleries, this system architecture mirrors the philosophical concepts from "The Library of Babel":
+Every piece of information surfaced by the system MUST be traceable to its
+source commune and original citizen text:
 
-- **Infinite exploration**: Users can navigate endlessly through the knowledge graph without artificial limits or dead ends
-- **Emergent meaning from chaos**: Insights arise from connection patterns across seemingly disparate entities, not from isolated facts
-- **Progressive revelation**: Knowledge unfolds in layers, presenting the most central/relevant nodes first while allowing unlimited depth
-- **Relational truth**: Meaning emerges from the web of relationships between books, entities, and concepts
+- **Source commune**: Which municipality contributed this insight
+- **Original text**: Exact quotes from citizen contributions
+- **Entity attribution**: How concepts were extracted from text
+- **Community context**: Thematic clusters and their member entities
 
-**Rationale**: The Library of Babel represents a universe containing all possible books, where meaning is rare but discoverable through navigation. Our system mirrors this by creating an explorable knowledge space where every visible node opens pathways to further discovery. The graph is not a static document but a living space users inhabit and navigate, revealing "sense" hidden within apparent information chaos.
+**Rationale**: Civic data demands transparency about origins. Users must be able to
+verify that insights genuinely reflect citizen voices, not system artifacts.
 
 **Implementation Requirements**:
-- Graph navigation MUST support recursive expansion from any node (no terminal points)
-- Progressive loading MUST enable gradual exploration: 300→500→1000 most central nodes
-- Community detection MUST identify emergent thematic clusters across books
-- Recommendation algorithms MUST surface non-obvious but high-value cross-book connections
-- Search MUST support both precise queries and exploratory "wandering"
-- The reconciliation layer MUST merge Neo4j + GraphRAG to reveal patterns invisible in either alone
-- Visualizations MUST highlight structural patterns (hubs, bridges, communities)
-- The UI MUST provide "related paths" and "alternative routes" through the graph
-- Loading states MUST indicate "more to explore" vs "fully loaded"
-- Centrality metrics (degree, betweenness, PageRank) MUST guide progressive loading priorities
+- Every entity MUST store its source commune and chunk reference
+- API responses MUST include source_quotes with commune attribution
+- The UI MUST display commune origin for all entities and answers
+- Query results MUST show which communes contributed to the answer
 
 ---
 
-### III. No orphan nodes
+### III. No Orphan Nodes
 
 **All nodes displayed in the interface MUST have at least one relationship.**
 
 Orphan nodes (isolated entities without connections) are prohibited in the visualization
 layer. This principle ensures that:
-- every entity shown provides relational context
-- graph visualizations maintain semantic coherence
-- users always see how entities connect to the broader knowledge graph
-- query results filter out disconnected nodes before rendering
+- Every entity shown provides relational context
+- Graph visualizations maintain semantic coherence
+- Users always see how civic entities connect to the broader knowledge graph
+- Query results filter out disconnected nodes before rendering
 
-**Rationale**: The Borges Library is fundamentally about exploring relationships and
-connections between literary entities. Orphan nodes provide no navigational value and
+**Rationale**: The GraphRAG system is fundamentally about exploring relationships and
+connections between civic themes. Orphan nodes provide no navigational value and
 clutter the interface with isolated facts that cannot be explored.
 
 **Implementation Requirements**:
@@ -113,165 +126,168 @@ clutter the interface with isolated facts that cannot be explored.
 
 ---
 
-### IV. Book-centric architecture
+### IV. Commune-Centric Architecture
 
-**Books MUST be the core entities in all graph queries and visualizations.**
+**Communes MUST be the primary organizational units in all graph queries and visualizations.**
 
-The knowledge graph is organized around books as primary entities. All queries,
-visualizations, and explorations MUST treat books as the central organizing principle:
-- search queries prioritize book-entity relationships
-- graph traversals anchor on book nodes
-- entity relationships are contextualized through their connections to books
-- visualization layouts position books as structural hubs
+The knowledge graph is organized around communes as the source containers for citizen
+contributions. All queries, visualizations, and explorations contextualize data by commune:
+- Search queries can filter by commune or span all communes
+- Graph traversals show commune attribution for entities
+- Entity relationships are contextualized through their commune origins
+- Visualization can highlight which communes contributed to an answer
 
-**Rationale**: books are the fundamental units of knowledge in the Borges Library. By
-making them the architectural center, we ensure that all knowledge exploration remains
-grounded in the source literary works, enabling users to trace insights back to their
-origins.
+**Commune Data Model**:
+- 50 communes in Charente-Maritime (Rochefort, Andilly, Surgères, etc.)
+- Each commune contains: entities, communities, contributions
+- Cross-commune analysis reveals regional patterns
 
-**Implementation requirements**:
-- GraphRAG queries MUST start from or include book nodes
-- Database indexes MUST optimize for book-centered queries
-- API responses MUST include book context for all entities
-- Visualization algorithms MUST calculate layouts with books as anchor points
+**Rationale**: The Grand Débat National organized citizen participation by commune.
+Preserving this structure enables geographic analysis and local-vs-regional comparison.
 
----
-
-### V. Inter-book knowledge exploration
-
-**Graph exploration MUST prioritize relationships that span multiple books.**
-
-The most valuable insights emerge from connections across different literary works.
-The system MUST favor discovering, surfacing, and visualizing inter-book relationships:
-- graphRAG search prioritizes multi-book relationship paths
-- query ranking weights cross-book connections higher
-- visualizations highlight bridges between different books
-- relationship types that connect books are given higher importance
-
-**Rationale**: while intra-book relationships are important, the unique value of a
-knowledge graph lies in revealing how concepts, themes, characters, and ideas connect
-across different works. These cross-pollinations generate novel insights impossible
-to discover through single-book analysis.
-
-**Implementation requirements**:
-- GraphRAG algorithms MUST include inter-book relationship scoring
-- Query expansion MUST traverse book boundaries
-- Relationship weights MUST account for cross-book connections
-- Analytics MUST track and report inter-book coverage metrics
+**Implementation Requirements**:
+- Queries MUST support commune-level filtering
+- Multi-commune queries MUST aggregate results with commune attribution
+- API responses MUST include commune metadata for all entities
+- Visualization MUST support commune-based coloring/grouping
 
 ---
 
-### VI. Extensible literature foundation
+### V. Cross-Commune Civic Analysis
 
-**The system MUST be built upon the nano-graphRAG library and designed for easy addition of new books or bodies of literature.**
+**Graph exploration MUST enable discovering patterns across multiple communes.**
 
-The Borges Library originates from and builds upon the nano-graphRAG library as its
-foundational knowledge extraction and retrieval layer. The architecture MUST prioritize
-the seamless integration of new literary content:
+The most valuable civic insights emerge from comparing citizen voices across different
+communes. The system MUST support cross-commune analysis:
+- Query all 50 communes simultaneously
+- Aggregate and compare responses by commune
+- Identify common themes and regional variations
+- Surface entities that appear in multiple communes
 
-- **nano-graphRAG foundation** : the system leverages nano-graphRAG for entity extraction, relationship building, and graph-based retrieval
-- **Modular book ingestion** : adding new books MUST be a straightforward, standardized process
-- **Scalable corpus expansion** : the system MUST handle growing collections without architectural changes
-- **Literature-agnostic processing**: The ingestion pipeline MUST work with diverse literary formats and genres
+**Key Analysis Capabilities**:
+- "What do citizens across all communes say about X?"
+- "How do concerns differ between coastal and inland communes?"
+- "Which themes appear most frequently across communes?"
 
-**Rationale**: The value of the Borges Library grows with its literary corpus. By
-building on nano-graphRAG and prioritizing extensibility, we ensure that:
-1. The system inherits a proven, well-tested GraphRAG implementation
-2. Users and administrators can expand the library with minimal friction
-3. New bodies of literature integrate seamlessly with existing knowledge
-4. The architecture remains adaptable to diverse literary traditions and formats
+**Rationale**: While single-commune queries are useful, the unique value of this
+dataset lies in revealing patterns across the region's citizen voices.
 
-This principle ensures the Borges Library is not a static collection but a living,
-growing repository that can incorporate world literature progressively.
-
-**Implementation requirements**:
-- Book ingestion MUST follow a documented, repeatable pipeline based on nano-graphRAG
-- New book addition MUST NOT require code changes to core system components
-- Configuration-driven book registration MUST specify metadata, source files, and processing parameters
-- Ingestion pipelines MUST support batch processing for adding multiple books
-- Progress tracking MUST provide visibility into book processing status
-- Rollback mechanisms MUST allow removal of incorrectly processed books
-- The system MUST validate new book integration against existing graph consistency rules
-- Documentation MUST include step-by-step guides for adding new literary content
-- API endpoints MUST support programmatic book addition for automation workflows
+**Implementation Requirements**:
+- `grand_debat_query_all` tool MUST query across all communes
+- Results MUST include per-commune breakdown
+- Aggregated provenance MUST combine quotes from multiple communes
+- Rate limiting MUST prevent API overload on multi-commune queries
 
 ---
 
-### VII. Basile minimalism (tribute to libraryofbabel.info)
+### VI. Single-Source Civic Data Foundation
 
-**The interface MUST embody Jonathan Basile's minimalistic design philosophy from libraryofbabel.info: functional simplicity, content-centric layout, and restrained visual hierarchy.**
+**The system connects EXCLUSIVELY to the Grand Débat National MCP server.**
 
-**SCOPE LIMITATION**: This principle applies to VISUAL STYLING ONLY (fonts, colors, buttons, panels).
-Functionality MUST remain 100% unchanged. Graph animations MUST be fully preserved.
+This interface is single-purpose and does NOT support:
+- Multiple data sources or backends
+- Source selection or toggle functionality
+- Alternative GraphRAG implementations
+- Generic legal document queries
 
-In tribute to Jonathan Basile's iconic digital implementation of Borges' vision, the Borges Library
-adopts his design principles as its visual constitution:
+**Single MCP Server**:
+```
+URL: https://graphragmcp-production.up.railway.app/mcp
+Protocol: MCP (Model Context Protocol) over HTTP
+Transport: Streamable HTTP with JSON-RPC
+```
 
-- **Functional minimalism**: Every UI element MUST serve a clear purpose. Decorative elements
-  are prohibited unless they reinforce the Library of Babel's thematic identity
-- **Content-centric layout**: Text and knowledge exploration are the primary visual content.
-  The interface exists to serve the literary content, not to showcase itself
-- **Typography as visual anchor**: Text MUST be the dominant visual element. Font choices,
-  spacing, and hierarchy communicate meaning through restraint
-- **Restrained color palette**: A limited, muted color scheme that does not compete with content.
-  Dark backgrounds with light text evoke the infinite galleries of Babel
-- **Hexagonal/geometric symbolism**: Where visual accents are necessary, geometric forms
-  (especially hexagons) reinforce the architectural metaphor of Borges' infinite library
-- **No gratuitous animation** (UI chrome only): Motion in buttons, panels, and menus MUST be purposeful—indicating
-  loading, transitions, or user feedback. **EXCEPTION**: Graph visualization animations (physics simulations,
-  node expansion, zoom, pan, interactive motions) are ESSENTIAL for exploration and MUST be fully preserved
+**Available Tools**:
+- `grand_debat_list_communes`: List all 50 communes with statistics
+- `grand_debat_query`: Query single commune with local/global mode
+- `grand_debat_query_all`: Query across all communes
+- `grand_debat_search_entities`: Search entities by pattern
+- `grand_debat_get_communities`: Get thematic community reports
+- `grand_debat_get_contributions`: Get original citizen texts
 
-**Rationale**: Jonathan Basile's libraryofbabel.info (https://libraryofbabel.info/) stands as the
-definitive digital interpretation of Borges' concept. By adopting his design philosophy, we honor
-both the literary source material and its most faithful digital incarnation. Minimalism serves the
-intellectual mission: users come to explore knowledge, not to admire interface design.
+**Rationale**: A single-purpose interface is simpler, more reliable, and better
+optimized for its specific dataset. Multi-source flexibility adds complexity
+without benefit for this focused civic exploration tool.
 
-**Implementation requirements**:
-- UI components MUST pass a "purpose test": if an element cannot justify its existence, remove it
-- Color palette MUST be limited to 4-5 primary colors maximum
-- Typography MUST use a maximum of 2 font families (one for body, one for accent/headings)
-- White space MUST be used deliberately to separate content areas and reduce cognitive load
-- Navigation MUST be streamlined: Browse, Search, Random, and contextual actions only
-- Loading states MUST be minimal and non-distracting (subtle spinners, not elaborate animations)
-- Error states MUST be informative but visually understated
-- The graph visualization is the ONE exception where visual complexity is permitted—all physics
-  simulations, node expansion, zoom, pan, and interactive animations MUST be preserved unchanged.
-  Only node/edge styling (colors, sizes) follows minimalist rules; motion is essential for exploration
-- Accessibility options (e.g., "Browse without JavaScript") MUST be provided for inclusive design
-- All design decisions MUST be defensible by answering: "How does this serve knowledge exploration?"
+**Implementation Requirements**:
+- NO source selection UI components
+- NO alternative backend configuration
+- API proxy MUST connect ONLY to graphragmcp-production
+- Environment variables for URL are for deployment flexibility only, not multi-source
 
 ---
 
-### VIII. Mobile-first responsiveness
+### VII. Functional Civic Interface
 
-**The interface MUST be fully functional and usable on mobile devices.**
+**The interface MUST prioritize clarity, efficiency, and civic exploration workflows.**
 
-Given that a significant portion of users will access the Borges Library from smartphones and
-tablets, the interface MUST provide a seamless experience across all device sizes:
+The interface is designed for researchers, journalists, and citizens exploring
+Grand Débat contributions. The design philosophy emphasizes:
 
-- **Touch-optimized interactions**: All graph interactions (tap to select, pinch to zoom, drag to pan)
-  MUST work naturally with touch gestures
-- **Responsive layout**: UI components MUST adapt fluidly to screen sizes from 320px to desktop
-- **Mobile-first design**: Design decisions MUST prioritize mobile usability, then enhance for larger screens
-- **Performance on mobile**: The system MUST remain performant on mobile devices with limited resources
-- **Readable typography**: Text MUST be legible without zooming on mobile screens
+- **Functional clarity**: Every UI element MUST serve civic exploration
+- **Content-centric layout**: Citizen quotes and themes are the primary content
+- **Readable typography**: Optimized for reading citizen contributions
+- **Restrained color palette**: Does not compete with content
+- **Efficient navigation**: Quick access to search and commune exploration
 
-**Rationale**: Literary exploration is not confined to desktop computers. Users may wish to explore
-the Borges Library during commutes, in cafes, or while reading physical books. A mobile-responsive
-interface ensures the library is accessible wherever curiosity strikes. The graph visualization,
-being the core exploration mechanism, MUST be fully functional with touch interactions.
+**SCOPE LIMITATION**: This principle applies to VISUAL STYLING ONLY.
+Graph animations and 3D visualizations MUST be fully preserved.
 
-**Implementation requirements**:
-- CSS MUST use responsive breakpoints: mobile (< 768px), tablet (768-1024px), desktop (> 1024px)
-- Touch targets MUST be at least 44x44 pixels for comfortable tapping
-- Graph visualization MUST support touch gestures: tap (select), pinch (zoom), drag (pan), double-tap (focus)
-- Navigation menus MUST collapse to mobile-friendly formats (hamburger menu, bottom navigation)
-- Modals and panels MUST be scrollable and dismissible on small screens
-- Font sizes MUST use relative units (rem/em) with a minimum body text of 16px on mobile
-- Images and SVGs MUST scale appropriately without overflow or cropping
-- Testing MUST include real device testing on iOS and Android, not just browser emulation
-- Performance budgets MUST target < 3s First Contentful Paint on 3G connections
-- The 3D graph MUST gracefully degrade or adapt for devices with limited GPU capabilities
+**Rationale**: Users come to explore citizen voices, not interface design.
+Minimalism serves the civic mission.
+
+**Implementation Requirements**:
+- UI components MUST pass a "purpose test"
+- Color palette limited to 4-5 primary colors
+- Typography: maximum 2 font families
+- Navigation: Search by query, explore by commune
+- Graph visualization is the ONE exception for visual complexity
+
+---
+
+### VIII. Mobile-First Responsiveness
+
+**The interface MUST be fully functional on mobile devices.**
+
+Given that users may access this civic data from various devices, the interface
+MUST provide a seamless experience across all screen sizes:
+
+- **Touch-optimized interactions**: All graph interactions work with touch gestures
+- **Responsive layout**: Adapts from 320px to desktop
+- **Mobile-first design**: Prioritize mobile, enhance for desktop
+- **Performance on mobile**: Remain performant on limited devices
+
+**Rationale**: Civic data access should not be confined to desktop computers.
+Users may explore during meetings, research sessions, or community discussions.
+
+**Implementation Requirements**:
+- CSS responsive breakpoints: mobile (< 768px), tablet (768-1024px), desktop (> 1024px)
+- Touch targets at least 44x44 pixels
+- Graph: tap (select), pinch (zoom), drag (pan), double-tap (focus)
+- Collapsible navigation for mobile
+- Minimum body text 16px on mobile
+- Target < 3s First Contentful Paint on 3G
+
+---
+
+### IX. RAG Observability
+
+**The system MUST provide visibility into GraphRAG operations.**
+
+Users and developers MUST be able to observe how the GraphRAG system processes queries:
+
+- **Query tracing**: Every query traceable through retrieval and generation
+- **Provenance visibility**: Which entities, relationships, and quotes contributed
+- **Processing phases**: Entity selection, community analysis, text synthesis
+- **Performance metrics**: Query latency and commune coverage
+
+**Rationale**: Transparency in RAG operations enables debugging, validation, and trust.
+
+**Implementation Requirements**:
+- Every query MUST return provenance data
+- Debug mode MUST show processing phases
+- API MUST expose entity selection rationale
+- Performance timing MUST be available for optimization
 
 ---
 
@@ -279,42 +295,26 @@ being the core exploration mechanism, MUST be fully functional with touch intera
 
 ### Graph Consistency
 
-- Relationship directionality MUST be semantically meaningful and consistent
-- Relationship types MUST follow a controlled vocabulary
+- Relationship directionality MUST be semantically meaningful
 - Entity deduplication MUST occur before visualization
-- Dangling references MUST be prevented through referential integrity checks
+- Dangling references MUST be prevented
+- Commune attribution MUST be consistent
 
 ### Source Fidelity
 
-- Text chunks MUST maintain exact provenance to source books
+- Text chunks MUST maintain exact provenance to source contributions
 - Entity extractions MUST link back to originating chunks
-- Modifications to the graph MUST preserve audit trails
-- Source texts MUST remain immutable; annotations are separate layers
+- Source texts MUST remain immutable
+- Commune metadata MUST be accurate
 
 ### Defensive Type Conversion
 
 **All type conversions MUST handle `None` values explicitly.**
 
-Python's `dict.get('key', default)` only returns the default when the key is **missing**,
-NOT when the value is `None`. This subtle behavior causes silent failures:
-
 ```python
-# ❌ UNSAFE: Crashes when weight key exists with None value
-float(data.get('weight', 1.0))  # TypeError: float() argument must be... not 'NoneType'
-
-# ✅ SAFE: Handles both missing keys AND None values
+# SAFE: Handles both missing keys AND None values
 float(data.get('weight') or 1.0)
 ```
-
-**Implementation requirements**:
-- Type conversions (`float()`, `int()`, `str()`) MUST use `value or default` pattern
-- Code review MUST check for unsafe `.get('key', default)` before type conversion
-- Dictionary values from external sources (Neo4j, GraphML, APIs) MUST be treated as potentially `None`
-- Silent failures MUST be prevented - prefer explicit errors over corrupted data
-
-**Rationale**: A single `float(None)` crash in the GraphRAG pipeline can silently break
-entire features (like dynamic node visualization) while appearing to work. The
-`value or default` pattern provides defense in depth against nullable data.
 
 ---
 
@@ -322,55 +322,51 @@ entire features (like dynamic node visualization) while appearing to work. The
 
 ### Performance
 
-- Graph queries MUST complete within 2 seconds for typical exploration tasks
-- Visualizations MUST render smoothly (≥30 fps) for graphs up to 500 nodes
-- API response times MUST stay under 200ms for single-hop relationship queries
-- Progressive loading MUST be implemented for large result sets
+- Graph queries MUST complete within 2 seconds
+- Visualizations MUST render at ≥30 fps for up to 500 nodes
+- API response times MUST stay under 200ms for single-hop queries
+- Progressive loading for large result sets
 
 ### Accessibility
 
-- Graph visualizations MUST provide alternative text-based navigation modes
-- Color schemes MUST maintain WCAG AA contrast ratios
-- Keyboard navigation MUST be fully supported
-- Screen reader compatibility MUST be maintained for all interactive elements
+- Graph visualizations MUST provide text-based alternatives
+- Color schemes MUST maintain WCAG AA contrast
+- Keyboard navigation MUST be supported
+- Screen reader compatibility maintained
 
 ### Error Handling
 
-- Empty query results MUST provide actionable suggestions
-- Graph rendering failures MUST gracefully degrade to list views
-- API errors MUST include context and recovery guidance
-- System state MUST be recoverable after errors without data loss
+- Empty results MUST provide suggestions (try different commune, broader query)
+- Graph failures MUST degrade gracefully to list views
+- MCP connection errors MUST show clear status
+- System state MUST be recoverable
 
 ---
 
 ## Governance
 
-**This constitution supersedes all other development practices and design decisions.**
+**This constitution supersedes all other development practices.**
 
 ### Amendment Procedure
 
-1. Proposed amendments MUST be documented with:
-   - Rationale for the change
-   - Impact analysis on existing principles
-   - Migration plan for affected components
-   - Approval from project maintainers
+1. Amendments MUST document:
+   - Rationale for change
+   - Impact analysis
+   - Migration plan
 
-2. Amendments follow semantic versioning:
-   - **MAJOR**: Principle removals, redefinitions, or backwards-incompatible changes
-   - **MINOR**: New principles added or material expansions to existing guidance
-   - **PATCH**: Clarifications, wording improvements, non-semantic refinements
+2. Semantic versioning:
+   - **MAJOR**: Scope changes, principle removals
+   - **MINOR**: New principles, material expansions
+   - **PATCH**: Clarifications, wording improvements
 
 ### Compliance Review
 
-- All feature specifications MUST include a Constitution Check section
-- Pull requests MUST verify compliance with applicable principles
-- Design deviations MUST be explicitly justified in plan.md Complexity Tracking
-- Automated tests SHOULD validate constitutional requirements where feasible
+- Features MUST include Constitution Check
+- PRs MUST verify compliance
+- Deviations MUST be justified
 
 ### Living Document
 
-This constitution is maintained in version control at `.specify/memory/constitution.md`.
-For development workflow guidance, consult the runtime documentation in `README.md`
-and project-specific instructions in `CLAUDE.md`.
+Maintained at `.specify/memory/constitution.md`.
 
-**Version**: 1.5.0 | **Ratified**: 2025-11-18 | **Last Amended**: 2025-11-26
+**Version**: 3.0.0 | **Ratified**: 2025-11-18 | **Last Amended**: 2025-12-23

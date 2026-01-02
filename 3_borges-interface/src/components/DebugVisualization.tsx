@@ -36,12 +36,12 @@ export default function DebugVisualization({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center">
-      <div className="bg-borges-dark border border-borges-secondary rounded-lg p-6 max-w-6xl max-h-[90vh] overflow-auto text-white">
+      <div className="bg-datack-black border border-datack-panel rounded-lg p-6 max-w-6xl max-h-[90vh] overflow-auto text-white">
 
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-borges-light">🔬 Debug GraphRAG</h2>
+            <h2 className="text-2xl font-bold text-datack-light">🔬 Debug GraphRAG</h2>
             <p className="text-gray-400">Analyse des phases de traitement</p>
           </div>
           <button
@@ -53,7 +53,7 @@ export default function DebugVisualization({
         </div>
 
         {/* Context Stats */}
-        <div className="bg-borges-secondary p-4 rounded mb-6">
+        <div className="bg-datack-panel p-4 rounded mb-6">
           <h3 className="text-lg font-semibold mb-3">📊 Statistiques Contextuelles</h3>
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -81,8 +81,8 @@ export default function DebugVisualization({
                 onClick={() => setActivePhase(phase.key)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded whitespace-nowrap ${
                   activePhase === phase.key
-                    ? 'bg-borges-primary text-white'
-                    : 'bg-borges-secondary text-gray-300 hover:bg-gray-600'
+                    ? 'bg-datack-yellow text-white'
+                    : 'bg-datack-panel text-gray-300 hover:bg-gray-600'
                 }`}
               >
                 <span>{phase.icon}</span>
@@ -111,12 +111,12 @@ export default function DebugVisualization({
 
         {/* Animation Timeline */}
         {debugInfo.animation_timeline && debugInfo.animation_timeline.length > 0 && (
-          <div className="mt-6 bg-borges-secondary p-4 rounded">
+          <div className="mt-6 bg-datack-panel p-4 rounded">
             <h3 className="text-lg font-semibold mb-3">🎬 Timeline d&apos;Animation</h3>
             <div className="space-y-2">
               {debugInfo.animation_timeline.map((step, index) => (
                 <div key={index} className="flex items-center space-x-3 text-sm">
-                  <span className="w-8 h-8 bg-borges-primary rounded-full flex items-center justify-center text-xs">
+                  <span className="w-8 h-8 bg-datack-yellow rounded-full flex items-center justify-center text-xs">
                     {index + 1}
                   </span>
                   <span className="flex-1">{step.description}</span>
@@ -174,7 +174,7 @@ function EntitySelectionPhase({ phase }: { phase: any }) {
 
         <div>
           <h4 className="font-semibold mb-3">Statistiques</h4>
-          <div className="bg-borges-secondary p-4 rounded">
+          <div className="bg-datack-panel p-4 rounded">
             <div className="space-y-2">
               <div>Entités sélectionnées: {phase.entities.filter((e: DebugEntity) => e.selected).length}</div>
               <div>Total d&apos;entités: {phase.entities.length}</div>
@@ -201,7 +201,7 @@ function CommunityAnalysisPhase({ phase }: { phase: any }) {
 
       <div className="space-y-4">
         {phase.communities.map((community: DebugCommunity, index: number) => (
-          <div key={index} className="bg-borges-secondary p-4 rounded">
+          <div key={index} className="bg-datack-panel p-4 rounded">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h4 className="font-semibold">Communauté {community.id}</h4>
@@ -236,11 +236,11 @@ function RelationshipMappingPhase({ phase }: { phase: any }) {
 
       <div className="space-y-3">
         {phase.relationships.map((relationship: DebugRelationship, index: number) => (
-          <div key={index} className="bg-borges-secondary p-4 rounded">
+          <div key={index} className="bg-datack-panel p-4 rounded">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <span className="font-medium">{relationship.source}</span>
-                <span className="text-borges-primary">→</span>
+                <span className="text-datack-yellow">→</span>
                 <span className="font-medium">{relationship.target}</span>
               </div>
               <div className="text-right text-sm">
@@ -273,7 +273,7 @@ function TextSynthesisPhase({ phase }: { phase: any }) {
 
       <div className="space-y-4">
         {phase.sources.map((source: DebugTextSource, index: number) => (
-          <div key={index} className="bg-borges-secondary p-4 rounded">
+          <div key={index} className="bg-datack-panel p-4 rounded">
             <div className="flex justify-between items-start mb-3">
               <h4 className="font-semibold">Source {source.id}</h4>
               <span className="text-sm">Pertinence: {source.relevance.toFixed(3)}</span>

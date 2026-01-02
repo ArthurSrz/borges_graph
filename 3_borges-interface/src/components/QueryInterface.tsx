@@ -404,14 +404,14 @@ export default function QueryInterface({
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask a question..."
-                className="borges-input pr-12"
+                className="datack-input pr-12"
                 disabled={isLoading}
               />
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                 {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-borges-light border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-datack-light border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <svg className="w-4 h-4 text-borges-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-datack-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 )}
@@ -420,7 +420,7 @@ export default function QueryInterface({
             <button
               type="submit"
               disabled={!query.trim() || isLoading}
-              className="borges-btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="datack-btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               {isLoading ? 'Analyzing...' : 'Explore'}
             </button>
@@ -432,10 +432,10 @@ export default function QueryInterface({
               <button
                 type="button"
                 onClick={() => setMode('local')}
-                className={`px-2 py-1 rounded-borges-sm transition-colors ${
+                className={`px-2 py-1 rounded transition-colors ${
                   mode === 'local'
-                    ? 'bg-borges-light text-borges-dark'
-                    : 'bg-borges-secondary text-borges-light-muted hover:text-borges-light border border-borges-border'
+                    ? 'bg-datack-light text-datack-black'
+                    : 'bg-datack-panel text-datack-light-muted hover:text-datack-light border border-datack-border'
                 }`}
               >
                 Local
@@ -443,10 +443,10 @@ export default function QueryInterface({
               <button
                 type="button"
                 onClick={() => setMode('global')}
-                className={`px-2 py-1 rounded-borges-sm transition-colors ${
+                className={`px-2 py-1 rounded transition-colors ${
                   mode === 'global'
-                    ? 'bg-borges-light text-borges-dark'
-                    : 'bg-borges-secondary text-borges-light-muted hover:text-borges-light border border-borges-border'
+                    ? 'bg-datack-light text-datack-black'
+                    : 'bg-datack-panel text-datack-light-muted hover:text-datack-light border border-datack-border'
                 }`}
               >
                 Global
@@ -456,10 +456,10 @@ export default function QueryInterface({
               <button
                 type="button"
                 onClick={() => setDebugMode(!debugMode)}
-                className={`px-2 py-1 rounded-borges-sm flex items-center space-x-1 transition-colors ${
+                className={`px-2 py-1 rounded flex items-center space-x-1 transition-colors ${
                   debugMode
-                    ? 'bg-borges-light text-borges-dark'
-                    : 'bg-borges-secondary text-borges-light-muted hover:text-borges-light border border-borges-border'
+                    ? 'bg-datack-light text-datack-black'
+                    : 'bg-datack-panel text-datack-light-muted hover:text-datack-light border border-datack-border'
                 }`}
                 title="Enable GraphRAG debug visualization"
               >
@@ -471,7 +471,7 @@ export default function QueryInterface({
                 <button
                   type="button"
                   onClick={() => setShowDebugPanel(true)}
-                  className="px-2 py-1 rounded-borges-sm bg-borges-secondary text-borges-light hover:bg-borges-dark-hover border border-borges-light flex items-center space-x-1 transition-colors"
+                  className="px-2 py-1 rounded bg-datack-panel text-datack-light hover:bg-datack-black-hover border border-datack-light flex items-center space-x-1 transition-colors"
                   title="View GraphRAG processing phases"
                 >
                   <span>Phases</span>
@@ -484,11 +484,11 @@ export default function QueryInterface({
 
       {/* Result Panel - Non-blocking side popup for graph exploration */}
       {showResult && lastResult && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-borges-secondary border border-borges-border rounded-borges-md p-4 shadow-borges-lg z-10 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-datack-panel border border-datack-border rounded-lg p-4 shadow-lg z-10 max-h-80 overflow-y-auto">
           <div className="flex justify-between items-start mb-3">
             <div className="flex-1">
-              <div className="text-xs text-borges-muted mb-1">Query:</div>
-              <div className="text-borges-light font-medium text-sm">{lastResult.query}</div>
+              <div className="text-xs text-datack-muted mb-1">Query:</div>
+              <div className="text-datack-light font-medium text-sm">{lastResult.query}</div>
             </div>
             <button
               onClick={() => {
@@ -497,7 +497,7 @@ export default function QueryInterface({
                   onClearHighlight()
                 }
               }}
-              className="borges-btn-ghost p-1 hover:bg-borges-dark-hover rounded-borges-sm"
+              className="datack-btn-ghost p-1 hover:bg-datack-black-hover rounded"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -507,20 +507,20 @@ export default function QueryInterface({
 
           {/* Context Info */}
           {lastResult.context && (
-            <div className="mb-3 p-2 bg-borges-dark rounded-borges-sm text-xs border border-borges-border">
-              <div className="text-borges-muted">
-                Mode: <span className="text-borges-light">{lastResult.context.mode}</span>
+            <div className="mb-3 p-2 bg-datack-black rounded text-xs border border-datack-border">
+              <div className="text-datack-muted">
+                Mode: <span className="text-datack-light">{lastResult.context.mode}</span>
               </div>
             </div>
           )}
 
           <div className="mb-4">
-            <div className="text-xs text-borges-muted mb-2">Reconciled Answer:</div>
+            <div className="text-xs text-datack-muted mb-2">Reconciled Answer:</div>
             <HighlightedText
               text={lastResult.answer}
               entities={coloredEntities}
               onEntityClick={handleEntityClick}
-              className="text-borges-light-muted"
+              className="text-datack-light-muted"
               showTooltip={true}
             />
           </div>

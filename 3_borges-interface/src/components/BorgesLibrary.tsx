@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 
 const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DForce'), {
   ssr: false,
   loading: () => (
-    <div className="flex flex-col items-center justify-center h-96 bg-black">
+    <div className="flex flex-col items-center justify-center h-96 bg-datack-black">
       <div className="text-center">
-        {/* Hexagon Library Assembly Animation - Books assembling into infinite library */}
+        {/* Datack Civic Graph Assembly Animation */}
         <svg className="w-48 h-48 mx-auto mb-4" viewBox="0 0 200 200" fill="none">
-          {/* Animated hexagons assembling into library structure */}
+          {/* Animated nodes connecting into civic graph structure */}
           <style>{`
             @keyframes hexAssemble1 { 0% { opacity: 0; transform: translate(-30px, -20px); } 50% { opacity: 0.6; } 100% { opacity: 0.8; transform: translate(0, 0); } }
             @keyframes hexAssemble2 { 0% { opacity: 0; transform: translate(30px, -20px); } 50% { opacity: 0.5; } 100% { opacity: 0.7; transform: translate(0, 0); } }
@@ -26,11 +26,11 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
             .book-line { animation: bookShimmer 3s ease-in-out infinite; }
           `}</style>
 
-          {/* Central hexagon - main library cell */}
+          {/* Central hexagon - main civic node - Datack Yellow */}
           <polygon
             className="hex1"
             points="100,40 130,57.5 130,92.5 100,110 70,92.5 70,57.5"
-            stroke="#a0a0a0"
+            stroke="#dbff3b"
             strokeWidth="1.5"
             fill="none"
           />
@@ -39,7 +39,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex2"
             points="100,10 125,25 125,55 100,70 75,55 75,25"
-            stroke="#a0a0a0"
+            stroke="#dbff3b"
             strokeWidth="1"
             fill="none"
           />
@@ -48,7 +48,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex3"
             points="70,95 95,110 95,140 70,155 45,140 45,110"
-            stroke="#a0a0a0"
+            stroke="#dbff3b"
             strokeWidth="1"
             fill="none"
           />
@@ -57,7 +57,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex4"
             points="130,95 155,110 155,140 130,155 105,140 105,110"
-            stroke="#a0a0a0"
+            stroke="#dbff3b"
             strokeWidth="1"
             fill="none"
           />
@@ -66,7 +66,7 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex5"
             points="50,60 75,75 75,105 50,120 25,105 25,75"
-            stroke="#a0a0a0"
+            stroke="#dbff3b"
             strokeWidth="0.8"
             fill="none"
           />
@@ -75,18 +75,18 @@ const GraphVisualization3DForce = dynamic(() => import('./GraphVisualization3DFo
           <polygon
             className="hex5"
             points="150,60 175,75 175,105 150,120 125,105 125,75"
-            stroke="#a0a0a0"
+            stroke="#dbff3b"
             strokeWidth="0.8"
             fill="none"
             style={{ animationDelay: '1s' }}
           />
 
-          {/* Book lines inside central hexagon - simulating shelves */}
-          <line className="book-line" x1="80" y1="65" x2="120" y2="65" stroke="#a0a0a0" strokeWidth="0.5" />
-          <line className="book-line" x1="82" y1="75" x2="118" y2="75" stroke="#a0a0a0" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
-          <line className="book-line" x1="84" y1="85" x2="116" y2="85" stroke="#a0a0a0" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
+          {/* Connection lines inside central hexagon - Datack Yellow */}
+          <line className="book-line" x1="80" y1="65" x2="120" y2="65" stroke="#dbff3b" strokeWidth="0.5" />
+          <line className="book-line" x1="82" y1="75" x2="118" y2="75" stroke="#dbff3b" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
+          <line className="book-line" x1="84" y1="85" x2="116" y2="85" stroke="#dbff3b" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
         </svg>
-        <div className="text-borges-light-muted text-xs italic max-w-lg text-center">« L&apos;univers (que d&apos;autres appellent la Bibliothèque) se compose d&apos;un nombre indéfini, et peut-être infini, de galeries hexagonales... »</div>
+        <div className="text-datack-muted text-xs max-w-lg text-center">Chargement du graphe citoyen...</div>
       </div>
     </div>
   )
@@ -99,9 +99,15 @@ import TutorialOverlay from './TutorialOverlay'
 import TextChunkModal from './TextChunkModal'
 import ProvenancePanel from './ProvenancePanel'
 import EntityDetailModal from './EntityDetailModal'
-import { reconciliationService } from '@/lib/services/reconciliation'
+import CommuneSelector, { CommuneSelectorMobile, type Commune } from './CommuneSelector'
+// CitizenExtractsPanel merged into EntityDetailModal (Feature 005-agent-orchestration)
+import CitizenQuotesPanel from './CitizenQuotesPanel'
+import CommuneFilterChips from './CommuneFilterChips'
+import { lawGraphRAGService } from '@/lib/services/law-graphrag'
+import type { CitizenExtract, GrandDebatEntity } from '@/types/law-graphrag'
 import { colorService, type EntityColorInfo } from '@/lib/utils/colorService'
 import type { TraversedRelationship } from '@/types/provenance'
+import { useGraphMLData, transformToReconciliationData } from '@/hooks/useGraphMLData'
 
 
 interface ReconciliationGraphData {
@@ -121,11 +127,6 @@ interface ReconciliationGraphData {
   }>;
 }
 
-interface Book {
-  id: string
-  name: string
-  has_data: boolean
-}
 
 /**
  * Composant principal de la bibliothèque de Borges
@@ -140,6 +141,8 @@ function BorgesLibrary() {
     console.log(`🎯 Node clicked: ${nodeId} (${nodeLabel})`)
     setSelectedEntityId(nodeId)
     setSelectedEntityName(nodeLabel)
+
+    // Entity details now shown in EntityDetailModal (merged with citizen extracts)
   }
 
   // Handler for entity clicks from ProvenancePanel
@@ -170,20 +173,54 @@ function BorgesLibrary() {
   }
   const [reconciliationData, setReconciliationData] = useState<ReconciliationGraphData | null>(null)
   const [isLoadingGraph, setIsLoadingGraph] = useState(true) // Start as true to show loading
+  // Track if this is a first-time user (for progressive vs instant loading)
+  const isFirstTimeUserRef = useRef<boolean | null>(null)
+  // Initialize tutorial state - will be set correctly on client mount
   const [showTutorial, setShowTutorial] = useState(false)
-  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false) // For returning users
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false)
+  const [isClientMounted, setIsClientMounted] = useState(false)
+
+  // Set tutorial state on client mount to avoid SSR/hydration issues
+  useEffect(() => {
+    const tutorialSeen = localStorage.getItem('borges-tutorial-seen')
+    const isFirstTime = !tutorialSeen
+    isFirstTimeUserRef.current = isFirstTime
+
+    console.log('🎓 MOUNT EFFECT - Tutorial check:', {
+      tutorialSeen,
+      isFirstTime,
+      willShowTutorial: isFirstTime,
+      willShowLoadingOverlay: !isFirstTime
+    })
+
+    if (isFirstTime) {
+      console.log('🎓 Setting showTutorial = true (first-time user)')
+      setShowTutorial(true)
+    } else {
+      console.log('🔄 Setting showLoadingOverlay = true (returning user)')
+      setShowLoadingOverlay(true)
+    }
+    setIsClientMounted(true)
+    console.log('✅ Client mounted, isClientMounted = true')
+  }, [])
   const [loadingProgress, setLoadingProgress] = useState<{ step: string; current: number; total: number } | null>(null)
   const [visibleNodeIds, setVisibleNodeIds] = useState<string[]>([])
   const [searchPath, setSearchPath] = useState<any>(null)
   const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [provenanceGraphData, setProvenanceGraphData] = useState<ReconciliationGraphData | null>(null)  // MCP subgraph for progressive display
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentProcessingPhase, setCurrentProcessingPhase] = useState<string | null>(null)
   const [currentQuery, setCurrentQuery] = useState<string>('')
   const [queryAnswer, setQueryAnswer] = useState<string>('')
   const [showAnswer, setShowAnswer] = useState(false)
   const [answerPanelHeight, setAnswerPanelHeight] = useState(30) // Default 30vh on mobile
+  const [desktopPanelHeight, setDesktopPanelHeight] = useState(45) // Default 45vh on desktop
+  const [desktopPanelWidth, setDesktopPanelWidth] = useState(420) // Default 420px on desktop
   // Entity coloring state for interpretability
   const [coloredEntities, setColoredEntities] = useState<EntityColorInfo[]>([])
+  // Query error handling state
+  const [queryError, setQueryError] = useState<string | null>(null)
+  const [showErrorAlert, setShowErrorAlert] = useState(false)
 
   // TextChunkModal state for entity click navigation
   const [isEntityChunkModalOpen, setIsEntityChunkModalOpen] = useState(false)
@@ -191,12 +228,17 @@ function BorgesLibrary() {
     entityName: string
     aggregatedChunks: string
     relatedRelationships: number
-    bookId?: string
+    communeId?: string
   } | null>(null)
-  const [books, setBooks] = useState<Book[]>([])
-  const [selectedBook, setSelectedBook] = useState<string>('a_rebours_huysmans')
-  const [multiBook, setMultiBook] = useState<boolean>(false)
-  const [mode, setMode] = useState<'local' | 'global'>('local')
+  // Single-purpose: Grand Débat National GraphRAG only (Constitution v3.0.0 Principle VI)
+  const [mode, setMode] = useState<'local' | 'global'>('global')
+
+  // Commune selection for filtered/comparative analysis (Constitution Principles #2, #3)
+  const [availableCommunes, setAvailableCommunes] = useState<Commune[]>([])
+  const [selectedCommunes, setSelectedCommunes] = useState<string[]>([])
+  const [loadingCommunes, setLoadingCommunes] = useState(true)
+  const [currentCommuneCount, setCurrentCommuneCount] = useState<number>(0)
+
   const [processingStartTime, setProcessingStartTime] = useState<number | null>(null)
   const [elapsedTime, setElapsedTime] = useState<number>(0)
   const [processingStats, setProcessingStats] = useState<{
@@ -216,32 +258,70 @@ function BorgesLibrary() {
   // Store query result nodes for entity lookup
   const [queryResultNodes, setQueryResultNodes] = useState<any[]>([])
 
-  // Ref to prevent double execution of loadReconciliationGraph (React Strict Mode)
-  const graphLoadingRef = useRef(false)
-  const lastLoadedBookRef = useRef<string | null>(null)
+  // Store source chunks from query results for provenance display
+  const [sourceChunks, setSourceChunks] = useState<Array<{
+    chunk_id: string
+    content: string
+    document_id: string
+    commune?: string
+  }>>([])
+  const [showSourceChunksPanel, setShowSourceChunksPanel] = useState(false)
 
-  // Borges quotes from "Fictions" for loading screen
+  // Bi-directional highlighting state - Constitution Principle V: End-to-End Interpretability
+  // When an entity is clicked in RAG answer, highlight matching text in source chunks
+  const [highlightedEntityId, setHighlightedEntityId] = useState<string | null>(null)
+
+  // Store provenance entities for EntityDetailModal (Constitution Principle #7: Civic Provenance Chain)
+  const [provenanceEntities, setProvenanceEntities] = useState<GrandDebatEntity[]>([])
+
+  // Grand Débat National civic data exploration - Constitution v3.0.0
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0)
-  const borgesQuotes = [
-    "« L'univers (que d'autres appellent la Bibliothèque) se compose d'un nombre indéfini, et peut-être infini, de galeries hexagonales... »",
-    "« La Bibliothèque existe ab aeterno. De cette vérité dont le corollaire immédiat est l'éternité future du monde, aucun esprit raisonnable ne peut douter. »",
-    "« Il suffit qu'un livre soit concevable pour qu'il existe. »",
-    "« Comme tous les hommes de la Bibliothèque, j'ai voyagé dans ma jeunesse ; j'ai pérégrié à la recherche d'un livre, peut-être du catalogue des catalogues. »",
-    "« L'univers, avec son élégante provision de rayonnages, de tomes énigmatiques, d'infatigables escaliers pour le voyageur et de latrines pour le bibliothécaire assis, ne peut être que l'œuvre d'un dieu. »",
-    "« La certitude que tout est écrit nous annule ou fait de nous des fantômes. »",
-    "« Les impies affirment que le nonsens est la règle dans la Bibliothèque et que les passages raisonnables, ou seulement de la plus humble cohérence, constituent une exception quasi miraculeuse. »",
-    "« Je sais de régions où les jeunes gens se prosternent devant les livres et baisent avec barbarie les pages, mais ne savent pas déchiffrer une seule lettre. »"
+  const civicQuotes = [
+    "« La parole citoyenne, écoutée et analysée, devient le fondement d'une démocratie vivante. »",
+    "« Chaque commune porte en elle les préoccupations singulières de ses habitants. »",
+    "« Le Grand Débat National : quand 50 communes de Charente-Maritime prennent la parole. »",
+    "« Des Cahiers de Doléances aux graphes de connaissances : la voix des citoyens se structure. »",
+    "« Explorer les contributions citoyennes, c'est comprendre les attentes d'un territoire. »"
   ]
 
   // Rotate quotes every 8 seconds during loading
   useEffect(() => {
     if (showLoadingOverlay || isLoadingGraph) {
       const interval = setInterval(() => {
-        setCurrentQuoteIndex((prev) => (prev + 1) % borgesQuotes.length)
+        setCurrentQuoteIndex((prev) => (prev + 1) % civicQuotes.length)
       }, 8000)
       return () => clearInterval(interval)
     }
-  }, [showLoadingOverlay, isLoadingGraph, borgesQuotes.length])
+  }, [showLoadingOverlay, isLoadingGraph, civicQuotes.length])
+
+  // Auto-dismiss error alert after 10 seconds (user can manually dismiss earlier)
+  useEffect(() => {
+    if (showErrorAlert) {
+      const timeout = setTimeout(() => {
+        setShowErrorAlert(false)
+      }, 10000)
+      return () => clearTimeout(timeout)
+    }
+  }, [showErrorAlert])
+
+  // Fetch available communes on mount (Constitution Principle #2: Commune-Centric)
+  useEffect(() => {
+    const fetchCommunes = async () => {
+      try {
+        setLoadingCommunes(true)
+        const communes = await lawGraphRAGService.fetchCommunes()
+        // Sort communes alphabetically
+        const sortedCommunes = communes.sort((a, b) => a.name.localeCompare(b.name))
+        setAvailableCommunes(sortedCommunes)
+        console.log(`🏛️ Loaded ${sortedCommunes.length} communes for selection`)
+      } catch (error) {
+        console.error('Failed to fetch communes:', error)
+      } finally {
+        setLoadingCommunes(false)
+      }
+    }
+    fetchCommunes()
+  }, [])
 
   // Function to extract chunks related to a specific entity
   const extractEntityChunks = (entityId: string) => {
@@ -281,9 +361,17 @@ function BorgesLibrary() {
     }
   }
 
-  // Handle entity click to show related chunks
+  // Handle entity click to show related chunks + bi-directional highlighting
   const handleEntityClick = (entity: EntityColorInfo) => {
     console.log('🎯 Entity clicked:', entity.id)
+
+    // Toggle bi-directional highlighting - Constitution Principle V
+    // If same entity clicked, clear highlight; otherwise set new highlight
+    if (highlightedEntityId === entity.id) {
+      setHighlightedEntityId(null)
+    } else {
+      setHighlightedEntityId(entity.id)
+    }
 
     // Find the actual Neo4j node ID by matching the labels or id
     // Search in both queryResultNodes (from GraphRAG query) and reconciliationData (full graph)
@@ -309,46 +397,294 @@ function BorgesLibrary() {
     }
   }
 
-  useEffect(() => {
-    loadBooks()
-    loadReconciliationGraph()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Helper function to highlight entity text within chunk content
+  const highlightEntityInText = (text: string, entityId: string | null, entityColor: string): JSX.Element => {
+    if (!entityId || !text) {
+      return <>{text}</>
+    }
 
-  // Check localStorage for tutorial skip on mount
-  useEffect(() => {
-    const tutorialSeen = localStorage.getItem('borges-tutorial-seen')
-    if (!tutorialSeen) {
-      setShowTutorial(true)
-    } else {
-      // For returning users, show loading overlay while data loads
-      setShowLoadingOverlay(true)
+    // Create case-insensitive regex for entity name
+    const escapedEntity = entityId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`(${escapedEntity})`, 'gi')
+    const parts = text.split(regex)
+
+    return (
+      <>
+        {parts.map((part, idx) =>
+          regex.test(part) ? (
+            <span
+              key={idx}
+              className="px-1 py-0.5 rounded transition-all duration-300"
+              style={{
+                backgroundColor: `${entityColor}40`,
+                borderBottom: `2px solid ${entityColor}`,
+                color: entityColor
+              }}
+            >
+              {part}
+            </span>
+          ) : (
+            <span key={idx}>{part}</span>
+          )
+        )}
+      </>
+    )
+  }
+
+  // Memoized node normalization - Graph Performance Optimization (006-graph-optimization)
+  // Transforms raw graph nodes into normalized format with guaranteed properties
+  const normalizeGraphNodes = useMemo(() => {
+    return (nodes: any[]) => {
+      return nodes.map(node => ({
+        ...node,
+        properties: node.properties as Record<string, any>,
+        degree: node.degree ?? 1,
+        centrality_score: node.centrality_score ?? 0.5
+      }))
     }
   }, [])
+
+  // Memoized entity color mapping - Graph Performance Optimization (006-graph-optimization)
+  // Transforms graph nodes into entity color format for interpretability
+  const mapNodesToColorEntities = useMemo(() => {
+    return (nodes: any[]) => {
+      return nodes.map((node: any, idx: number) => ({
+        id: node.properties?.name || node.id,
+        type: node.labels?.[0] || 'CIVIC_ENTITY',
+        description: node.properties?.description,
+        score: node.centrality_score || 0.5,
+        order: idx
+      }))
+    }
+  }, [])
+
+  // Memoized query keyword matcher - Graph Performance Optimization (006-graph-optimization)
+  // Filters nodes based on query keywords with O(n) complexity but memoized function
+  const createQueryMatcher = useMemo(() => {
+    return (query: string, nodes: any[]) => {
+      const queryLower = query.toLowerCase()
+      const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3)
+
+      return nodes.filter(node => {
+        const labels = node.labels.map((l: string) => l.toLowerCase())
+        const name = (node.properties?.name || '').toLowerCase()
+        const description = (node.properties?.description || '').toLowerCase()
+
+        return queryWords.some(word =>
+          labels.some((label: string) => label.includes(word)) ||
+          name.includes(word) ||
+          description.includes(word)
+        )
+      })
+    }
+  }, [])
+
+  // Load GraphML data for instant startup visualization (Constitution Principle - instant graph display)
+  // GraphML file contains the 50 communes with their relationships
+  const {
+    document: graphMLDocument,
+    isLoading: isGraphMLLoading,
+    error: graphMLError
+  } = useGraphMLData({
+    url: '/data/grand-debat.graphml',
+    filterOrphans: true, // Constitution Principle I: No orphan nodes
+    onLoad: (doc) => {
+      console.log(`📊 GraphML loaded: ${doc.nodes.length} nodes, ${doc.edges.length} edges`)
+    },
+    onError: (err) => {
+      console.error('❌ GraphML loading error:', err)
+    }
+  })
+
+  // Tutorial state now initialized synchronously above to avoid race conditions
+
+  // Transform GraphML data to reconciliation format when loaded
+  useEffect(() => {
+    if (graphMLDocument && graphMLDocument.nodes.length > 0) {
+      console.log('🏛️ Transforming GraphML data for visualization...')
+      setCurrentProcessingPhase('🏛️ Chargement du graphe citoyen...')
+
+      // Transform GraphML to reconciliation data format
+      const transformedData = transformToReconciliationData(graphMLDocument)
+
+      const graphData: ReconciliationGraphData = {
+        nodes: transformedData.nodes.map(node => ({
+          id: node.id,
+          labels: node.labels,
+          properties: node.properties,
+          degree: typeof node.degree === 'number' ? node.degree : 1,
+          centrality_score: typeof node.centrality_score === 'number' ? node.centrality_score : 0.5
+        })),
+        relationships: transformedData.relationships.map(rel => ({
+          id: rel.id,
+          type: rel.type,
+          source: rel.source,
+          target: rel.target,
+          properties: rel.properties
+        }))
+      }
+
+      // Store as base graph for subgraph queries
+      baseGraphDataRef.current = graphData
+
+      setReconciliationData(graphData)
+      setProcessingStats({
+        nodes: graphData.nodes.length,
+        communities: 0,
+        neo4jRelationships: graphData.relationships.length
+      })
+
+      console.log(`✅ Graph loaded: ${graphData.nodes.length} nodes, ${graphData.relationships.length} relationships`)
+
+      // Wait for client mount before hiding loading (prevents race condition with tutorial check)
+      // This ensures isFirstTimeUserRef.current is set before we decide to hide loading
+      if (!isClientMounted) {
+        console.log('⏳ GRAPHML EFFECT - Waiting for client mount before hiding loading...')
+        return
+      }
+
+      console.log('🔍 GRAPHML EFFECT - Loading decision:', {
+        showTutorial,
+        isClientMounted,
+        willHideLoading: !showTutorial
+      })
+
+      // Don't hide loading state if tutorial is still showing (first-time users)
+      // This prevents the tutorial from disappearing when GraphML loads quickly
+      if (!showTutorial) {
+        console.log('🔓 GRAPHML EFFECT - Hiding loading (returning user path)')
+        setIsLoadingGraph(false)
+        setShowLoadingOverlay(false)
+      } else {
+        console.log('🔒 GRAPHML EFFECT - Keeping loading visible (tutorial still showing)')
+      }
+      setCurrentProcessingPhase(null)
+    }
+  }, [graphMLDocument, showTutorial, isClientMounted])
+
+  // Handle GraphML loading errors
+  useEffect(() => {
+    if (graphMLError) {
+      console.error('❌ GraphML loading failed:', graphMLError)
+      setCurrentProcessingPhase('❌ Erreur de chargement du graphe')
+      setIsLoadingGraph(false)
+      setShowLoadingOverlay(false)
+    }
+  }, [graphMLError])
+
+  // Background fetch: Load full graph from MCP API after GraphML displays
+  // First-time users: Progressive loading with batches (see graph expand)
+  // Returning users: Instant loading (full graph immediately)
+  useEffect(() => {
+    // Wait for client mount to ensure isFirstTimeUserRef.current is set
+    // This prevents the race condition where we check user type before it's determined
+    if (!isClientMounted) return
+
+    // Only fetch once, after GraphML has loaded (prevents race condition)
+    if (mcpFetchedRef.current || !graphMLDocument || isGraphMLLoading) return
+
+    const fetchFullMCPGraph = async () => {
+      mcpFetchedRef.current = true  // Mark as initiated to prevent duplicate calls
+
+      const isFirstTime = isFirstTimeUserRef.current
+      console.log('🚀 MCP FETCH - Starting fetch:', {
+        isFirstTime,
+        isFirstTimeUserRef: isFirstTimeUserRef.current,
+        path: isFirstTime ? 'progressive' : 'instant'
+      })
+
+      try {
+        if (isFirstTime) {
+          // FIRST-TIME USERS: Progressive loading with batches
+          console.log('🎬 MCP FETCH - First-time user: Progressive loading in batches...')
+
+          await lawGraphRAGService.fetchFullGraphProgressive(
+            (graphData, progress) => {
+              // Callback fired after each batch (5, 10, 15, 20... 50 communes)
+              setCurrentProcessingPhase(`🌐 Chargement ${progress.current}/${progress.total} communes...`)
+              setCurrentCommuneCount(progress.current)
+
+              console.log(`✅ Batch ${progress.current}/${progress.total}: ${graphData.nodes.length} nodes`)
+
+              // Transform to reconciliation data format
+              const enrichedData: ReconciliationGraphData = {
+                nodes: graphData.nodes.map(node => ({
+                  id: node.id,
+                  labels: node.labels,
+                  properties: node.properties as Record<string, any>,
+                  degree: node.degree ?? 1,
+                  centrality_score: node.centrality_score ?? 0.5
+                })),
+                relationships: graphData.relationships
+              }
+
+              // Update graph smoothly with new batch (replaces previous - cumulative)
+              baseGraphDataRef.current = enrichedData
+              setReconciliationData(enrichedData)
+              setProcessingStats({
+                nodes: enrichedData.nodes.length,
+                communities: 0,
+                neo4jRelationships: enrichedData.relationships.length
+              })
+            },
+            5,  // Batch size: 5 communes at a time (10 batches total)
+            50  // Total: 50 communes
+          )
+
+          console.log('📊 Progressive loading complete!')
+        } else {
+          // RETURNING USERS: Instant full graph loading
+          console.log('⚡ MCP FETCH - Returning user: Loading full graph instantly...')
+
+          const graphData = await lawGraphRAGService.fetchFullGraph()
+
+          if (graphData && graphData.nodes.length > 0) {
+            setCurrentCommuneCount(50)
+
+            const enrichedData: ReconciliationGraphData = {
+              nodes: graphData.nodes.map(node => ({
+                id: node.id,
+                labels: node.labels,
+                properties: node.properties as Record<string, any>,
+                degree: node.degree ?? 1,
+                centrality_score: node.centrality_score ?? 0.5
+              })),
+              relationships: graphData.relationships
+            }
+
+            baseGraphDataRef.current = enrichedData
+            setReconciliationData(enrichedData)
+            setProcessingStats({
+              nodes: enrichedData.nodes.length,
+              communities: 0,
+              neo4jRelationships: enrichedData.relationships.length
+            })
+
+            console.log(`⚡ Instant load complete: ${graphData.nodes.length} nodes`)
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ MCP fetch failed (GraphML still displayed):', error)
+        // Don't show error - GraphML is still displayed
+      } finally {
+        setCurrentProcessingPhase(null)
+        setShowLoadingOverlay(false)
+      }
+    }
+
+    // Delay slightly to ensure GraphML renders first
+    const timer = setTimeout(fetchFullMCPGraph, 500)
+    return () => clearTimeout(timer)
+  }, [graphMLDocument, isGraphMLLoading, isClientMounted])
 
   // Handler for tutorial completion
   const handleTutorialComplete = () => {
     setShowTutorial(false)
-    // If graph is still loading, show the hexagon loading animation
-    if (isLoadingGraph) {
-      setShowLoadingOverlay(true)
-    }
+    // Graph is now ready (GraphML loaded during tutorial)
+    setIsLoadingGraph(false)
+    setShowLoadingOverlay(false)
   }
 
-  // Clear previous query results when book selection changes
-  useEffect(() => {
-    console.log(`📖 Book selection changed to: ${selectedBook}`)
-    // Clear previous query state to ensure fresh queries
-    setQueryAnswer('')
-    setShowAnswer(false)
-    setCurrentQuery('')
-    setSearchPath(null)
-    setDebugInfo(null)
-    setReconciliationData({ nodes: [], relationships: [] })
-    setCurrentProcessingPhase(null)
-
-    // Reload reconciliation graph for new book context
-    loadReconciliationGraph()
-  }, [selectedBook])
 
   // Timer effect for processing duration
   useEffect(() => {
@@ -382,180 +718,6 @@ function BorgesLibrary() {
     }
   }
 
-  const loadBooks = async () => {
-    try {
-      const booksData = await reconciliationService.getBooks()
-      if (booksData.books) {
-        setBooks(booksData.books)
-        console.log(`📚 Loaded ${booksData.books.length} books`)
-      }
-    } catch (error) {
-      console.error('Error loading books:', error)
-    }
-  }
-
-
-  const GRAPH_CACHE_TTL = 30 * 60 * 1000 // 30 minutes
-  const getGraphCacheKey = () => `borges-graph-cache-${selectedBook || 'all'}`
-
-  const loadReconciliationGraph = async () => {
-    // Guard against double execution (React Strict Mode) and redundant calls for same book
-    if (graphLoadingRef.current) {
-      console.log('⏭️ Graph loading already in progress, skipping duplicate call')
-      return
-    }
-    if (lastLoadedBookRef.current === selectedBook && reconciliationData?.nodes?.length) {
-      console.log('⏭️ Graph already loaded for this book, skipping')
-      return
-    }
-
-    graphLoadingRef.current = true
-    setIsLoadingGraph(true)
-    setLoadingProgress({ step: 'nodes', current: 0, total: 300 })
-
-    // Check localStorage cache first for faster returning user experience
-    try {
-      const cached = localStorage.getItem(getGraphCacheKey())
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached)
-        if (Date.now() - timestamp < GRAPH_CACHE_TTL) {
-          console.log('⚡ Loading graph from cache (instant load)')
-          setReconciliationData(data)
-          setVisibleNodeIds(data.nodes.map((node: any) => node.id))
-          setIsLoadingGraph(false)
-          setShowLoadingOverlay(false)
-          setLoadingProgress(null)
-          graphLoadingRef.current = false
-          lastLoadedBookRef.current = selectedBook
-          return
-        } else {
-          console.log('🔄 Cache expired, fetching fresh data')
-          localStorage.removeItem(getGraphCacheKey())
-        }
-      }
-    } catch (cacheError) {
-      console.warn('Cache read failed:', cacheError)
-    }
-
-    try {
-      // Load top nodes with better filtering for design principles
-      console.log(`📚 Loading connected graph (respecting design principles)...`)
-      console.log(`🎯 Principe #1: Only connected nodes (no orphans)`)
-      console.log(`📖 Principe #2: Books as core entities (larger display)`)
-      console.log(`🔍 Principe #3: Inter-book zones prioritized`)
-      console.log(`📏 Principe #4: Proper spacing between nodes`)
-      console.log(`⚡ Rebuild: ${new Date().toISOString()}`)
-
-      // Start with a more focused set of high-centrality nodes
-      setLoadingProgress({ step: 'nodes', current: 0, total: 300 })
-      const nodesData = await reconciliationService.getNodes({ limit: 300 })
-      if (nodesData.success && nodesData.nodes.length > 0) {
-        const nodeIds = nodesData.nodes.map(node => node.id)
-        console.log(`📊 Loaded ${nodeIds.length} high-centrality nodes`)
-        setLoadingProgress({ step: 'nodes', current: nodeIds.length, total: 300 })
-
-        // Get relationships with priority on book connections
-        let relationships: any[] = []
-        let relationshipsFiltered = false
-        let relationshipsLimit = 0
-        const totalChunks = Math.ceil(nodeIds.length / 50) // 50 nodes per chunk
-        setLoadingProgress({ step: 'relations', current: 0, total: totalChunks })
-        try {
-          const relationshipsData = await reconciliationService.getRelationships(
-            nodeIds,
-            8000,
-            (loadedChunks, totalChunks) => {
-              setLoadingProgress({ step: 'relations', current: loadedChunks, total: totalChunks })
-            }
-          )
-          relationships = relationshipsData.success ? relationshipsData.relationships : []
-          relationshipsFiltered = relationshipsData.filtered || false
-          relationshipsLimit = relationshipsData.limit_applied || 0
-        } catch (relError) {
-          console.error('⚠️ Failed to load relationships, continuing with nodes only:', relError)
-        }
-
-        // Helper function to identify book nodes (Principle #2: Books as core entities)
-        const isBookNode = (node: any): boolean => {
-          // Check if node has BOOK label (primary check)
-          if (node.labels && node.labels.includes('BOOK')) {
-            return true
-          }
-          // Fallback: Check if ID starts with book identifiers
-          const nodeId = String(node.properties?.id || node.id || '')
-          return nodeId.startsWith('LIVRE_') || nodeId.startsWith('book_')
-        }
-
-        // Apply Connected Subgraph First filter (Principe #1: No orphans)
-        // BUT: Always include book nodes (Principe #2: Books as core entities)
-        const connectedNodeIds = new Set<string>()
-        relationships.forEach(rel => {
-          connectedNodeIds.add(rel.source)
-          connectedNodeIds.add(rel.target)
-        })
-
-        // Filter nodes: keep connected nodes OR book nodes (books are always visible per Principle #2)
-        const connectedNodes = nodesData.nodes.filter(node =>
-          connectedNodeIds.has(node.id) || isBookNode(node)
-        )
-
-        console.log(`🔍 Debug Connected Subgraph First:`)
-        console.log(`  • Total nodes before filter: ${nodesData.nodes.length}`)
-        console.log(`  • Total relationships: ${relationships.length}`)
-        console.log(`  • Unique nodes in relationships: ${connectedNodeIds.size}`)
-        console.log(`  • Connected nodes after filter: ${connectedNodes.length}`)
-
-        // Identify book nodes using the helper function (Principe #2)
-        const bookNodes = connectedNodes.filter(isBookNode)
-
-        console.log(`📈 Connected knowledge base loaded (design-optimized):`)
-        console.log(`  • Connected Nodes: ${connectedNodes.length} (zero orphans ✓)`)
-        console.log(`  • Book Entities: ${bookNodes.length} (core nodes highlighted ✓)`)
-        console.log(`  • Total Relationships: ${relationships.length}`)
-        console.log(`  • Density: ${(relationships.length / connectedNodes.length).toFixed(2)} relationships per node`)
-        console.log(`  🎯 Design principles compliance: 100%`)
-
-        if (relationshipsFiltered) {
-          console.warn(`⚠️ Relationship count was limited to ${relationshipsLimit}`)
-        }
-
-        // Connected subgraph filtering now respects Principle #2 (books always included)
-        // Books are guaranteed visible even without relationships
-        const finalNodes = connectedNodes.length > 0 ? connectedNodes : nodesData.nodes
-
-        setLoadingProgress({ step: 'building', current: finalNodes.length, total: finalNodes.length })
-
-        const graphData = {
-          nodes: finalNodes,
-          relationships
-        }
-
-        setReconciliationData(graphData)
-
-        // Set initial visible nodes
-        setVisibleNodeIds(finalNodes.map(node => node.id))
-
-        // Save to cache for faster subsequent loads
-        try {
-          localStorage.setItem(getGraphCacheKey(), JSON.stringify({
-            data: graphData,
-            timestamp: Date.now()
-          }))
-          console.log('💾 Graph cached for 30 minutes')
-        } catch (cacheError) {
-          console.warn('Cache save failed:', cacheError)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading connected knowledge base:', error)
-    } finally {
-      setIsLoadingGraph(false)
-      setShowLoadingOverlay(false) // Hide loading overlay once data is loaded
-      setLoadingProgress(null)
-      graphLoadingRef.current = false // Reset guard for future loads
-      lastLoadedBookRef.current = selectedBook // Mark book as loaded
-    }
-  }
 
 
   const handleHighlightPath = (searchPathData: any) => {
@@ -566,6 +728,7 @@ function BorgesLibrary() {
   const handleClearHighlight = () => {
     console.log('🧹 Clearing highlights in BorgesLibrary')
     setSearchPath(null)
+    setProvenanceGraphData(null)  // Restore full graph
   }
 
   const handleProcessingStart = () => {
@@ -584,368 +747,342 @@ function BorgesLibrary() {
     setCurrentProcessingPhase(null)
   }
 
-  const handleSimpleQuery = useCallback(async (query: string) => {
-    console.log('🔍 Processing query:', query)
-    console.log('📖 Current selectedBook:', selectedBook)
-    console.log('🔧 Current mode:', mode)
-    console.log('📚 Multi-book mode:', multiBook)
+  // Store base GraphML data for restoring after queries
+  const baseGraphDataRef = useRef<ReconciliationGraphData | null>(null)
 
-    // Clear previous query results to ensure fresh responses for each query
+  // Track if MCP background fetch has already been initiated (prevents race condition)
+  const mcpFetchedRef = useRef(false)
+
+  // Update base graph data when GraphML loads
+  useEffect(() => {
+    if (reconciliationData && reconciliationData.nodes.length > 0 && !baseGraphDataRef.current) {
+      baseGraphDataRef.current = reconciliationData
+      console.log('📊 Base graph data stored:', reconciliationData.nodes.length, 'nodes')
+    }
+  }, [reconciliationData])
+
+  const handleSimpleQuery = useCallback(async (query: string) => {
+    console.log('🔍 Processing civic query:', query)
+    console.log('🏛️ Single-purpose: Grand Débat National GraphRAG')
+    console.log('🔧 Current mode:', mode)
+
+    // Clear previous query results but KEEP the base graph visible
     setQueryAnswer('')
     setShowAnswer(false)
     setSearchPath(null)
+    setProvenanceGraphData(null)  // Clear previous provenance subgraph
     setDebugInfo(null)
-    setReconciliationData({ nodes: [], relationships: [] })
+    setQueryError(null)
+    setShowErrorAlert(false)
+    // DON'T clear reconciliationData - keep base graph visible for subgraph highlighting
 
     setIsProcessing(true)
     setProcessingStartTime(Date.now())
-    setCurrentProcessingPhase('🔍 Running GraphRAG...')
+    setCurrentProcessingPhase('🏛️ Querying Grand Débat National...')
     setCurrentQuery(query)
     setProcessingStats({ nodes: 0, communities: 0 })
 
     try {
-      if (multiBook) {
-        // Multi-book query - search across all books
-        console.log(`📚 Querying ALL BOOKS with mode: ${mode}`)
-        const result = await reconciliationService.multiBookQuery({
-          query,
-          mode,
-          debug_mode: false // Don't need debug mode for multi-book
-        })
+      // Single-purpose: Grand Débat National GraphRAG only (Constitution v3.0.0)
+      console.log('🏛️ Querying Grand Débat National MCP API')
+      setCurrentProcessingPhase('🏛️ Analyzing citizen contributions...')
 
-        if (result.success) {
-          setCurrentProcessingPhase(`✓ Queried ${result.books_with_results || 0} books`)
+      // Show extended wait message after 30 seconds
+      const extendedWaitTimer = setTimeout(() => {
+        setCurrentProcessingPhase('🏛️ Beaucoup de citoyens se sont exprimés sur cette question... merci de patienter')
+      }, 30000)
 
-          console.log('📚 Multi-book query result:', result)
-          console.log('📖 Book results:', result.book_results)
+      // Create timeout promise (60 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          clearTimeout(extendedWaitTimer)
+          reject(new Error('TIMEOUT'))
+        }, 60000)
+      })
 
-          // Show answer from all books
-          let combinedAnswer = 'No relevant results found across the books.'
+      // Build query params with optional commune filtering
+      // Constitution Principles #2 (Commune-Centric) and #3 (Cross-Commune Analysis)
+      const queryParams: { query: string; mode: 'local' | 'global'; commune_ids?: string[] } = {
+        query,
+        mode
+      }
 
-          if (result.book_results && Array.isArray(result.book_results)) {
-            console.log(`📋 Processing ${result.book_results.length} book results`)
+      // Only include commune_ids if a subset of communes is selected (not all)
+      if (selectedCommunes.length > 0 && selectedCommunes.length < availableCommunes.length) {
+        queryParams.commune_ids = selectedCommunes
+        console.log(`🏛️ Filtering by ${selectedCommunes.length} selected communes`)
+      }
 
-            const validResults = result.book_results
-              .filter((r: any) => {
-                const isValid = r && r.answer && !r.error && r.answer !== "Sorry, I'm not able to provide an answer to that question."
-                console.log(`  ${r.book_id}: valid=${isValid}, answer length=${r.answer?.length || 0}`)
-                return isValid
-              })
-              .map((r: any) => {
-                const bookName = r.book_id ? r.book_id.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) : 'Unknown Book'
-                return `📖 **${bookName}**:\n${r.answer}`
-              })
+      // Race between query and timeout
+      const result = await Promise.race([
+        lawGraphRAGService.query(queryParams),
+        timeoutPromise
+      ])
 
-            console.log(`✅ ${validResults.length} valid results after filtering`)
+      // Clear the extended wait timer since query completed
+      clearTimeout(extendedWaitTimer)
 
-            if (validResults.length > 0) {
-              combinedAnswer = validResults.join('\n\n---\n\n')
-            } else {
-              console.warn('⚠️ No valid results - all answers were filtered out')
-            }
-          } else {
-            console.warn('⚠️ book_results is not an array or is missing')
-          }
+      if (result.success !== false) {
+        setCurrentProcessingPhase('✓ Civic analysis complete')
+        setQueryAnswer(result.answer || 'Aucune réponse disponible pour cette requête.')
 
-          console.log(`📝 Final combined answer length: ${combinedAnswer.length}`)
-          setQueryAnswer(combinedAnswer)
-          setShowAnswer(true)
+        // Generate query ID for provenance tracking
+        const tempQueryId = `civic-query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        setCurrentQueryId(tempQueryId)
+        setShowProvenancePanel(true)
+        console.log('📊 Provenance tracking enabled for civic query:', tempQueryId)
 
-          // Generate query ID for provenance tracking (temporary until backend provides it)
-          const tempQueryId = `multi-query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          setCurrentQueryId(tempQueryId)
-          setShowProvenancePanel(true)
-          console.log('📊 Provenance tracking enabled for multi-book query:', tempQueryId)
-
-          // Display aggregated nodes from multi-book query if available
-          if (result.selected_nodes && result.selected_relationships) {
-            console.log('🎯 Multi-book selected nodes:', result.selected_nodes.length)
-            console.log('🔗 Multi-book selected relationships:', result.selected_relationships.length)
-
-            // Count enriched relationship types
-            const neo4jRels = result.selected_relationships.filter((r: any) => r.properties?.neo4j_source).length
-            const crossBookRels = result.selected_relationships.filter((r: any) => r.properties?.cross_book).length
-            const communityRels = result.selected_relationships.filter((r: any) => r.type === 'BELONGS_TO' || r.type === 'MEMBER_OF').length
-
-            setProcessingStats({
-              nodes: result.selected_nodes.length,
-              communities: 0, // Multi-book doesn't use community analysis
-              neo4jRelationships: neo4jRels,
-              crossBookLinks: crossBookRels,
-              entityCommunityLinks: communityRels
-            })
-
-            // Store query result nodes for entity lookup
-            setQueryResultNodes(result.selected_nodes || [])
-
-            setReconciliationData({
-              nodes: result.selected_nodes || [],
-              relationships: result.selected_relationships || []
-            })
-
-            // Create debug info for visualization consistency
-            const aggregatedDebugInfo = {
-              processing_phases: {
-                entity_selection: {
-                  entities: result.selected_nodes.map((node: any, index: number) => ({
-                    id: node.labels?.[0] || node.id,
-                    name: node.labels?.[0] || node.id,
-                    type: node.type,
-                    description: node.properties?.description || '',
-                    rank: index + 1,
-                    score: node.centrality_score || 1,
-                    selected: true
-                  })),
-                  duration_ms: 1000
-                },
-                community_analysis: { communities: [], duration_ms: 500 },
-                relationship_mapping: {
-                  relationships: result.selected_relationships.map((rel: any) => ({
-                    source: rel.source,
-                    target: rel.target,
-                    description: rel.properties?.description || '',
-                    weight: rel.properties?.weight || 1.0
-                  })),
-                  duration_ms: 800
-                },
-                text_synthesis: { duration_ms: 200 }
-              },
-              context_stats: {
-                total_time_ms: result.total_processing_time * 1000,
-                mode: 'multi-book',
-                prompt_length: query.length
-              },
-              animation_timeline: [
-                { phase: 'explosion', duration: 1000, description: 'Analyzing entities across books' },
-                { phase: 'filtering', duration: 500, description: 'Selecting relevant communities' },
-                { phase: 'synthesis', duration: 800, description: 'Mapping cross-book relationships' },
-                { phase: 'crystallization', duration: 200, description: 'Generating multi-book answer' }
-              ]
-            };
-            setDebugInfo(aggregatedDebugInfo);
-
-            // Extract entities for coloring across all books (Principle #4 - End-to-end interpretability)
-            let allEntitiesToColor: Array<{
-              id: string
-              type: string
-              description?: string
-              rank?: number
-              order?: number
-              score: number
-            }> = []
-
-            console.log('🎨 MULTI-BOOK ENTITIES DEBUG:')
-            console.log('🔍 All book results:', result.book_results)
-
-            if (result.book_results && Array.isArray(result.book_results)) {
-              result.book_results.forEach((bookResult: any, bookIndex: number) => {
-                console.log(`📖 Processing book ${bookIndex}:`, bookResult.book_id)
-
-                // Extract entities from each book's debug info if available
-                if (bookResult.debug_info?.processing_phases?.entity_selection?.entities) {
-                  console.log(`✅ Found entities in book ${bookResult.book_id}:`, bookResult.debug_info.processing_phases.entity_selection.entities.length)
-
-                  const bookEntities = bookResult.debug_info.processing_phases.entity_selection.entities.map((entity: any, idx: number) => ({
-                    id: entity.id || entity.name,
-                    type: entity.type || 'CONCEPT',
-                    description: entity.description,
-                    rank: entity.rank,
-                    order: allEntitiesToColor.length + idx, // Global order across all books
-                    score: entity.score || 0.5
-                  }))
-
-                  allEntitiesToColor.push(...bookEntities)
-                }
-                // Fallback to selected_nodes from each book
-                else if (bookResult.selected_nodes) {
-                  console.log(`⚠️ Using selected_nodes fallback for book ${bookResult.book_id}`)
-
-                  const bookEntities = bookResult.selected_nodes.map((node: any, idx: number) => ({
-                    id: node.properties?.name || node.id || node.labels?.[0],
-                    type: node.labels?.[0] || node.type || 'CONCEPT',
-                    description: node.properties?.description,
-                    score: (node.degree || node.centrality_score || 1) / 100,
-                    order: allEntitiesToColor.length + idx
-                  }))
-
-                  allEntitiesToColor.push(...bookEntities)
-                }
-              })
-            }
-
-            console.log(`🎯 Total entities to color across all books: ${allEntitiesToColor.length}`)
-            console.log('🎯 Sample entities:', allEntitiesToColor.slice(0, 5))
-
-            // Process entities with color service
-            if (allEntitiesToColor.length > 0) {
-              const enrichedEntities = colorService.enrichEntitiesWithColors(allEntitiesToColor)
-              console.log(`🌈 Multi-book enriched entities: ${enrichedEntities.length}`)
-              setColoredEntities(enrichedEntities)
-            } else {
-              console.log('⚠️ No entities found for multi-book coloring')
-              setColoredEntities([])
-            }
-          } else {
-            // Clear search path if no nodes available
-            setSearchPath(null)
-            setColoredEntities([])
-          }
+        // Extract and store source chunks from the query result for provenance display
+        const chunks = result.graphrag_data?.source_chunks || []
+        console.log(`📚 Found ${chunks.length} source chunks from MCP query`)
+        setSourceChunks(chunks)
+        if (chunks.length > 0) {
+          setShowSourceChunksPanel(true)
         }
-      } else {
-        // Single-book query - use reconciled endpoint
-        console.log(`📖 Querying book: ${selectedBook}, mode: ${mode}`)
-        console.log('🚀 About to call reconciliationService.reconciledQuery with:', {
-          query,
-          mode,
-          debug_mode: true,
-          book_id: selectedBook
-        })
-        const result = await reconciliationService.reconciledQuery({
-          query,
-          mode,
-          debug_mode: true,  // Enable debug mode for animation data
-          book_id: selectedBook
-        })
-        console.log('✅ API call completed, result:', result.success ? 'success' : 'failed')
 
-        if (result.success) {
-          setCurrentProcessingPhase(`✓ Retrieved answer from ${selectedBook}`)
-          setQueryAnswer(result.answer || 'No answer available')
+        // Extract provenance entities for CitizenExtractsPanel (Constitution Principle #7)
+        const entities = result.graphrag_data?.entities || []
+        const grandDebatEntities: GrandDebatEntity[] = entities.map((e: any, idx: number) => ({
+          name: e.entity_name || e.name || e.id || '',
+          type: e.entity_type || e.type || 'CIVIC_ENTITY',
+          description: e.description || '',
+          source_commune: e.source_commune || 'Charente-Maritime',
+          rank: e.rank || idx + 1
+        }))
+        console.log(`🏛️ Found ${grandDebatEntities.length} provenance entities`)
+        setProvenanceEntities(grandDebatEntities)
 
-          // Generate query ID for provenance tracking (temporary until backend provides it)
-          const tempQueryId = `query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          setCurrentQueryId(tempQueryId)
-          setShowProvenancePanel(true)
-          console.log('📊 Provenance tracking enabled for query:', tempQueryId)
+        // Transform response to graph data format
+        const graphData = lawGraphRAGService.transformToGraphData(result)
 
-          // Extract entities for coloring (Principle #4 - End-to-end interpretability)
-          let entitiesToColor: Array<{
-            id: string
-            type: string
-            description?: string
-            rank?: number
-            order?: number
-            score: number
-          }> = []
+        // Build subgraph from base graph based on query keywords
+        // MCP often returns no entities, so we search the base graph for relevant nodes
+        const baseGraph = baseGraphDataRef.current
 
-          console.log('🎨 REAL-TIME DEBUG - Entities to color:')
-          console.log('🔍 Debug entities:', result.debug_info?.processing_phases?.entity_selection?.entities)
-          console.log('🔍 Selected nodes:', result.selected_nodes)
-          console.log('🔍 Regular nodes:', result.nodes)
+        if (graphData && graphData.nodes.length > 0) {
+          // MCP returned graph data - use it directly
+          console.log('🏛️ Civic graph data from MCP:', graphData.nodes.length, 'nodes,', graphData.relationships.length, 'relationships')
 
-          // Priority 1: Use debug entities if available (most complete info)
-          if (result.debug_info?.processing_phases?.entity_selection?.entities) {
-            console.log('✅ Using debug entities (Priority 1)')
-            entitiesToColor = result.debug_info.processing_phases.entity_selection.entities.map((entity: any, idx: number) => ({
-              id: entity.id || entity.name,
-              type: entity.type || 'CONCEPT',
-              description: entity.description,
-              rank: entity.rank,
-              order: idx,
-              score: entity.score || 0.5
-            }))
-          }
-          // Priority 2: Use selected_nodes from API response (good fallback)
-          else if (result.selected_nodes && result.selected_nodes.length > 0) {
-            console.log('✅ Using selected_nodes (Priority 2)')
-            entitiesToColor = result.selected_nodes.map((node: any, idx: number) => ({
-              id: node.properties?.name || node.id,
-              type: node.labels?.[0] || 'CONCEPT',
-              description: node.properties?.description,
-              score: (node.degree || 1) / 100,
-              order: idx
-            }))
-          }
-          // Priority 3: Use nodes from response
-          else if (result.nodes && result.nodes.length > 0) {
-            console.log('✅ Using regular nodes (Priority 3)')
-            entitiesToColor = result.nodes.map((node: any, idx: number) => ({
-              id: node.properties?.name || node.id,
-              type: node.labels?.[0] || 'CONCEPT',
-              description: node.properties?.description,
-              score: (node.degree || 1) / 100,
-              order: idx
-            }))
-          }
+          setProcessingStats({
+            nodes: graphData.nodes.length,
+            communities: 0,
+            neo4jRelationships: graphData.relationships.length
+          })
 
-          console.log(`🎯 Entities to color: ${entitiesToColor.length}`, entitiesToColor.slice(0, 3))
+          // Use memoized node normalization - Graph Performance Optimization (006-graph-optimization)
+          const normalizedNodes = normalizeGraphNodes(graphData.nodes)
 
-          // Process entities with color service
+          setQueryResultNodes(normalizedNodes)
+
+          // Set provenanceGraphData for progressive display of MCP subgraph
+          // This is the community detection + multi-hop subgraph from GraphRAG
+          setProvenanceGraphData({
+            nodes: normalizedNodes,
+            relationships: graphData.relationships
+          })
+          console.log(`🎯 ProvenanceGraphData set: ${normalizedNodes.length} nodes, ${graphData.relationships.length} relationships`)
+
+          // Use memoized entity color mapping - Graph Performance Optimization (006-graph-optimization)
+          const entitiesToColor = mapNodesToColorEntities(graphData.nodes)
+
           if (entitiesToColor.length > 0) {
             const enrichedEntities = colorService.enrichEntitiesWithColors(entitiesToColor)
-            console.log(`🌈 Enriched entities: ${enrichedEntities.length}`, enrichedEntities.slice(0, 3))
+            console.log(`🌈 Civic entities enriched: ${enrichedEntities.length}`)
             setColoredEntities(enrichedEntities)
+          }
+
+          // Keep searchPath for entity highlighting (used by animation effect)
+          setSearchPath({
+            entities: normalizedNodes.map(n => ({
+              id: n.properties?.name || n.id,
+              name: n.properties?.name || n.id
+            })),
+            relations: graphData.relationships.map(r => ({
+              source: r.source,
+              target: r.target,
+              type: r.type
+            }))
+          })
+        } else if (baseGraph && baseGraph.nodes.length > 0) {
+          // MCP returned no graph data - build subgraph from base GraphML based on query
+          console.log('📊 Building subgraph from base GraphML for query:', query)
+
+          // Use memoized query matcher - Graph Performance Optimization (006-graph-optimization)
+          const matchingNodes = createQueryMatcher(query, baseGraph.nodes)
+
+          // If no direct matches, show nodes connected to commune nodes
+          let subgraphNodes = matchingNodes
+          if (matchingNodes.length === 0) {
+            // Fallback: show COMMUNE nodes and their direct neighbors
+            const communeNodes = baseGraph.nodes.filter(n =>
+              n.labels.some(l => l.toUpperCase() === 'COMMUNE')
+            )
+            const communeIds = new Set(communeNodes.map(n => n.id))
+
+            // Find edges connected to communes
+            const communeEdges = baseGraph.relationships.filter(r =>
+              communeIds.has(r.source) || communeIds.has(r.target)
+            )
+
+            // Get neighbor node IDs
+            const neighborIds = new Set<string>()
+            communeEdges.forEach(e => {
+              neighborIds.add(e.source)
+              neighborIds.add(e.target)
+            })
+
+            subgraphNodes = baseGraph.nodes.filter(n => neighborIds.has(n.id))
+            console.log(`📊 Using commune-centered subgraph: ${subgraphNodes.length} nodes`)
           } else {
-            console.log('⚠️ No entities found for coloring')
-            setColoredEntities([])
+            console.log(`📊 Found ${matchingNodes.length} nodes matching query`)
           }
 
-          setShowAnswer(true)
+          // Get IDs of subgraph nodes
+          const subgraphNodeIds = new Set(subgraphNodes.map(n => n.id))
 
-          // Set debug info for animation and clear scene first
-          if (result.debug_info) {
-            console.log('🎬 Debug info received for animation:', result.debug_info)
-            setDebugInfo(result.debug_info)
+          // Filter relationships to only those within subgraph
+          const subgraphRelationships = baseGraph.relationships.filter(r =>
+            subgraphNodeIds.has(r.source) && subgraphNodeIds.has(r.target)
+          )
 
-            // Clear the scene first by setting empty reconciliation data temporarily
-            setReconciliationData({ nodes: [], relationships: [] })
+          setProcessingStats({
+            nodes: subgraphNodes.length,
+            communities: 0,
+            neo4jRelationships: subgraphRelationships.length
+          })
 
-            // Set the selected nodes for incremental loading
-            if (result.selected_nodes && result.selected_relationships) {
-              // Count enriched relationship types for stats
-              const neo4jRels = result.selected_relationships.filter((r: any) => r.properties?.neo4j_source).length
-              const crossBookRels = result.selected_relationships.filter((r: any) => r.properties?.cross_book).length
-              const communityRels = result.selected_relationships.filter((r: any) => r.type === 'BELONGS_TO' || r.type === 'MEMBER_OF').length
+          setQueryResultNodes(subgraphNodes)
+          // Performance fix: Don't replace reconciliationData with subgraph
+          // This avoids rebuilding the entire 3D graph on each query
+          // setReconciliationData({
+          //   nodes: subgraphNodes,
+          //   relationships: subgraphRelationships
+          // })
 
-              setProcessingStats({
-                nodes: result.selected_nodes.length,
-                communities: result.debug_info.processing_phases?.community_analysis?.communities?.length || 0,
-                neo4jRelationships: neo4jRels,
-                crossBookLinks: crossBookRels,
-                entityCommunityLinks: communityRels
-              })
+          // Use memoized entity color mapping - Graph Performance Optimization (006-graph-optimization)
+          const entitiesToColor = mapNodesToColorEntities(subgraphNodes)
 
-              setTimeout(() => {
-                console.log('🎯 Starting incremental loading with selected GraphRAG nodes')
-                console.log('🔍 Selected nodes length:', result.selected_nodes?.length || 0)
-                console.log('🔍 First selected node:', result.selected_nodes?.[0])
-                console.log('🔍 Selected relationships length:', result.selected_relationships?.length || 0)
-
-                // Store query result nodes for entity lookup
-                setQueryResultNodes(result.selected_nodes || [])
-
-                setReconciliationData({
-                  nodes: result.selected_nodes || [],
-                  relationships: result.selected_relationships || []
-                })
-              }, 500) // Small delay to show the clearing effect
-            }
+          if (entitiesToColor.length > 0) {
+            const enrichedEntities = colorService.enrichEntitiesWithColors(entitiesToColor)
+            console.log(`🌈 Subgraph entities enriched: ${enrichedEntities.length}`)
+            setColoredEntities(enrichedEntities)
           }
 
-          // Clear any existing highlights for single book queries
-          setSearchPath(null)
+          // Create a search path for highlighting
+          setSearchPath({
+            entities: subgraphNodes.map(n => ({
+              id: n.id,
+              name: n.properties?.name || n.id
+            })),
+            relations: subgraphRelationships.map(r => ({
+              source: r.source,
+              target: r.target,
+              type: r.type
+            }))
+          })
+        } else {
+          console.log('⚠️ No graph data available')
+          setColoredEntities([])
         }
+
+        // Create debug info for visualization
+        const currentNodes = reconciliationData?.nodes || []
+        const currentRels = reconciliationData?.relationships || []
+        const civicDebugInfo = {
+          processing_phases: {
+            entity_selection: {
+              entities: currentNodes.map((node: any, index: number) => ({
+                id: node.properties?.name || node.id,
+                name: node.properties?.name || node.id,
+                type: node.labels?.[0] || 'CIVIC_ENTITY',
+                description: node.properties?.description || '',
+                rank: index + 1,
+                score: node.centrality_score || 0.5,
+                selected: true
+              })),
+              duration_ms: 500
+            },
+            community_analysis: { communities: [], duration_ms: 100 },
+            relationship_mapping: {
+              relationships: currentRels.map((rel: any) => ({
+                source: rel.source,
+                target: rel.target,
+                description: rel.properties?.description || '',
+                weight: rel.properties?.weight || 1.0
+              })),
+              duration_ms: 300
+            },
+            text_synthesis: { duration_ms: 200 }
+          },
+          context_stats: {
+            total_time_ms: result.processing_time ? result.processing_time * 1000 : 1000,
+            mode: 'grand-debat-national',
+            prompt_length: query.length
+          },
+          animation_timeline: [
+            { phase: 'explosion', duration: 500, description: 'Analyzing civic entities' },
+            { phase: 'filtering', duration: 300, description: 'Mapping commune relationships' },
+            { phase: 'synthesis', duration: 300, description: 'Building civic context' },
+            { phase: 'crystallization', duration: 200, description: 'Generating civic answer' }
+          ]
+        }
+        setDebugInfo(civicDebugInfo)
+
+        setShowAnswer(true)
+      } else {
+        throw new Error(result.error || 'Civic GraphRAG query failed')
       }
     } catch (error) {
-      console.error('Error processing query:', error)
-      setQueryAnswer(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      setShowAnswer(true)
+      console.error('Error processing civic query:', error)
+
+      // Provide user-friendly error messages
+      let errorMessage = 'Une erreur est survenue lors du traitement de votre requête.'
+
+      const errorDetail = error instanceof Error ? error.message : 'Unknown error'
+      if (errorDetail === 'TIMEOUT') {
+        errorMessage = 'La requête a dépassé le délai maximum de 45 secondes. Le serveur MCP ne répond pas.'
+      } else if (errorDetail.includes('fetch') || errorDetail.includes('network') || errorDetail.includes('ECONNREFUSED')) {
+        errorMessage = 'Impossible de se connecter au service Grand Débat National. Vérifiez que le serveur MCP est accessible.'
+      } else if (errorDetail.includes('timeout') || errorDetail.includes('ETIMEDOUT')) {
+        errorMessage = 'La requête a expiré. Le serveur MCP met trop de temps à répondre.'
+      } else if (errorDetail.includes('500') || errorDetail.includes('Internal Server')) {
+        errorMessage = 'Le service a rencontré une erreur interne. Veuillez réessayer plus tard.'
+      } else {
+        errorMessage = `Erreur: ${errorDetail}`
+      }
+      console.error('Civic GraphRAG error details:', errorDetail)
+
+      // Set error state and show alert
+      setQueryError(errorMessage)
+      setShowErrorAlert(true)
+      setColoredEntities([])
     } finally {
       setIsProcessing(false)
       setProcessingStartTime(null)
       setCurrentProcessingPhase(null)
     }
-  }, [selectedBook, mode, multiBook])
+  }, [mode, selectedCommunes, availableCommunes])
+
+  // Debug logging for tutorial state - DISABLED to fix freeze
+  // console.log('🖼️ RENDER - Tutorial state:', {
+  //   showTutorial,
+  //   showLoadingOverlay,
+  //   isLoadingGraph,
+  //   isClientMounted,
+  //   isFirstTimeUser: isFirstTimeUserRef.current
+  // })
 
   return (
-    <div className="min-h-screen bg-borges-dark text-borges-light">
-      {/* Mobile Navigation Menu */}
+    <div className="min-h-screen bg-datack-black text-datack-light">
+      {/* Mobile Navigation Menu - Datack Branding */}
       <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-xl text-borges-light font-semibold">Navigation</h2>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-lg bg-[#0a0a0a] text-[#dbff3b] px-4 py-2 rounded-md">DATACK</span>
+          </div>
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="touch-target flex items-center justify-center text-borges-light"
+            className="touch-target flex items-center justify-center text-datack-light"
             aria-label="Fermer le menu"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -954,67 +1091,49 @@ function BorgesLibrary() {
           </button>
         </div>
 
-        {/* Mobile Book Selector */}
+        {/* Single-purpose: Grand Débat National only - no source selection */}
         <div className="mobile-nav-item">
-          <label className="text-borges-light-muted text-sm mb-2 block">Livre sélectionné</label>
-          <select
-            value={selectedBook}
-            onChange={(e) => {
-              setSelectedBook(e.target.value)
-              setIsMobileMenuOpen(false)
-            }}
-            disabled={multiBook || isProcessing}
-            className="borges-input w-full"
-          >
-            {books.map((book) => (
-              <option key={book.id} value={book.id}>
-                {book.name}
-              </option>
-            ))}
-          </select>
+          <label className="text-datack-gray text-sm mb-2 block">Source de données</label>
+          <div className="text-datack-light text-sm bg-datack-dark p-3 rounded-datack-sm border border-datack-yellow/30">
+            🏛️ Grand Débat National 2019
+            <div className="text-xs text-datack-gray mt-1">50 communes · Charente-Maritime</div>
+          </div>
         </div>
 
-        {/* Mobile Multi-book Toggle */}
-        <button
-          onClick={() => {
-            setMultiBook(!multiBook)
-            setIsMobileMenuOpen(false)
-          }}
-          disabled={isProcessing}
-          className={`mobile-nav-item w-full text-left flex items-center justify-between ${
-            multiBook ? 'text-borges-accent' : ''
-          }`}
-        >
-          <span>📚 Tout le catalogue</span>
-          {multiBook && <span className="text-borges-accent">✓</span>}
-        </button>
+        {/* Mobile Commune Selector - Constitution Principles #2, #3 */}
+        <CommuneSelectorMobile
+          communes={availableCommunes}
+          selectedCommunes={selectedCommunes}
+          onSelectionChange={setSelectedCommunes}
+          disabled={isProcessing || loadingCommunes}
+        />
 
         {/* Mobile Mode Toggle */}
         <div className="mobile-nav-item">
-          <label className="text-borges-light-muted text-sm mb-2 block">Mode de recherche</label>
+          <label className="text-datack-gray text-sm mb-2 block">Mode de recherche</label>
           <div className="flex gap-2">
             <button
               onClick={() => setMode('local')}
-              className={`flex-1 py-3 rounded-borges-sm text-center ${
-                mode === 'local' ? 'bg-borges-light text-borges-dark' : 'bg-borges-secondary text-borges-light'
+              className={`flex-1 py-3 rounded-datack-sm text-center transition-colors ${
+                mode === 'local' ? 'bg-datack-yellow text-datack-black font-medium' : 'bg-datack-dark text-datack-light'
               }`}
             >
-              Ascendant
+              Local
             </button>
             <button
               onClick={() => setMode('global')}
-              className={`flex-1 py-3 rounded-borges-sm text-center ${
-                mode === 'global' ? 'bg-borges-light text-borges-dark' : 'bg-borges-secondary text-borges-light'
+              className={`flex-1 py-3 rounded-datack-sm text-center transition-colors ${
+                mode === 'global' ? 'bg-datack-yellow text-datack-black font-medium' : 'bg-datack-dark text-datack-light'
               }`}
             >
-              Descendant
+              Global
             </button>
           </div>
         </div>
       </div>
 
-      {/* Header - Responsive: Basile Minimalism with mobile support */}
-      <header className={`p-4 md:p-6 border-b border-borges-border relative transition-all duration-300 ${selectedEntityId ? 'md:mr-[450px]' : ''}`}>
+      {/* Header - Datack Branding (Feature 005-agent-orchestration) */}
+      <header className={`p-4 md:p-6 border-b border-datack-border relative transition-all duration-300 ${selectedEntityId ? 'md:mr-[450px]' : ''}`}>
         <div className="max-w-7xl mx-auto flex items-center gap-3 md:gap-4">
           {/* Mobile Menu Toggle */}
           <button
@@ -1027,19 +1146,19 @@ function BorgesLibrary() {
             </svg>
           </button>
 
-          {/* Nested hexagons logo - matches favicon */}
-          <svg className="w-6 h-6 md:w-8 md:h-8 flex-shrink-0" viewBox="0 0 32 32" fill="none">
-            <polygon points="16,1 29,8.5 29,23.5 16,31 3,23.5 3,8.5" fill="none" stroke="#E8D5B7" strokeWidth="1.5"/>
-            <polygon points="16,5 25,10.5 25,21.5 16,27 7,21.5 7,10.5" fill="none" stroke="#E8D5B7" strokeWidth="1.2"/>
-            <polygon points="16,9 21,12.5 21,19.5 16,23 11,19.5 11,12.5" fill="none" stroke="#E8D5B7" strokeWidth="1"/>
-            <polygon points="16,12.5 18.5,14 18.5,18 16,19.5 13.5,18 13.5,14" fill="#E8D5B7"/>
-          </svg>
+          {/* Datack Logo - Black background with yellow text */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="font-bold text-lg md:text-xl tracking-tight bg-[#0a0a0a] text-[#dbff3b] px-4 py-2 rounded-md">DATACK</span>
+          </div>
+
+          <div className="h-8 w-px bg-datack-border hidden sm:block" />
+
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm sm:text-lg md:text-display-mobile lg:text-display text-borges-light tracking-wide font-semibold">
-              Le graphe de Borges
+            <h1 className="text-sm sm:text-lg md:text-display-mobile lg:text-display text-datack-light tracking-wide font-semibold">
+              Grand Débat National
             </h1>
-            <p className="text-borges-light-muted mt-1 text-xs md:text-sm italic max-w-2xl hidden md:block">
-              « Tous les livres, quelque divers qu&apos;ils soient, comportent des éléments égaux : l&apos;espace, le point, la virgule, les vingt-deux lettres de l&apos;alphabet. »
+            <p className="text-datack-gray mt-1 text-xs md:text-sm max-w-2xl hidden md:block">
+              Explorer les contributions citoyennes · 50 communes de Charente-Maritime · <span className="bg-[#0a0a0a] text-[#dbff3b] px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap">Cahiers de Doléances 2019</span>
             </p>
           </div>
         </div>
@@ -1048,49 +1167,35 @@ function BorgesLibrary() {
       {/* Main Content - Adapts when side panel is open */}
       <main className={`h-[calc(100vh-80px)] md:h-[calc(100vh-120px)] transition-all duration-300 ${selectedEntityId ? 'md:mr-[450px]' : ''}`}>
         <div className="h-full flex flex-col">
-          {/* Enhanced Query Bar with Controls - Responsive Basile Minimalism */}
-          <div className="p-3 md:p-4 bg-borges-secondary border-b border-borges-border">
+          {/* Enhanced Query Bar with Controls - Datack Branding */}
+          <div className="p-3 md:p-4 bg-datack-secondary border-b border-datack-border">
             <div className="max-w-6xl mx-auto space-y-2 md:space-y-3">
               {/* Main Search Row - Responsive */}
               <div className="responsive-search">
-                {/* Desktop-only: Book Selector & Multi-Book Toggle */}
-                <div className="hidden md:flex gap-2">
-                  {/* Book Selector */}
-                  <select
-                    value={selectedBook}
-                    onChange={(e) => setSelectedBook(e.target.value)}
-                    disabled={multiBook || isProcessing}
-                    className="borges-input max-w-[200px] disabled:opacity-50"
-                  >
-                    {books.map((book) => (
-                      <option key={book.id} value={book.id}>
-                        {book.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Multi-Book Toggle */}
-                  <button
-                    onClick={() => setMultiBook(!multiBook)}
-                    disabled={isProcessing}
-                    className={`borges-btn-secondary text-sm disabled:opacity-50 flex items-center ${
-                      multiBook ? 'border-borges-light text-borges-light' : ''
-                    }`}
-                    title="Interroger tout le catalogue"
-                  >
-                    <span className="mr-1 grayscale">📚</span>
-                    Tout le catalogue
-                  </button>
+                {/* Desktop-only: Data source indicator (single-purpose) */}
+                <div className="hidden md:flex gap-2 items-center">
+                  <div className="text-datack-light text-sm bg-datack-dark px-3 py-2 rounded-datack-sm border border-datack-border">
+                    🏛️ Grand Débat National
+                  </div>
                 </div>
+
+                {/* Commune Selector - Constitution Principles #2, #3 */}
+                <CommuneSelector
+                  communes={availableCommunes}
+                  selectedCommunes={selectedCommunes}
+                  onSelectionChange={setSelectedCommunes}
+                  disabled={isProcessing || loadingCommunes}
+                  className="hidden md:block"
+                />
 
                 {/* Search Input - Full width on mobile */}
                 <div className="flex gap-2 flex-1">
                   <input
                     type="text"
-                    placeholder="Posez une question..."
+                    placeholder="Quelles sont les préoccupations des citoyens sur les impôts ?"
                     disabled={isProcessing}
                     id="search-input"
-                    className="borges-input flex-1 disabled:opacity-50 text-base"
+                    className="datack-input flex-1 disabled:opacity-50 text-base"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && !isProcessing) {
                         const query = (e.target as HTMLInputElement).value.trim()
@@ -1101,7 +1206,7 @@ function BorgesLibrary() {
                     }}
                   />
 
-                  {/* Search Button */}
+                  {/* Search Button - Datack Yellow */}
                   <button
                     disabled={isProcessing}
                     onClick={() => {
@@ -1111,169 +1216,238 @@ function BorgesLibrary() {
                         handleSimpleQuery(query)
                       }
                     }}
-                    className={`borges-btn-primary disabled:opacity-50 min-w-touch ${isProcessing ? 'animate-pulse-brightness' : ''}`}
+                    className={`px-4 py-2 bg-[#0a0a0a] text-[#dbff3b] font-medium hover:opacity-80 transition-colors rounded disabled:opacity-50 min-w-touch ${isProcessing ? 'animate-pulse-brightness' : ''}`}
                     style={isProcessing ? {
                       animation: 'pulseBrightness 1.2s ease-in-out infinite'
                     } : undefined}
                   >
-                    {isProcessing ? <span className="animate-blue-white-glow">...</span> : <span className="hidden sm:inline">Recherche</span>}
+                    {isProcessing ? <span className="animate-yellow-white-glow">...</span> : <span className="hidden sm:inline">Recherche</span>}
                     <svg className="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </button>
                 </div>
 
-                {/* Desktop-only: Mode Toggle */}
-                <div className="hidden md:flex gap-1 bg-borges-dark rounded-borges-sm p-1 border border-borges-border">
+                {/* Desktop-only: Mode Toggle - Datack Inverted (black bg + yellow text) */}
+                <div className="hidden md:flex gap-1 bg-datack-dark rounded-datack-sm p-1 border border-datack-border">
                   <button
                     onClick={() => setMode('local')}
                     disabled={isProcessing}
-                    className={`flex items-center px-2 py-1 text-xs rounded-borges-sm font-medium transition-colors disabled:opacity-50 ${
+                    className={`flex items-center px-2 py-1 text-xs rounded font-medium transition-colors disabled:opacity-50 ${
                       mode === 'local'
-                        ? 'bg-borges-light text-borges-dark'
-                        : 'text-borges-light-muted hover:text-borges-light'
+                        ? 'bg-[#0a0a0a] text-[#dbff3b]'
+                        : 'text-datack-muted hover:text-datack-light'
                     }`}
-                    title="Du texte vers le livre"
+                    title="Recherche locale par commune"
                   >
-                    <svg className="w-4 h-4 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-                      <path d="M1 13h5M1 11h4M1 9h3" strokeWidth="1.5" strokeLinecap="round"/>
-                      <path d="M8 6l2-2" strokeWidth="1.5" strokeLinecap="round"/>
-                      <path d="M11 2v8l3 1.5V3.5L11 2z" strokeWidth="1.5" strokeLinejoin="round"/>
-                    </svg>
-                    Ascendant
+                    Local
                   </button>
                   <button
                     onClick={() => setMode('global')}
                     disabled={isProcessing}
-                    className={`flex items-center px-2 py-1 text-xs rounded-borges-sm font-medium transition-colors disabled:opacity-50 ${
+                    className={`flex items-center px-2 py-1 text-xs rounded font-medium transition-colors disabled:opacity-50 ${
                       mode === 'global'
-                        ? 'bg-borges-light text-borges-dark'
-                        : 'text-borges-light-muted hover:text-borges-light'
+                        ? 'bg-[#0a0a0a] text-[#dbff3b]'
+                        : 'text-datack-muted hover:text-datack-light'
                     }`}
-                    title="Des livres vers le texte"
+                    title="Recherche globale toutes communes"
                   >
-                    <svg className="w-4 h-4 mr-1" viewBox="0 0 16 16" fill="none" stroke="currentColor">
-                      <path d="M1 2v6l2.5 1.25V3.25L1 2z" strokeWidth="1.5" strokeLinejoin="round"/>
-                      <path d="M4.5 2v6l2.5 1.25V3.25L4.5 2z" strokeWidth="1.5" strokeLinejoin="round"/>
-                      <path d="M6 11l2 2" strokeWidth="1.5" strokeLinecap="round"/>
-                      <path d="M10 14h5M10 12h4M10 10h3" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                    Descendant
+                    Global
                   </button>
                 </div>
               </div>
 
+              {/* Commune Filter Chips - Constitution Principle II (Civic Provenance) */}
+              <CommuneFilterChips
+                selectedCommunes={selectedCommunes}
+                availableCommunes={availableCommunes}
+                onRemove={(communeId) => {
+                  setSelectedCommunes(prev => prev.filter(id => id !== communeId))
+                }}
+                maxCommunes={availableCommunes.length}
+              />
+
               {/* Mobile-only: Current settings indicator */}
-              <div className="flex md:hidden items-center justify-between text-xs text-borges-light-muted">
-                <span>📖 {books.find(b => b.id === selectedBook)?.name || selectedBook}</span>
-                <span>{mode === 'local' ? '↑ Ascendant' : '↓ Descendant'}</span>
-                {multiBook && <span className="text-borges-accent">📚 Tout</span>}
+              <div className="flex md:hidden items-center justify-between text-xs text-datack-muted">
+                <span>
+                  🏛️ {selectedCommunes.length > 0 && selectedCommunes.length < availableCommunes.length
+                    ? `${selectedCommunes.length} commune${selectedCommunes.length > 1 ? 's' : ''}`
+                    : 'Grand Débat National'}
+                </span>
+                <span>{mode === 'local' ? 'Local' : 'Global'}</span>
               </div>
             </div>
           </div>
 
           {/* 3D Force Graph Visualization with Provenance Panel */}
-          <div className="flex-1 flex bg-black relative">
+          <div className="flex-1 flex bg-datack-black relative">
             {/* Main Graph Container */}
-            <div className="flex-1 bg-black relative">
+            <div className="flex-1 bg-datack-black relative">
               {/* Hexagonal Processing Indicator - Similar to startup animation */}
               {/* Positioned inside graph container to avoid viewport-relative shifts */}
               {/* Only shows during query processing, NOT during initial graph loading */}
               {isProcessing && !isLoadingGraph && (
                 <div className="absolute top-8 left-1/2 -translate-x-1/2 z-[60] pointer-events-none">
-                  {/* Hexagon Assembly Animation - LARGER and MORE VISIBLE with blue glow */}
-                  <div className="relative w-40 h-40">
+                  {/* Civic Contributions Animation - Documents flowing into civic assembly */}
+                  <div className="relative w-48 h-48">
                     <svg viewBox="0 0 200 200" className="w-full h-full">
                       <style>{`
-                        @keyframes hexBlueWhite1 {
-                          0%, 100% { stroke: #3b82f6; opacity: 0.6; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4)); }
-                          50% { stroke: #ffffff; opacity: 1; filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 35px rgba(59, 130, 246, 0.8)); }
+                        @keyframes docFloat1 {
+                          0% { transform: translate(-60px, -40px) rotate(-15deg); opacity: 0; }
+                          50% { opacity: 0.8; }
+                          100% { transform: translate(0, 0) rotate(0deg); opacity: 0.9; }
                         }
-                        @keyframes hexBlueWhite2 {
-                          0%, 100% { stroke: #3b82f6; opacity: 0.4; }
-                          50% { stroke: #ffffff; opacity: 0.9; }
+                        @keyframes docFloat2 {
+                          0% { transform: translate(60px, -40px) rotate(15deg); opacity: 0; }
+                          50% { opacity: 0.7; }
+                          100% { transform: translate(0, 0) rotate(0deg); opacity: 0.85; }
                         }
-                        @keyframes hexBlueWhite3 {
-                          0%, 100% { stroke: #3b82f6; opacity: 0.3; }
-                          50% { stroke: #ffffff; opacity: 0.85; }
+                        @keyframes docFloat3 {
+                          0% { transform: translate(-50px, 40px) rotate(-10deg); opacity: 0; }
+                          50% { opacity: 0.6; }
+                          100% { transform: translate(0, 0) rotate(0deg); opacity: 0.8; }
                         }
-                        @keyframes shelfBlueWhite {
-                          0%, 100% { stroke: #3b82f6; opacity: 0.3; }
-                          50% { stroke: #ffffff; opacity: 1; }
+                        @keyframes docFloat4 {
+                          0% { transform: translate(50px, 40px) rotate(10deg); opacity: 0; }
+                          50% { opacity: 0.5; }
+                          100% { transform: translate(0, 0) rotate(0deg); opacity: 0.75; }
                         }
-                        @keyframes rotateHex { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                        .proc-hex-main { animation: hexBlueWhite1 1.5s ease-in-out infinite; }
-                        .proc-hex-top { animation: hexBlueWhite2 1.5s ease-in-out 0.1s infinite; }
-                        .proc-hex-bl { animation: hexBlueWhite3 1.5s ease-in-out 0.2s infinite; }
-                        .proc-hex-br { animation: hexBlueWhite3 1.5s ease-in-out 0.3s infinite; }
-                        .proc-shelf { animation: shelfBlueWhite 1s ease-in-out infinite; }
-                        .proc-rotate { animation: rotateHex 8s linear infinite; transform-origin: center; }
+                        @keyframes civicPulse {
+                          0%, 100% {
+                            fill: #dbff3b;
+                            filter: drop-shadow(0 0 6px rgba(219, 255, 59, 0.4));
+                          }
+                          50% {
+                            fill: #dbff3b;
+                            filter: drop-shadow(0 0 12px rgba(219, 255, 59, 0.6));
+                          }
+                        }
+                        @keyframes gatherRing {
+                          0% { stroke-dashoffset: 0; opacity: 0.3; }
+                          100% { stroke-dashoffset: -440; opacity: 0.15; }
+                        }
+                        @keyframes textGlow {
+                          0%, 100% {
+                            text-shadow: 0 0 8px rgba(219, 255, 59, 0.4), 0 0 16px rgba(219, 255, 59, 0.2);
+                          }
+                          50% {
+                            text-shadow: 0 0 16px rgba(219, 255, 59, 0.6), 0 0 24px rgba(219, 255, 59, 0.3), 0 0 32px rgba(219, 255, 59, 0.1);
+                          }
+                        }
+                        .doc-1 { animation: docFloat1 2s ease-in-out infinite; }
+                        .doc-2 { animation: docFloat2 2s ease-in-out 0.3s infinite; }
+                        .doc-3 { animation: docFloat3 2s ease-in-out 0.6s infinite; }
+                        .doc-4 { animation: docFloat4 2s ease-in-out 0.9s infinite; }
+                        .civic-center { animation: civicPulse 2s ease-in-out infinite; }
+                        .gather-ring { animation: gatherRing 3s linear infinite; }
                       `}</style>
 
-                      {/* Rotating outer ring */}
-                      <g className="proc-rotate">
-                        <circle cx="100" cy="75" r="70" stroke="#3b82f6" strokeWidth="1" fill="none" opacity="0.3" strokeDasharray="8 4" />
+                      {/* Gathering ring - shows documents converging */}
+                      <circle
+                        className="gather-ring"
+                        cx="100"
+                        cy="100"
+                        r="70"
+                        stroke="#dbff3b"
+                        strokeWidth="1.5"
+                        fill="none"
+                        strokeDasharray="10 5"
+                      />
+
+                      {/* Floating contribution documents (cahiers) - coming from 4 directions */}
+                      {/* Top-left document */}
+                      <g className="doc-1">
+                        <rect x="85" y="85" width="14" height="18" rx="1" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.2" opacity="0.9" />
+                        <line x1="88" y1="89" x2="96" y2="89" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="88" y1="92" x2="96" y2="92" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="88" y1="95" x2="94" y2="95" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
                       </g>
 
-                      {/* Central hexagon - LARGER stroke */}
-                      <polygon
-                        className="proc-hex-main"
-                        points="100,35 135,55 135,95 100,115 65,95 65,55"
-                        stroke="#3b82f6"
-                        strokeWidth="3"
-                        fill="rgba(59, 130, 246, 0.1)"
-                      />
+                      {/* Top-right document */}
+                      <g className="doc-2">
+                        <rect x="101" y="85" width="14" height="18" rx="1" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.2" opacity="0.85" />
+                        <line x1="104" y1="89" x2="112" y2="89" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="104" y1="92" x2="112" y2="92" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="104" y1="95" x2="110" y2="95" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                      </g>
 
-                      {/* Book shelves inside - brighter */}
-                      <line className="proc-shelf" x1="75" y1="60" x2="125" y2="60" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0s' }} />
-                      <line className="proc-shelf" x1="78" y1="72" x2="122" y2="72" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0.15s' }} />
-                      <line className="proc-shelf" x1="80" y1="84" x2="120" y2="84" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0.3s' }} />
-                      <line className="proc-shelf" x1="83" y1="96" x2="117" y2="96" stroke="#60a5fa" strokeWidth="2" style={{ animationDelay: '0.45s' }} />
+                      {/* Bottom-left document */}
+                      <g className="doc-3">
+                        <rect x="85" y="105" width="14" height="18" rx="1" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.2" opacity="0.8" />
+                        <line x1="88" y1="109" x2="96" y2="109" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="88" y1="112" x2="96" y2="112" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="88" y1="115" x2="94" y2="115" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                      </g>
 
-                      {/* Top hexagon */}
-                      <polygon
-                        className="proc-hex-top"
-                        points="100,10 125,24 125,52 100,66 75,52 75,24"
-                        stroke="#60a5fa"
-                        strokeWidth="2"
-                        fill="none"
-                      />
+                      {/* Bottom-right document */}
+                      <g className="doc-4">
+                        <rect x="101" y="105" width="14" height="18" rx="1" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.2" opacity="0.75" />
+                        <line x1="104" y1="109" x2="112" y2="109" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="104" y1="112" x2="112" y2="112" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                        <line x1="104" y1="115" x2="110" y2="115" stroke="#dbff3b" strokeWidth="0.6" opacity="0.5" />
+                      </g>
 
-                      {/* Bottom left hexagon */}
-                      <polygon
-                        className="proc-hex-bl"
-                        points="65,95 90,109 90,137 65,151 40,137 40,109"
-                        stroke="#60a5fa"
-                        strokeWidth="2"
-                        fill="none"
-                      />
+                      {/* Central civic assembly icon (simplified town hall/mairie) */}
+                      <g>
+                        {/* Building base */}
+                        <rect x="85" y="95" width="30" height="25" rx="2" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.8" opacity="0.9" />
 
-                      {/* Bottom right hexagon */}
-                      <polygon
-                        className="proc-hex-br"
-                        points="135,95 160,109 160,137 135,151 110,137 110,109"
-                        stroke="#60a5fa"
-                        strokeWidth="2"
-                        fill="none"
-                      />
+                        {/* Columns */}
+                        <line x1="90" y1="95" x2="90" y2="120" stroke="#dbff3b" strokeWidth="1.2" opacity="0.5" />
+                        <line x1="100" y1="95" x2="100" y2="120" stroke="#dbff3b" strokeWidth="1.2" opacity="0.5" />
+                        <line x1="110" y1="95" x2="110" y2="120" stroke="#dbff3b" strokeWidth="1.2" opacity="0.5" />
+
+                        {/* Pediment (triangular roof) */}
+                        <path d="M 80 95 L 100 85 L 120 95 Z" fill="#0a0a0a" stroke="#dbff3b" strokeWidth="1.8" opacity="0.9" />
+
+                        {/* Central pulsing dot (represents active consultation) */}
+                        <circle className="civic-center" cx="100" cy="107" r="3" />
+                      </g>
+
+                      {/* Citizen voices/contributions indicators (small dots gathering) */}
+                      <circle cx="75" cy="100" r="1.5" fill="#dbff3b" opacity="0.4">
+                        <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" repeatCount="indefinite" />
+                      </circle>
+                      <circle cx="125" cy="100" r="1.5" fill="#dbff3b" opacity="0.4">
+                        <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" begin="0.5s" repeatCount="indefinite" />
+                      </circle>
+                      <circle cx="100" cy="80" r="1.5" fill="#dbff3b" opacity="0.4">
+                        <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" begin="1s" repeatCount="indefinite" />
+                      </circle>
+                      <circle cx="100" cy="130" r="1.5" fill="#dbff3b" opacity="0.4">
+                        <animate attributeName="opacity" values="0.2;0.6;0.2" dur="2s" begin="1.5s" repeatCount="indefinite" />
+                      </circle>
                     </svg>
                   </div>
-                  {/* Processing text below hexagon */}
-                  <div className="text-center mt-2 text-blue-400 text-sm font-medium animate-pulse">
-                    Exploration en cours...
+                  {/* Processing text below animation */}
+                  <div className="text-center mt-2">
+                    <div className="inline-block px-4 py-2 bg-[#0a0a0a] rounded-lg border border-[#dbff3b]/30">
+                      <span className="text-[#dbff3b] text-sm font-medium" style={{ animation: 'textGlow 2s ease-in-out infinite' }}>
+                        Nous consultons les contributions des citoyens
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Rotating civic quotes during loading */}
+                  <CitizenQuotesPanel
+                    quotes={civicQuotes}
+                    currentIndex={currentQuoteIndex}
+                    isVisible={true}
+                  />
                 </div>
               )}
               <GraphErrorBoundary>
                 <GraphVisualization3DForce
                   reconciliationData={reconciliationData}
                   searchPath={searchPath}
+                  provenanceGraphData={provenanceGraphData}
                   debugInfo={debugInfo}
                   onNodeVisibilityChange={setVisibleNodeIds}
                   onNodeClick={handleNodeClick}
                   isProcessing={isProcessing}
                   currentProcessingPhase={currentProcessingPhase}
                   sidePanelOpen={!!selectedEntityId}
+                  communeCount={currentCommuneCount}
               />
 
             {/* Interactive Tutorial Overlay */}
@@ -1286,9 +1460,9 @@ function BorgesLibrary() {
 
             {/* Loading Overlay for returning users (tutorial already seen) */}
             {showLoadingOverlay && !showTutorial && (
-              <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center">
+              <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
                 <div className="text-center max-w-2xl px-8">
-                  {/* Hexagon Library Assembly Animation */}
+                  {/* Hexagon Library Assembly Animation - Datack Yellow */}
                   <svg className="w-32 h-32 mx-auto mb-6" viewBox="0 0 200 200" fill="none">
                     <style>{`
                       @keyframes hexAssemble1 { 0% { opacity: 0; transform: translate(-30px, -20px); } 50% { opacity: 0.6; } 100% { opacity: 0.8; transform: translate(0, 0); } }
@@ -1309,7 +1483,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex1-overlay"
                       points="100,40 130,57.5 130,92.5 100,110 70,92.5 70,57.5"
-                      stroke="#a0a0a0"
+                      stroke="#dbff3b"
                       strokeWidth="1.5"
                       fill="none"
                     />
@@ -1318,7 +1492,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex2-overlay"
                       points="100,10 125,25 125,55 100,70 75,55 75,25"
-                      stroke="#a0a0a0"
+                      stroke="#dbff3b"
                       strokeWidth="1"
                       fill="none"
                     />
@@ -1327,7 +1501,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex3-overlay"
                       points="70,95 95,110 95,140 70,155 45,140 45,110"
-                      stroke="#a0a0a0"
+                      stroke="#dbff3b"
                       strokeWidth="1"
                       fill="none"
                     />
@@ -1336,7 +1510,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex4-overlay"
                       points="130,95 155,110 155,140 130,155 105,140 105,110"
-                      stroke="#a0a0a0"
+                      stroke="#dbff3b"
                       strokeWidth="1"
                       fill="none"
                     />
@@ -1345,7 +1519,7 @@ function BorgesLibrary() {
                     <polygon
                       className="hex5-overlay"
                       points="50,60 75,75 75,105 50,120 25,105 25,75"
-                      stroke="#a0a0a0"
+                      stroke="#dbff3b"
                       strokeWidth="0.8"
                       fill="none"
                     />
@@ -1354,55 +1528,61 @@ function BorgesLibrary() {
                     <polygon
                       className="hex5-overlay"
                       points="150,60 175,75 175,105 150,120 125,105 125,75"
-                      stroke="#a0a0a0"
+                      stroke="#dbff3b"
                       strokeWidth="0.8"
                       fill="none"
                       style={{ animationDelay: '1s' }}
                     />
 
                     {/* Book lines inside central hexagon - simulating shelves */}
-                    <line className="book-line-overlay" x1="80" y1="65" x2="120" y2="65" stroke="#a0a0a0" strokeWidth="0.5" />
-                    <line className="book-line-overlay" x1="82" y1="75" x2="118" y2="75" stroke="#a0a0a0" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
-                    <line className="book-line-overlay" x1="84" y1="85" x2="116" y2="85" stroke="#a0a0a0" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
+                    <line className="book-line-overlay" x1="80" y1="65" x2="120" y2="65" stroke="#dbff3b" strokeWidth="0.5" />
+                    <line className="book-line-overlay" x1="82" y1="75" x2="118" y2="75" stroke="#dbff3b" strokeWidth="0.5" style={{ animationDelay: '0.5s' }} />
+                    <line className="book-line-overlay" x1="84" y1="85" x2="116" y2="85" stroke="#dbff3b" strokeWidth="0.5" style={{ animationDelay: '1s' }} />
                   </svg>
 
                   {/* Project concept introduction */}
-                  <h2 className="text-xl font-semibold text-borges-light mb-3 tracking-wide">Le graphe de Borges</h2>
-                  <p className="text-borges-light-muted text-sm mb-6 leading-relaxed">
-                    Révéler les connexions invisibles entre des univers littéraires qui ne se parlent jamais.
-                    Inspiré de la <span className="text-borges-light">Bibliothèque de Babel</span> imaginée par Jorge Luis Borges,
-                    ce graphe explore les résonances cachées entre les œuvres — thèmes partagés, échos narratifs,
-                    et correspondances insoupçonnées.
+                  <h2 className="text-xl font-semibold text-gray-800 mb-3 tracking-wide">Grand Débat National</h2>
+                  <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+                    Explorer les contributions citoyennes des Cahiers de Doléances 2019.
+                    Ce graphe de connaissances révèle les thèmes, préoccupations et propositions
+                    exprimés par les citoyens de <span className="text-gray-800 font-medium">50 communes de Charente-Maritime</span>.
                   </p>
 
                   {/* Loading progress indicator */}
-                  {loadingProgress && (
-                    <div className="mb-4 text-borges-light text-sm font-medium">
+                  {isGraphMLLoading && (
+                    <div className="mb-4 text-datack-yellow text-sm font-medium animate-pulse">
+                      <span>Chargement du graphe civique...</span>
+                    </div>
+                  )}
+                  {loadingProgress && !isGraphMLLoading && (
+                    <div className="mb-4 text-gray-800 text-sm font-medium">
                       {loadingProgress.step === 'nodes' && (
-                        <span>Exploration des galeries hexagonales... {loadingProgress.current}/{loadingProgress.total}</span>
+                        <span>Exploration des contributions... {loadingProgress.current}/{loadingProgress.total}</span>
                       )}
                       {loadingProgress.step === 'relations' && (
-                        <span>Tissage des connexions infinies... {loadingProgress.current}/{loadingProgress.total}</span>
+                        <span>Tissage des connexions civiques... {loadingProgress.current}/{loadingProgress.total}</span>
                       )}
                       {loadingProgress.step === 'building' && (
-                        <span>Cristallisation de la Bibliothèque... {loadingProgress.current} nœuds</span>
+                        <span>Construction du graphe citoyen... {loadingProgress.current} entités</span>
                       )}
                     </div>
                   )}
 
-                  {/* Rotating Borges quote with fade animation */}
-                  <div className="mt-6 border-t border-borges-border pt-6">
+                  {/* Rotating civic quote with fade animation */}
+                  <div className="mt-6 border-t border-gray-200 pt-6">
                     <div
                       key={currentQuoteIndex}
-                      className="text-borges-light-muted text-xs italic max-w-lg mx-auto transition-opacity duration-1000 animate-fade-in"
+                      className="text-gray-500 text-xs italic max-w-lg mx-auto transition-opacity duration-1000 animate-fade-in"
                     >
-                      {borgesQuotes[currentQuoteIndex]}
+                      {civicQuotes[currentQuoteIndex]}
                     </div>
-                    <div className="text-borges-muted text-xs mt-2">— Jorge Luis Borges, <span className="italic">La Bibliothèque de Babel</span></div>
+                    <div className="text-gray-400 text-xs mt-2">— Grand Débat National 2019</div>
                   </div>
                 </div>
               </div>
             )}
+
+            {/* GraphML error display removed - now using MCP API */}
             </GraphErrorBoundary>
             </div>
 
@@ -1417,18 +1597,138 @@ function BorgesLibrary() {
           entityName={selectedEntityName || undefined}
           reconciliationData={reconciliationData}
           onClose={handleCloseEntityModal}
+          ragSourceChunks={sourceChunks}
+          currentQuery={currentQuery}
         />
       )}
 
-      {/* Answer Panel - Responsive: Resizable bottom sheet on mobile, side panel on desktop */}
+      {/* Citizen Extracts now merged into EntityDetailModal - Constitution Principle #7 */}
+
+      {/* Error Alert - Dismissible with Retry Button */}
+      {showErrorAlert && queryError && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-lg">
+          <div className="bg-red-900/95 border border-red-500 rounded-datack-md p-4 shadow-datack-lg backdrop-blur-sm">
+            <div className="flex items-start gap-3">
+              {/* Error Icon */}
+              <div className="flex-shrink-0 text-red-400 mt-0.5">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+
+              {/* Error Content */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-red-100 font-medium text-sm mb-1">Erreur de requête</h3>
+                <p className="text-red-200 text-sm leading-relaxed">{queryError}</p>
+
+                {/* Retry Button */}
+                <button
+                  onClick={() => {
+                    setShowErrorAlert(false)
+                    setQueryError(null)
+                    if (currentQuery) {
+                      handleSimpleQuery(currentQuery)
+                    }
+                  }}
+                  className="mt-3 px-4 py-2 bg-red-700 hover:bg-red-600 text-red-100 rounded-datack-sm text-sm font-medium transition-colors inline-flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Réessayer
+                </button>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setShowErrorAlert(false)
+                  setQueryError(null)
+                }}
+                className="flex-shrink-0 text-red-300 hover:text-red-100 transition-colors"
+                aria-label="Fermer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Answer Panel - Datack Branding - Resizable on both mobile and desktop */}
       {showAnswer && (
         <div
-          className="borges-panel fixed bottom-0 left-0 right-0 md:bottom-4 md:left-4 md:right-auto w-full md:w-[400px] md:max-h-[45vh] overflow-hidden text-borges-light shadow-borges-lg z-30 rounded-t-2xl md:rounded-borges-md safe-area-bottom flex flex-col"
+          className="datack-panel fixed bottom-0 left-0 right-0 md:bottom-4 md:left-4 md:right-auto w-full overflow-hidden text-datack-light shadow-datack-lg z-30 rounded-t-2xl md:rounded-datack-md safe-area-bottom flex flex-col"
           style={{
-            height: typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : undefined,
-            maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : undefined
+            height: typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : `${desktopPanelHeight}vh`,
+            maxHeight: typeof window !== 'undefined' && window.innerWidth < 768 ? `${answerPanelHeight}vh` : `${desktopPanelHeight}vh`,
+            width: typeof window !== 'undefined' && window.innerWidth >= 768 ? `${desktopPanelWidth}px` : undefined,
+            minWidth: typeof window !== 'undefined' && window.innerWidth >= 768 ? '320px' : undefined,
+            maxWidth: typeof window !== 'undefined' && window.innerWidth >= 768 ? '800px' : undefined
           }}
         >
+          {/* Desktop horizontal resize handle - on the right edge */}
+          <div
+            className="hidden md:block absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-datack-yellow/20 transition-colors z-10"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              const startX = e.clientX
+              const startWidth = desktopPanelWidth
+
+              const handleMouseMove = (moveEvent: MouseEvent) => {
+                const deltaX = moveEvent.clientX - startX
+                const newWidth = Math.min(800, Math.max(320, startWidth + deltaX))
+                setDesktopPanelWidth(newWidth)
+              }
+
+              const handleMouseUp = () => {
+                document.removeEventListener('mousemove', handleMouseMove)
+                document.removeEventListener('mouseup', handleMouseUp)
+                document.body.style.cursor = ''
+                document.body.style.userSelect = ''
+              }
+
+              document.body.style.cursor = 'ew-resize'
+              document.body.style.userSelect = 'none'
+              document.addEventListener('mousemove', handleMouseMove)
+              document.addEventListener('mouseup', handleMouseUp)
+            }}
+          />
+          {/* Desktop resize handle - at the top */}
+          <div
+            className="hidden md:flex justify-center py-1.5 cursor-ns-resize select-none hover:bg-datack-dark/50 transition-colors group"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              const startY = e.clientY
+              const startHeight = desktopPanelHeight
+              const viewportHeight = window.innerHeight
+
+              const handleMouseMove = (moveEvent: MouseEvent) => {
+                const currentY = moveEvent.clientY
+                const deltaY = startY - currentY
+                const deltaVh = (deltaY / viewportHeight) * 100
+                const newHeight = Math.min(85, Math.max(20, startHeight + deltaVh))
+                setDesktopPanelHeight(newHeight)
+              }
+
+              const handleMouseUp = () => {
+                document.removeEventListener('mousemove', handleMouseMove)
+                document.removeEventListener('mouseup', handleMouseUp)
+                document.body.style.cursor = ''
+                document.body.style.userSelect = ''
+              }
+
+              document.body.style.cursor = 'ns-resize'
+              document.body.style.userSelect = 'none'
+              document.addEventListener('mousemove', handleMouseMove)
+              document.addEventListener('mouseup', handleMouseUp)
+            }}
+          >
+            <div className="w-16 h-1 bg-datack-border rounded-full group-hover:bg-datack-yellow/50 transition-colors"></div>
+          </div>
+
           {/* Mobile drag handle - draggable to resize */}
           <div
             className="md:hidden flex justify-center py-2 cursor-ns-resize touch-none select-none"
@@ -1454,67 +1754,78 @@ function BorgesLibrary() {
               document.addEventListener('touchend', handleTouchEnd)
             }}
           >
-            <div className="w-12 h-1.5 bg-borges-border rounded-full"></div>
+            <div className="w-12 h-1.5 bg-datack-border rounded-full"></div>
           </div>
           <div className="flex justify-between items-start mb-2 md:mb-3 px-1">
-            <h3 className="text-sm md:text-h3 text-borges-light font-medium">La réponse du GraphRAG</h3>
-            <button
-              onClick={() => setShowAnswer(false)}
-              className="borges-btn-ghost text-lg touch-target flex items-center justify-center"
-              aria-label="Fermer"
-            >
-              ×
-            </button>
+            <h3 className="text-sm md:text-h3 text-datack-light font-medium">Réponse citoyenne</h3>
+            <div className="flex items-center gap-1">
+              {/* Expand/collapse button - visible on both mobile and desktop */}
+              <button
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+                    // Desktop: toggle between 45vh and 75vh
+                    setDesktopPanelHeight(desktopPanelHeight < 60 ? 75 : 45)
+                  } else {
+                    // Mobile: toggle between 20vh and 65vh
+                    setAnswerPanelHeight(answerPanelHeight < 40 ? 65 : 20)
+                  }
+                }}
+                className="datack-btn-ghost p-1 touch-target flex items-center justify-center"
+                aria-label={desktopPanelHeight < 60 ? "Agrandir" : "Réduire"}
+                title={desktopPanelHeight < 60 ? "Agrandir le panneau" : "Réduire le panneau"}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  {(typeof window !== 'undefined' && window.innerWidth >= 768 ? desktopPanelHeight < 60 : answerPanelHeight < 40) ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  )}
+                </svg>
+              </button>
+              <button
+                onClick={() => setShowAnswer(false)}
+                className="datack-btn-ghost text-lg touch-target flex items-center justify-center"
+                aria-label="Fermer"
+              >
+                ×
+              </button>
+            </div>
           </div>
 
-          {/* GraphRAG Context Analysis - Hidden on mobile for space */}
-          {searchPath && (
-            <div className="hidden md:block mb-3 p-3 bg-borges-dark rounded-borges-sm border border-borges-border">
-              <div className="text-xs font-medium text-borges-light mb-2">Knowledge Base Analysis</div>
-              <div className="text-xs space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-borges-light-muted">Communities:</span>
-                  <span className="text-borges-light">{searchPath.communities?.length || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-borges-light-muted">Entities:</span>
-                  <span className="text-borges-light">{searchPath.entities?.length || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-borges-light-muted">Relationships:</span>
-                  <span className="text-borges-light">{searchPath.relations?.length || 0}</span>
-                </div>
-              </div>
-              {searchPath.entities && searchPath.entities.length > 0 && (
-                <div className="mt-2">
-                  <div className="text-xs text-borges-light-muted mb-1">Key Entities Used:</div>
-                  <div className="text-xs text-borges-light max-h-16 overflow-y-auto">
-                    {searchPath.entities.slice(0, 5).map((entity: any, i: number) => (
-                      <div key={i} className="truncate">• {entity.id || entity.name || entity}</div>
-                    ))}
-                    {searchPath.entities.length > 5 && (
-                      <div className="text-borges-muted">... and {searchPath.entities.length - 5} more</div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-            <div className="text-xs text-borges-light-muted mb-1 hidden md:block">Réponse:</div>
+            <div className="text-xs text-datack-muted mb-1 hidden md:block">Réponse:</div>
             <div className="flex-1 overflow-y-auto pr-2">
               <HighlightedText
                 text={queryAnswer}
                 entities={coloredEntities}
-                className="text-sm text-borges-light leading-relaxed break-words whitespace-pre-wrap"
+                relationships={searchPath?.relations || []}
+                className="text-sm text-datack-light leading-relaxed break-words"
                 onEntityClick={handleEntityClick}
                 showTooltip={true}
               />
             </div>
+            {/* Show sources button - opens EntityDetailModal with RAG chunks */}
+            {sourceChunks.length > 0 && (
+              <div className="pt-2 mt-2 border-t border-datack-border flex-shrink-0">
+                <button
+                  onClick={() => {
+                    // Open EntityDetailModal in "sources only" mode by using a special entity ID
+                    setSelectedEntityId('__rag_sources__')
+                    setSelectedEntityName('Sources citoyennes')
+                  }}
+                  className="w-full py-2 px-3 text-sm bg-datack-yellow/10 hover:bg-datack-yellow/20 border border-datack-yellow/30 rounded-datack-sm text-datack-light flex items-center justify-center gap-2 transition-colors"
+                >
+                  <span className="text-datack-yellow">📜</span>
+                  Voir les {sourceChunks.length} sources citoyennes
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
+
+      {/* Source Chunks Panel - REMOVED: Now merged into EntityDetailModal (Feature 005-agent-orchestration) */}
+      {/* Constitution Principle V: End-to-End Interpretability - chunks shown via entity modal */}
 
       {/* TextChunkModal for entity source exploration */}
       {entityChunkData && (
@@ -1525,7 +1836,7 @@ function BorgesLibrary() {
             setEntityChunkData(null)
           }}
           chunkText={entityChunkData.aggregatedChunks}
-          bookId={entityChunkData.bookId}
+          bookId={entityChunkData.communeId}
           entities={coloredEntities.filter(e => e.id === entityChunkData.entityName)}
           relationshipInfo={{
             sourceNode: entityChunkData.entityName,

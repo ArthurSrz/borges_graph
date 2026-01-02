@@ -18,45 +18,55 @@ module.exports = {
     },
     extend: {
       colors: {
-        'borges-dark': '#0a0a0a',
-        'borges-light': '#f5f5f5',
-        'borges-accent': '#7dd3fc',
-        'borges-secondary': '#2a2a2a',
-        'borges-muted': '#666666',
-        'borges-dark-hover': '#1a1a1a',
-        'borges-light-muted': '#a0a0a0',
-        'borges-border': '#333333',
+        // Datack Brand Colors - LIGHT THEME (Cycle 006-ui-fix)
+        'datack-yellow': '#dbff3b',       // Primary accent (neon lime)
+        'datack-yellow-bright': '#c4e600', // Darker accent for hover on light bg
+        'datack-black': '#ffffff',        // Primary background (white)
+        'datack-dark': '#f5f5f5',         // Elevated surfaces (light gray)
+        'datack-panel': '#ffffff',        // Panel background
+        'datack-light': '#0a0a0a',        // Primary text (dark)
+        'datack-light-muted': '#404040',  // Secondary text
+        'datack-gray': '#6b6b6b',         // Muted text
+        // Semantic aliases
+        'datack-accent': '#dbff3b',
+        'datack-secondary': '#f0f0f0',    // Secondary surfaces
+        'datack-muted': '#6b6b6b',
+        'datack-border': '#e5e5e5',       // Subtle borders
+        'datack-hover': '#c4e600',
+        'datack-black-hover': '#f5f5f5',  // Hover state for white bg
       },
       fontFamily: {
-        'borges': ['Cormorant Garamond', 'Georgia', 'serif'],
+        'datack': ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       fontSize: {
         // Mobile-first responsive typography (min 16px body)
-        'display': ['2.5rem', { lineHeight: '1.2', fontWeight: '300' }],
-        'display-mobile': ['1.75rem', { lineHeight: '1.2', fontWeight: '300' }],
-        'h1': ['2rem', { lineHeight: '1.3', fontWeight: '400' }],
-        'h1-mobile': ['1.5rem', { lineHeight: '1.3', fontWeight: '400' }],
-        'h2': ['1.5rem', { lineHeight: '1.4', fontWeight: '500' }],
-        'h2-mobile': ['1.25rem', { lineHeight: '1.4', fontWeight: '500' }],
+        'display': ['2.5rem', { lineHeight: '1.2', fontWeight: '700' }],
+        'display-mobile': ['1.75rem', { lineHeight: '1.2', fontWeight: '700' }],
+        'h1': ['2rem', { lineHeight: '1.3', fontWeight: '600' }],
+        'h1-mobile': ['1.5rem', { lineHeight: '1.3', fontWeight: '600' }],
+        'h2': ['1.5rem', { lineHeight: '1.4', fontWeight: '600' }],
+        'h2-mobile': ['1.25rem', { lineHeight: '1.4', fontWeight: '600' }],
         'h3': ['1.25rem', { lineHeight: '1.4', fontWeight: '500' }],
         'h3-mobile': ['1.125rem', { lineHeight: '1.4', fontWeight: '500' }],
-        'body': ['1rem', { lineHeight: '1.6' }],      // 16px minimum
-        'body-sm': ['0.875rem', { lineHeight: '1.5' }], // 14px for secondary
+        'body': ['1rem', { lineHeight: '1.6', fontWeight: '400' }],
+        'body-sm': ['0.875rem', { lineHeight: '1.5', fontWeight: '400' }],
       },
       borderRadius: {
-        'borges-sm': '4px',
-        'borges-md': '8px',
-        'borges-lg': '12px',
+        'datack-sm': '4px',
+        'datack-md': '8px',
+        'datack-lg': '12px',
       },
       boxShadow: {
-        'borges-sm': '0 1px 2px rgba(0,0,0,0.3)',
-        'borges-md': '0 4px 6px rgba(0,0,0,0.4)',
-        'borges-lg': '0 10px 15px rgba(0,0,0,0.5)',
+        // Light theme shadows
+        'datack-sm': '0 1px 2px rgba(0,0,0,0.1)',
+        'datack-md': '0 4px 6px rgba(0,0,0,0.1)',
+        'datack-lg': '0 10px 15px rgba(0,0,0,0.15)',
+        'datack-glow': '0 0 20px rgba(219, 255, 59, 0.4)',
       },
       // Touch-friendly spacing (Constitution Principle VIII: 44x44px touch targets)
       spacing: {
-        'touch': '44px',        // Minimum touch target size
-        'touch-sm': '36px',     // Smaller touch target (with padding)
+        'touch': '44px',
+        'touch-sm': '36px',
       },
       minWidth: {
         'touch': '44px',
