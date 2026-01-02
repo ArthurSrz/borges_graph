@@ -1090,14 +1090,20 @@ export default function GraphVisualization3DForce({
 
               {/* Relationship Types - Dynamic from API data */}
               <div className="border-t border-datack-border pt-3">
-                <div className="text-datack-muted text-xs font-medium mb-2 sticky top-0 bg-datack-dark py-1">Types de relations:</div>
+                <div className="text-datack-muted text-xs font-medium mb-2 sticky top-0 bg-datack-dark py-1">
+                  Types de relations ({relationshipTypes.size})
+                </div>
                 <div className="space-y-1.5">
                   {relationshipTypes.size > 0 ? (
                     Array.from(relationshipTypes).sort().map((relType) => {
                       const count = reconciliationData?.relationships.filter(r => r.type === relType).length || 0
                       return (
-                        <div key={relType} className="inline-block bg-[#0a0a0a] text-[#dbff3b] px-2 py-1 rounded text-xs font-medium">
-                          {relType} ×{count}
+                        <div key={relType} className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-datack-yellow">→</span>
+                            <span className="text-datack-light font-medium truncate">{relType}</span>
+                          </div>
+                          <span className="text-datack-muted/60 ml-2 flex-shrink-0">×{count}</span>
                         </div>
                       )
                     })
@@ -1139,14 +1145,18 @@ export default function GraphVisualization3DForce({
                 </div>
                 {/* Relations - Dynamic from API data */}
                 <div className="border-t border-datack-border pt-2">
-                  <div className="text-datack-muted text-xs font-medium mb-1">Relations:</div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="text-datack-muted text-xs font-medium mb-1">Relations ({relationshipTypes.size}):</div>
+                  <div className="space-y-1">
                     {relationshipTypes.size > 0 ? (
                       Array.from(relationshipTypes).sort().map((relType) => {
                         const count = reconciliationData?.relationships.filter(r => r.type === relType).length || 0
                         return (
-                          <div key={relType} className="inline-block bg-[#0a0a0a] text-[#dbff3b] px-2 py-1 rounded text-xs font-medium">
-                            {relType} ×{count}
+                          <div key={relType} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                              <span className="text-datack-yellow">→</span>
+                              <span className="text-datack-light font-medium truncate">{relType}</span>
+                            </div>
+                            <span className="text-datack-muted/60 ml-2 flex-shrink-0">×{count}</span>
                           </div>
                         )
                       })
