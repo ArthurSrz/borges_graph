@@ -101,6 +101,8 @@ import ProvenancePanel from './ProvenancePanel'
 import EntityDetailModal from './EntityDetailModal'
 import CommuneSelector, { CommuneSelectorMobile, type Commune } from './CommuneSelector'
 // CitizenExtractsPanel merged into EntityDetailModal (Feature 005-agent-orchestration)
+import CitizenQuotesPanel from './CitizenQuotesPanel'
+import CommuneFilterChips from './CommuneFilterChips'
 import { lawGraphRAGService } from '@/lib/services/law-graphrag'
 import type { CitizenExtract, GrandDebatEntity } from '@/types/law-graphrag'
 import { colorService, type EntityColorInfo } from '@/lib/utils/colorService'
@@ -1255,6 +1257,16 @@ function BorgesLibrary() {
                 </div>
               </div>
 
+              {/* Commune Filter Chips - Constitution Principle II (Civic Provenance) */}
+              <CommuneFilterChips
+                selectedCommunes={selectedCommunes}
+                availableCommunes={availableCommunes}
+                onRemove={(communeId) => {
+                  setSelectedCommunes(prev => prev.filter(id => id !== communeId))
+                }}
+                maxCommunes={availableCommunes.length}
+              />
+
               {/* Mobile-only: Current settings indicator */}
               <div className="flex md:hidden items-center justify-between text-xs text-datack-muted">
                 <span>
@@ -1415,6 +1427,13 @@ function BorgesLibrary() {
                       </span>
                     </div>
                   </div>
+
+                  {/* Rotating civic quotes during loading */}
+                  <CitizenQuotesPanel
+                    quotes={civicQuotes}
+                    currentIndex={currentQuoteIndex}
+                    isVisible={true}
+                  />
                 </div>
               )}
               <GraphErrorBoundary>
