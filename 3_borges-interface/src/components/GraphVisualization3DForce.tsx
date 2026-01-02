@@ -1100,7 +1100,7 @@ export default function GraphVisualization3DForce({
                       return (
                         <div key={relType} className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <span className="text-datack-yellow">→</span>
+                            <span className="text-[#0a0a0a]">→</span>
                             <span className="text-datack-light font-medium truncate">{relType}</span>
                           </div>
                           <span className="text-datack-muted/60 ml-2 flex-shrink-0">×{count}</span>
@@ -1153,7 +1153,7 @@ export default function GraphVisualization3DForce({
                         return (
                           <div key={relType} className="flex items-center justify-between text-xs">
                             <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                              <span className="text-datack-yellow">→</span>
+                              <span className="text-[#0a0a0a]">→</span>
                               <span className="text-datack-light font-medium truncate">{relType}</span>
                             </div>
                             <span className="text-datack-muted/60 ml-2 flex-shrink-0">×{count}</span>
