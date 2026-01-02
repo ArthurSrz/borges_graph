@@ -1,6 +1,6 @@
 'use client'
 
-import { X } from 'lucide-react'
+import { XMarkIcon } from '@heroicons/react/24/solid'
 
 export interface Commune {
   id: string
@@ -54,7 +54,7 @@ export default function CommuneFilterChips({
             className="p-0.5 hover:bg-datack-border rounded-full transition-colors"
             aria-label={`Retirer ${commune.name}`}
           >
-            <X className="w-3 h-3 text-datack-muted group-hover:text-datack-yellow transition-colors" />
+            <XMarkIcon className="w-3 h-3 text-datack-muted group-hover:text-datack-yellow transition-colors" />
           </button>
         </div>
       ))}
