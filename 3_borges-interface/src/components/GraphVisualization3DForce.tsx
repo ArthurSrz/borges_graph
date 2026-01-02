@@ -1041,9 +1041,9 @@ export default function GraphVisualization3DForce({
           {/* Show subgraph dimensions when provenance is active */}
           {provenanceGraphData && provenanceGraphData.nodes.length > 0 ? (
             <>
-              <div className="text-datack-yellow font-medium">Sous-graphe</div>
+              <div className="inline-block bg-[#0a0a0a] text-[#dbff3b] px-2 py-1 rounded font-medium text-xs mb-1">Sous-graphe</div>
               <div className="text-datack-muted">
-                {new Set(provenanceGraphData.nodes.map(n => n.properties?.source_commune).filter(Boolean)).size} communes
+                {new Set(provenanceGraphData.nodes.map(n => n.commune_id || n.properties?.commune_id || n.properties?.source_commune).filter(Boolean)).size} communes
               </div>
               <div className="text-datack-muted">{provenanceGraphData.nodes.length} noeuds</div>
               <div className="text-datack-muted">{provenanceGraphData.relationships.length} relations</div>
@@ -1090,15 +1090,17 @@ export default function GraphVisualization3DForce({
 
               {/* Relationship Types - Dynamic from API data */}
               <div className="border-t border-datack-border pt-3">
-                <div className="text-datack-muted text-xs font-medium mb-2 sticky top-0 bg-datack-dark py-1">Types de relations</div>
-                <div className="space-y-1 text-datack-muted text-xs">
+                <div className="text-datack-muted text-xs font-medium mb-2 sticky top-0 bg-datack-dark py-1">Types de relations:</div>
+                <div className="space-y-1.5">
                   {relationshipTypes.size > 0 ? (
-                    Array.from(relationshipTypes).sort().map((relType) => (
-                      <div key={relType} className="flex items-center">
-                        <span className="mr-2 text-datack-yellow">→</span>
-                        <span className="font-medium">{relType}</span>
-                      </div>
-                    ))
+                    Array.from(relationshipTypes).sort().map((relType) => {
+                      const count = reconciliationData?.relationships.filter(r => r.type === relType).length || 0
+                      return (
+                        <div key={relType} className="inline-block bg-[#0a0a0a] text-[#dbff3b] px-2 py-1 rounded text-xs font-medium">
+                          {relType} ×{count}
+                        </div>
+                      )
+                    })
                   ) : (
                     <div className="text-datack-gray text-xs italic">Aucune relation</div>
                   )}
@@ -1137,12 +1139,17 @@ export default function GraphVisualization3DForce({
                 </div>
                 {/* Relations - Dynamic from API data */}
                 <div className="border-t border-datack-border pt-2">
-                  <div className="text-datack-muted text-xs font-medium mb-1">Relations</div>
-                  <div className="space-y-0.5 text-datack-muted text-xs">
+                  <div className="text-datack-muted text-xs font-medium mb-1">Relations:</div>
+                  <div className="flex flex-wrap gap-1.5">
                     {relationshipTypes.size > 0 ? (
-                      Array.from(relationshipTypes).sort().map((relType) => (
-                        <div key={relType}>→ {relType}</div>
-                      ))
+                      Array.from(relationshipTypes).sort().map((relType) => {
+                        const count = reconciliationData?.relationships.filter(r => r.type === relType).length || 0
+                        return (
+                          <div key={relType} className="inline-block bg-[#0a0a0a] text-[#dbff3b] px-2 py-1 rounded text-xs font-medium">
+                            {relType} ×{count}
+                          </div>
+                        )
+                      })
                     ) : (
                       <div className="text-datack-gray text-xs italic">Aucune relation</div>
                     )}
